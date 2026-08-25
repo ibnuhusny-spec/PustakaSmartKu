@@ -58,7 +58,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       img.src = src;
     });
 
-    const memberAvatarSrc = member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`;
+    const memberAvatarSrc = member.avatar || `https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80`;
 
     Promise.all([
       loadImage(schoolLogoUrl),
@@ -724,7 +724,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
               }}>
                 <img 
                   ref={photoDomRef}
-                  src={member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`}
+                  src={member.avatar || `https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80`}
                   alt={member.name}
                   style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }}
                   onError={e => {
@@ -799,7 +799,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            🚀 <strong>Super Ultra HD 600 DPI (2426 x 1530 px):</strong> Kualitas gambar tajam tanpa pecah saat dizoom di CorelDraw + Pasfoto terhubung dari DOM Image!
+            🚀 <strong>Super Ultra HD 600 DPI (2426 x 1530 px):</strong> Pasfoto siswa kini menggunakan gambar foto asli berkualitas tinggi (*Unsplash Photo*)!
           </div>
 
         </div>

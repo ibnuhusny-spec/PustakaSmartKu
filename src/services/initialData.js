@@ -14,7 +14,7 @@ export const DEFAULT_SETTINGS = {
   autoAttendanceOnTap: true,
   schoolLogoUrl: "", // Dedicated School Logo
   logoUrl: "/perpustakaansmart.png", // App Logo
-  cardTemplate: "school_luxury", // Default card template theme: school_luxury, vertical_split, royal_gold, clean_corporate
+  cardTemplate: "clean_corporate", // Default card template theme: clean_corporate, vertical_split, school_luxury, royal_gold
   idFieldLabel: "NISN / NIP", // Custom ID Label
   classFieldLabel: "Peran / Kelas" // Custom Class/Role Label
 };
@@ -116,16 +116,16 @@ export const INITIAL_MEMBERS = [
   {
     id: "M-001",
     rfidUid: "RFID-1001",
-    name: "Ahmad Fauzi",
+    name: "Abu Muhammad Abdillah",
     role: "Siswa",
-    classGrade: "XII IPA 1",
-    nisn: "0051239841",
-    email: "ahmad.fauzi@sch.id",
+    classGrade: "Kelas 4A Putra",
+    nisn: "00001",
+    email: "abu.abdillah@sch.id",
     phone: "081234567890",
     balance: 25000,
     points: 180,
-    badge: "Duta Baca Utama 🥇",
-    avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Ahmad",
+    badge: "Pembaca Baru 🌱",
+    avatar: "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80",
     registeredAt: "2026-01-10"
   },
   {
@@ -140,7 +140,7 @@ export const INITIAL_MEMBERS = [
     balance: 15000,
     points: 140,
     badge: "Kutu Buku 📚",
-    avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Siti",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
     registeredAt: "2026-01-12"
   },
   {
@@ -155,7 +155,7 @@ export const INITIAL_MEMBERS = [
     balance: 5000,
     points: 90,
     badge: "Penjelajah Sastra 🚀",
-    avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Budi",
+    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80",
     registeredAt: "2026-02-01"
   },
   {
@@ -170,7 +170,7 @@ export const INITIAL_MEMBERS = [
     balance: 100000,
     points: 320,
     badge: "Pembina Literasi 🌟",
-    avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Nurhayati",
+    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
     registeredAt: "2026-01-01"
   },
   {
@@ -185,7 +185,7 @@ export const INITIAL_MEMBERS = [
     balance: 0,
     points: 60,
     badge: "Pembaca Aktif ⭐",
-    avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Dewi",
+    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80",
     registeredAt: "2026-02-15"
   }
 ];
@@ -195,7 +195,7 @@ export const INITIAL_TRANSACTIONS = [
     id: "TRX-20260820-01",
     rfidUid: "RFID-1001",
     memberId: "M-001",
-    memberName: "Ahmad Fauzi",
+    memberName: "Abu Muhammad Abdillah",
     bookId: "B-101",
     bookTitle: "Laskar Pelangi",
     issueDate: "2026-08-10",
@@ -242,8 +242,8 @@ export const INITIAL_ATTENDANCE = [
   {
     id: "ATT-001",
     rfidUid: "RFID-1001",
-    memberName: "Ahmad Fauzi",
-    classGrade: "XII IPA 1",
+    memberName: "Abu Muhammad Abdillah",
+    classGrade: "Kelas 4A Putra",
     purpose: "Membaca & Meminjam Buku",
     timestamp: "2026-08-25T07:15:00.000Z",
     date: "2026-08-25"
