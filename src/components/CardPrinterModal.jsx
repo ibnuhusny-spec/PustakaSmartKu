@@ -199,18 +199,15 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.font = `bold ${22 * s}px sans-serif`;
         ctx.fillStyle = '#334155';
         
-        // Measure exact label prefix width for perfect alignment
         const labelPrefix = 'Alamat : ';
         ctx.fillText(labelPrefix, tX, currY);
         const exactLabelWidth = ctx.measureText(labelPrefix).width;
 
-        // Draw Line 1 Address
         ctx.font = `${22 * s}px sans-serif`;
         ctx.fillText(line1Address, tX + exactLabelWidth, currY);
 
-        // Draw Line 2 Address if filled (Aligned EXACTLY under the letter "J" of "Jalan")
         if (line2Address && line2Address.trim() !== '') {
-          currY += 34 * s; // Generous line spacing matching above lines!
+          currY += 34 * s;
           ctx.font = `bold ${21 * s}px sans-serif`;
           ctx.fillStyle = '#0f172a';
           ctx.fillText(line2Address, tX + exactLabelWidth, currY);
@@ -255,12 +252,16 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.font = `bold ${46 * s}px monospace`;
         ctx.fillText(member.rfidUid, 65 * s, fY + (90 * s));
 
+        // Right-aligned footer text (NO CUTOFF / OVERFLOW)
+        ctx.textAlign = 'right';
         ctx.fillStyle = '#0f172a';
         ctx.font = `bold ${22 * s}px sans-serif`;
-        ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', (1011 - 440) * s, fY + (62 * s));
+        ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', (1011 - 45) * s, fY + (62 * s));
+
         ctx.fillStyle = '#64748b';
         ctx.font = `bold ${18 * s}px sans-serif`;
-        ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', (1011 - 440) * s, fY + (92 * s));
+        ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', (1011 - 45) * s, fY + (92 * s));
+        ctx.textAlign = 'left';
       }
 
       // ==========================================
@@ -380,12 +381,16 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.font = `bold ${46 * s}px monospace`;
         ctx.fillText(member.rfidUid, 65 * s, fY + (90 * s));
 
+        // Right-aligned footer text (NO CUTOFF / OVERFLOW)
+        ctx.textAlign = 'right';
         ctx.fillStyle = '#fbbf24';
         ctx.font = `bold ${22 * s}px sans-serif`;
-        ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', (1011 - 440) * s, fY + (62 * s));
+        ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', (1011 - 45) * s, fY + (62 * s));
+
         ctx.fillStyle = '#94a3b8';
         ctx.font = `bold ${18 * s}px sans-serif`;
-        ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', (1011 - 440) * s, fY + (92 * s));
+        ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', (1011 - 45) * s, fY + (92 * s));
+        ctx.textAlign = 'left';
       }
 
       // ==========================================
@@ -395,17 +400,23 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.fillStyle = '#172554';
         ctx.fillRect(0, 0, width, height);
 
+        let textStartX = 50 * s;
         if (activeLogoImg) {
-          ctx.drawImage(activeLogoImg, 50 * s, 25 * s, 85 * s, 85 * s);
+          ctx.drawImage(activeLogoImg, 50 * s, 20 * s, 80 * s, 80 * s);
+          textStartX = 145 * s;
         }
 
         ctx.fillStyle = '#fde047';
         ctx.font = `bold ${30 * s}px serif`;
-        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), 155 * s, 60 * s);
+        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), textStartX, 58 * s);
 
         ctx.fillStyle = '#ffffff';
         ctx.font = `bold ${20 * s}px serif`;
-        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), 155 * s, 90 * s);
+        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), textStartX, 88 * s);
+
+        ctx.fillStyle = '#fde047';
+        ctx.font = `bold ${20 * s}px monospace`;
+        ctx.fillText('⚡ SMART RFID', (1011 - 210) * s, 58 * s);
 
         ctx.strokeStyle = '#eab308';
         ctx.lineWidth = 3 * s;
@@ -456,6 +467,10 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.fillStyle = 'rgba(234, 179, 8, 0.25)';
         ctx.roundRect(tX, currY, 420 * s, 48 * s, 12 * s);
         ctx.fill();
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 1.5 * s;
+        ctx.roundRect(tX, currY, 420 * s, 48 * s, 12 * s);
+        ctx.stroke();
 
         ctx.fillStyle = '#fde047';
         ctx.font = `bold ${24 * s}px serif`;
@@ -469,13 +484,32 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.lineTo((1011 - 35) * s, fY);
         ctx.stroke();
 
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = `bold ${18 * s}px monospace`;
+        ctx.fillText('KODE CHIP RFID (UID ANGGOTA)', 45 * s, fY + (32 * s));
+
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.2)';
+        ctx.roundRect(45 * s, fY + (42 * s), 440 * s, 65 * s, 14 * s);
+        ctx.fill();
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 2 * s;
+        ctx.roundRect(45 * s, fY + (42 * s), 440 * s, 65 * s, 14 * s);
+        ctx.stroke();
+
         ctx.fillStyle = '#34d399';
         ctx.font = `bold ${46 * s}px monospace`;
-        ctx.fillText(`UID: ${member.rfidUid}`, 45 * s, fY + (70 * s));
+        ctx.fillText(member.rfidUid, 65 * s, fY + (90 * s));
 
+        // Right-aligned footer text UNIFIED 2-LINES (NO OVERFLOW / CUTOFF!)
+        ctx.textAlign = 'right';
         ctx.fillStyle = '#fde047';
-        ctx.font = `bold ${22 * s}px serif`;
-        ctx.fillText('KARTU RESMI ANGGOTA PERPUSTAKAAN', (1011 - 460) * s, fY + (70 * s));
+        ctx.font = `bold ${22 * s}px sans-serif`;
+        ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', (1011 - 45) * s, fY + (62 * s));
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = `bold ${18 * s}px sans-serif`;
+        ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', (1011 - 45) * s, fY + (92 * s));
+        ctx.textAlign = 'left';
       }
 
       // ==========================================
@@ -706,7 +740,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            ✨ <strong>Perataan Presisi 100%:</strong> Baris kedua (<i>Kabupaten Maros</i>) kini sejajar lurus persis di bawah huruf <strong>"J"</strong> kata <i>"Jalan"</i> dengan jarak baris yang lega!
+            ✨ <strong>Layout Footer Diseragamkan:</strong> Teks <i>"KARTU ANGGOTA PERPUSTAKAAN"</i> kini sejajar rapi di kanan dengan margin aman tanpa terpotong!
           </div>
 
         </div>
