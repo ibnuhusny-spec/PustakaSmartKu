@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag } from 'lucide-react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault } from '../services/db';
 
 export default function SettingsView({ settings, onRefreshData, onReplaySplash }) {
@@ -60,15 +60,33 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     a.click();
   };
 
+  // File Upload Handler for Importing Backup JSON directly from computer file
+  const handleJsonFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const jsonContent = evt.target.result;
+      const success = importData(jsonContent);
+      if (success) {
+        onRefreshData();
+        alert('🎉 BERHASIL! Seluruh data ribuan buku, anggota, presensi, & transaksi berhasil dipulihkan total!');
+      } else {
+        alert('❌ Gagal mengimpor data. File cadangan JSON tidak valid.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleImport = () => {
     if (!importJsonText.trim()) return;
     const success = importData(importJsonText);
     if (success) {
       onRefreshData();
-      alert('Data database berhasil dipulihkan!');
+      alert('🎉 BERHASIL! Data database berhasil dipulihkan!');
       setImportJsonText('');
     } else {
-      alert('Gagal mengimpor data. Format JSON tidak valid.');
+      alert('❌ Gagal mengimpor data. Format JSON tidak valid.');
     }
   };
 
@@ -374,42 +392,52 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
         </div>
       </form>
 
-      {/* BACKUP & RESTORE DATABASE CARD */}
+      {/* BACKUP & RESTORE DATABASE CARD WITH DIRECT FILE UPLOAD */}
       <div className="glass-card" style={{ padding: '28px' }}>
         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Database color="#10b981" /> Cadangan & Pemulihan Data (Offline Backup JSON)
+          <Database color="#10b981" /> Cadangan & Pemulihan Data Anti-Hilang (Offline Backup JSON)
         </h3>
         <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-          Seluruh data tersimpan aman di browser (*IndexedDB/LocalStorage*). Anda dapat mengekspor atau mengimpor file JSON cadangan kapan saja secara 100% gratis.
+          Seluruh data buku, anggota, presensi, & transaksi tersimpan aman secara otomatis di browser lokal Anda (*IndexedDB/LocalStorage*). Untuk mengamankan data jika laptop rusak/di-install ulang, Anda cukup mengunduh file cadangan <strong>Backup JSON</strong>.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           
           {/* Export Box */}
-          <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem' }}>Download Backup Database</h4>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              Unduh seluruh file data buku, siswa, presensi, & transaksi dalam format file JSON.
+          <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Download size={18} /> 1. Amankan / Download Backup File
+            </h4>
+            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', marginBottom: '16px' }}>
+              Unduh seluruh file data ribuan buku, anggota, & transaksi ke file JSON. Simpan di <strong>Flashdisk atau Google Drive</strong> Anda.
             </p>
-            <button onClick={handleExport} className="btn btn-emerald" style={{ width: '100%' }}>
-              <Download size={16} /> Download Backup JSON
+            <button onClick={handleExport} className="btn btn-emerald" style={{ width: '100%', padding: '10px' }}>
+              <Download size={16} /> Download Backup JSON Sekarang
             </button>
           </div>
 
           {/* Import Box */}
-          <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem' }}>Restore / Import Data</h4>
-            <textarea 
-              className="form-textarea"
-              rows="2"
-              placeholder="Paste isi file JSON cadangan di sini..."
-              value={importJsonText}
-              onChange={e => setImportJsonText(e.target.value)}
-              style={{ fontSize: '0.78rem', marginBottom: '10px' }}
-            />
-            <button onClick={handleImport} className="btn btn-primary" style={{ width: '100%' }}>
-              <Upload size={16} /> Pulihkan Data
-            </button>
+          <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Upload size={18} /> 2. Pulihkan / Import Data File
+            </h4>
+            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', marginBottom: '12px' }}>
+              Pilih file <code>Backup_PustakaSmart_....json</code> dari Flashdisk/Laptop Anda untuk memulihkan seluruh data dalam 2 detik:
+            </p>
+
+            <label 
+              className="btn btn-primary"
+              style={{ cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '10px' }}
+            >
+              <FolderOpen size={18} />
+              <span>Pilih File Backup JSON dari Komputer...</span>
+              <input 
+                type="file" 
+                accept=".json"
+                onChange={handleJsonFileUpload}
+                style={{ display: 'none' }}
+              />
+            </label>
           </div>
 
         </div>
