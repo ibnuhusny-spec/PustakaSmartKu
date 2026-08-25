@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Printer, X, CreditCard, Cpu, Sparkles, ShieldCheck, Download, Image as ImageIcon } from 'lucide-react';
+import { Printer, X, CreditCard, Cpu, Sparkles, ShieldCheck, Download, MapPin, UserCheck } from 'lucide-react';
 
 export default function CardPrinterModal({ isOpen, onClose, member, settings }) {
   const cardRef = useRef(null);
@@ -12,10 +12,6 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
   // Convert HTML Card to HD PNG Image for CorelDraw / Photoshop / Sticker Printing
   const handleDownloadPNG = () => {
-    const cardEl = cardRef.current;
-    if (!cardEl) return;
-
-    // Use HTML5 Canvas to render high resolution PNG image of the card
     const width = 1011; // High resolution 300 DPI for CR80 card (85.6mm)
     const height = 638;  // High resolution 300 DPI for CR80 card (53.98mm)
 
@@ -24,145 +20,183 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
     canvas.height = height;
     const ctx = canvas.getContext('2d');
 
-    // Create gradient background matching card theme
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, '#0f172a');
-    gradient.addColorStop(0.5, '#1e1b4b');
-    gradient.addColorStop(1, '#312e81');
-    ctx.fillStyle = gradient;
-    ctx.roundRect(0, 0, width, height, 40);
-    ctx.fill();
+    const schoolLogoUrl = settings?.logoUrl || '/perpustakaansmart.png';
+    const memberAvatarUrl = member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`;
 
-    // Border line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth = 4;
-    ctx.roundRect(4, 4, width - 8, height - 8, 36);
-    ctx.stroke();
+    // Helper to load image as Promise
+    const loadImage = (src) => new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
 
-    // Top Header: School Name & Subtitle
-    ctx.fillStyle = '#818cf8';
-    ctx.font = 'bold 26px sans-serif';
-    ctx.fillText((settings?.schoolName || 'SMA NEGERI 1 SMART LITERACY').toUpperCase(), 40, 60);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '18px sans-serif';
-    ctx.fillText('KARTU TANDA ANGGOTA PERPUSTAKAAN RFID', 40, 92);
-
-    // Microchip Indicator text
-    ctx.fillStyle = '#fbbf24';
-    ctx.font = 'bold 20px monospace';
-    ctx.fillText('⚡ SMART CHIP', width - 200, 60);
-
-    // Divider Line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(40, 115);
-    ctx.lineTo(width - 40, 115);
-    ctx.stroke();
-
-    // Load Member Avatar Image & Draw Photo Frame
-    const avatarImg = new Image();
-    avatarImg.crossOrigin = 'anonymous';
-    avatarImg.onload = () => {
-      // Draw Photo Frame
-      ctx.fillStyle = '#ffffff';
-      ctx.roundRect(40, 140, 190, 240, 24);
+    Promise.all([loadImage(schoolLogoUrl), loadImage(memberAvatarUrl)]).then(([logoImg, photoImg]) => {
+      // Background Gradient
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, '#0f172a');
+      gradient.addColorStop(0.4, '#1e1b4b');
+      gradient.addColorStop(1, '#1e293b');
+      ctx.fillStyle = gradient;
+      ctx.roundRect(0, 0, width, height, 36);
       ctx.fill();
-      ctx.strokeStyle = '#6366f1';
+
+      // Card Border Glow Accent
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
       ctx.lineWidth = 6;
-      ctx.roundRect(40, 140, 190, 240, 24);
+      ctx.roundRect(4, 4, width - 8, height - 8, 32);
       ctx.stroke();
 
-      // Clip and Draw Photo
-      ctx.save();
+      // --- KOP KARTU HEADER ---
+      let headerTextStartX = 40;
+
+      // Draw School Logo if available
+      if (logoImg) {
+        ctx.drawImage(logoImg, 40, 25, 80, 80);
+        headerTextStartX = 135;
+      }
+
+      // Kop School Name (Bold & Large)
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 30px sans-serif';
+      ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), headerTextStartX, 60);
+
+      // Kop Library Subtitle
+      ctx.fillStyle = '#60a5fa';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText((settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID').toUpperCase(), headerTextStartX, 90);
+
+      // Smart Chip Microchip Label Top Right
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText('⚡ SMART RFID', width - 200, 60);
+
+      // Kop Divider Line
+      ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)';
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.roundRect(44, 144, 182, 232, 20);
-      ctx.clip();
-      ctx.drawImage(avatarImg, 44, 144, 182, 232);
-      ctx.restore();
-
-      // Draw Member Meta Text
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = 'bold 42px sans-serif';
-      ctx.fillText(member.name, 260, 200);
-
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = 'bold 26px sans-serif';
-      ctx.fillText(`${member.role || 'Siswa'}: ${member.classGrade || 'Umum'}`, 260, 250);
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '22px sans-serif';
-      ctx.fillText(`NISN: ${member.nisn || '0051239841'}`, 260, 290);
-
-      // Bottom Section Line
-      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(40, 440);
-      ctx.lineTo(width - 40, 440);
+      ctx.moveTo(35, 120);
+      ctx.lineTo(width - 35, 120);
       ctx.stroke();
 
-      // RFID UID Box
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '18px monospace';
-      ctx.fillText('KODE CHIP RFID (UID)', 40, 480);
+      // --- 2x3 PROPORTIONAL ENLARGED PHOTO BOX (Left) ---
+      const photoX = 40;
+      const photoY = 145;
+      const photoW = 240; // 2x3 Ratio (240px wide x 340px high)
+      const photoH = 340;
 
-      ctx.fillStyle = '#34d399';
-      ctx.font = 'bold 38px monospace';
-      ctx.fillText(member.rfidUid, 40, 530);
+      // Photo Frame White & Gold Border
+      ctx.fillStyle = '#ffffff';
+      ctx.roundRect(photoX, photoY, photoW, photoH, 20);
+      ctx.fill();
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 6;
+      ctx.roundRect(photoX, photoY, photoW, photoH, 20);
+      ctx.stroke();
 
-      // Badge Info
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '18px sans-serif';
-      ctx.fillText('STATUS GELAR', width - 260, 480);
+      // Draw Photo Inside Frame
+      if (photoImg) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(photoX + 4, photoY + 4, photoW - 8, photoH - 8, 16);
+        ctx.clip();
+        ctx.drawImage(photoImg, photoX + 4, photoY + 4, photoW - 8, photoH - 8);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#334155';
+        ctx.font = 'bold 60px sans-serif';
+        ctx.fillText(member.name.charAt(0), photoX + 90, photoY + 180);
+      }
 
+      // --- BALANCED STUDENT INFORMATION (Right Side) ---
+      const textX = 310;
+      let currY = 185;
+
+      // Nama Lengkap Siswa / Guru (Enlarged Bold)
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 38px sans-serif';
+      ctx.fillText(member.name, textX, currY);
+
+      // Kelas & Jabatan
+      currY += 45;
       ctx.fillStyle = '#fbbf24';
       ctx.font = 'bold 26px sans-serif';
-      ctx.fillText(member.badge || 'Pembaca Aktif ⭐', width - 260, 530);
+      ctx.fillText(`Peran / Kelas :  ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, textX, currY);
 
-      // Trigger Download
-      const link = document.createElement('a');
-      const cleanName = member.name.replace(/[^a-zA-Z0-9]/g, '_');
-      link.download = `Kartu_RFID_${cleanName}_${member.rfidUid}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    };
+      // NISN
+      currY += 40;
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText(`NISN / NIP       :  ${member.nisn || '00001'}`, textX, currY);
 
-    avatarImg.onerror = () => {
-      // Fallback if image fails to load, generate canvas without image clip
-      ctx.fillStyle = '#ffffff';
-      ctx.roundRect(40, 140, 190, 240, 24);
+      // Alamat Sekolah / Perpustakaan
+      currY += 40;
+      ctx.fillStyle = '#64748b';
+      ctx.font = '20px sans-serif';
+      const addressText = settings?.address || 'Jl. Raya Pendidikan No. 45, Jakarta';
+      ctx.fillText(`Alamat           :  ${addressText.length > 35 ? addressText.substring(0, 35) + '...' : addressText}`, textX, currY);
+
+      // Status Badge Duta Baca Box Right Side
+      currY += 50;
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
+      ctx.roundRect(textX, currY, 400, 50, 12);
       ctx.fill();
-      ctx.fillStyle = '#1e293b';
-      ctx.font = 'bold 40px sans-serif';
-      ctx.fillText(member.name.charAt(0), 115, 270);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.roundRect(textX, currY, 400, 50, 12);
+      ctx.stroke();
 
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = 'bold 42px sans-serif';
-      ctx.fillText(member.name, 260, 200);
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, textX + 15, currY + 33);
 
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = 'bold 26px sans-serif';
-      ctx.fillText(`${member.role || 'Siswa'}: ${member.classGrade || 'Umum'}`, 260, 250);
+      // --- BOTTOM FOOTER: RFID UID CODE BAR ---
+      const footerY = 510;
+
+      // Footer Top Line
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(35, footerY);
+      ctx.lineTo(width - 35, footerY);
+      ctx.stroke();
+
+      // RFID Chip Label
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 18px monospace';
+      ctx.fillText('KODE CHIP RFID (UID ANGGOTA)', 40, footerY + 35);
+
+      // RFID UID Box Badge (Bright Green & Bold Monospace)
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+      ctx.roundRect(40, footerY + 45, 420, 60, 12);
+      ctx.fill();
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2;
+      ctx.roundRect(40, footerY + 45, 420, 60, 12);
+      ctx.stroke();
 
       ctx.fillStyle = '#34d399';
-      ctx.font = 'bold 38px monospace';
-      ctx.fillText(member.rfidUid, 40, 530);
+      ctx.font = 'bold 42px monospace';
+      ctx.fillText(member.rfidUid, 60, footerY + 90);
 
+      // Card Validity Note Bottom Right
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillText('KARTU RESMI PERPUSTAKAAN DIGITAL', width - 420, footerY + 80);
+
+      // Trigger High Quality PNG Download
       const link = document.createElement('a');
       const cleanName = member.name.replace(/[^a-zA-Z0-9]/g, '_');
       link.download = `Kartu_RFID_${cleanName}_${member.rfidUid}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-    };
-
-    avatarImg.src = member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`;
+    });
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '540px' }}>
+      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '560px' }}>
         
         <div className="modal-header no-print">
           <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Cetak & Download Kartu Pelajar RFID Digital</h3>
@@ -173,22 +207,23 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
         <div className="modal-body printable-area" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           
-          {/* Credit Card sized ID Badge (85.6mm x 53.98mm ratio) */}
+          {/* Credit Card sized ID Badge ON-SCREEN PREVIEW */}
           <div ref={cardRef} style={{
-            width: '360px',
-            height: '225px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
+            width: '420px',
+            height: '265px',
+            borderRadius: '18px',
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e293b 100%)',
             color: '#ffffff',
-            padding: '18px',
+            padding: '16px',
             position: 'relative',
-            boxShadow: '0 15px 35px rgba(0, 0, 0, 0.5)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
+            border: '2px solid rgba(59, 130, 246, 0.4)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
             overflow: 'hidden'
           }}>
+            
             {/* Glossy Overlay */}
             <div style={{
               position: 'absolute',
@@ -196,82 +231,104 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
               right: '-50%',
               width: '100%',
               height: '100%',
-              background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
               pointerEvents: 'none'
             }} />
 
-            {/* Top Card Header with School Logo */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {settings?.logoUrl && (
-                  <img src={settings.logoUrl} alt="Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-                )}
+            {/* Top Card Header with Logo */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderBottom: '2px solid rgba(96, 165, 250, 0.4)', paddingBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <img 
+                  src={settings?.logoUrl || '/perpustakaansmart.png'} 
+                  alt="Logo" 
+                  style={{ width: '38px', height: '38px', objectFit: 'contain' }} 
+                  onError={e => { e.target.style.display = 'none'; }}
+                />
                 <div>
-                  <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#818cf8' }}>
-                    {settings?.schoolName || 'SMA NEGERI 1 SMART LITERACY'}
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#ffffff' }}>
+                    {settings?.schoolName || 'SDIT QURRATU A\'YUN AL-ISLAMI'}
                   </div>
-                  <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>
-                    KARTU TANDA ANGGOTA PERPUSTAKAAN RFID
+                  <div style={{ fontSize: '0.62rem', color: '#60a5fa', fontWeight: 700 }}>
+                    {settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID'}
                   </div>
                 </div>
               </div>
-              <Cpu size={22} color="#fbbf24" title="Smart RFID Microchip" />
+              <Cpu size={20} color="#fbbf24" title="Smart RFID Microchip" />
             </div>
 
-            {/* Middle Card Content */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', margin: '8px 0', zIndex: 1 }}>
-              {/* Photo */}
+            {/* Middle Card Content: 2x3 Photo + Info */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', margin: '8px 0', zIndex: 1, flex: 1 }}>
+              
+              {/* 2x3 Enlarged Photo Frame */}
               <div style={{
-                width: '64px',
-                height: '64px',
+                width: '95px',
+                height: '135px',
                 borderRadius: '12px',
-                border: '2px solid #6366f1',
+                border: '3px solid #fbbf24',
                 padding: '2px',
                 background: '#ffffff',
-                flexShrink: 0
+                flexShrink: 0,
+                boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
               }}>
                 <img 
-                  src={member.avatar}
+                  src={member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`}
                   alt={member.name}
-                  style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }}
+                  style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }}
                 />
               </div>
 
-              {/* Member Meta */}
-              <div style={{ flex: 1, overflow: 'hidden' }}>
-                <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: '#f8fafc' }}>
+              {/* Member Information Details */}
+              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: '#ffffff' }}>
                   {member.name}
                 </h4>
-                <div style={{ fontSize: '0.75rem', color: '#cbd5e1', marginTop: '2px' }}>
-                  {member.role}: {member.classGrade}
+                
+                <div style={{ fontSize: '0.8rem', color: '#fbbf24', fontWeight: 700 }}>
+                  {member.role || 'Siswa'}: {member.classGrade || 'Umum'}
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                  NISN: {member.nisn || '0051239841'}
+                
+                <div style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>
+                  NISN / NIP: <strong>{member.nisn || '00001'}</strong>
+                </div>
+
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                  Alamat: {settings?.address || 'Jl. Raya Pendidikan No. 45, Jakarta'}
+                </div>
+
+                <div style={{
+                  background: 'rgba(245, 158, 11, 0.15)',
+                  border: '1px solid #f59e0b',
+                  borderRadius: '6px',
+                  padding: '3px 8px',
+                  fontSize: '0.7rem',
+                  color: '#fbbf24',
+                  fontWeight: 700,
+                  marginTop: '2px',
+                  display: 'inline-block'
+                }}>
+                  🏆 {member.badge || 'Pembaca Baru 🌱'}
                 </div>
               </div>
             </div>
 
-            {/* Bottom Card Footer */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', zIndex: 1, borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: '8px' }}>
+            {/* Bottom Card Footer with RFID UID Code */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: '6px' }}>
               <div>
-                <div style={{ fontSize: '0.58rem', color: '#94a3b8', textTransform: 'uppercase' }}>RFID UID CODE</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700, color: '#34d399', letterSpacing: '1px' }}>
+                <div style={{ fontSize: '0.55rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>KODE CHIP RFID (UID)</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', fontWeight: 900, color: '#34d399', letterSpacing: '1px' }}>
                   {member.rfidUid}
                 </div>
               </div>
 
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>DUTA BACA</div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#fbbf24' }}>
-                  {member.badge || 'Pembaca Aktif ⭐'}
-                </div>
+              <div style={{ textAlign: 'right', fontSize: '0.62rem', color: '#94a3b8', fontWeight: 700 }}>
+                KARTU RESMI PERPUSTAKAAN
               </div>
             </div>
 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            💡 <strong>Untuk Cetak Kertas Stiker & CorelDraw:</strong> Klik tombol hijau <strong>"Download Gambar Kartu (PNG HD)"</strong> untuk mengunduh gambar kartu resolusi tinggi 300 DPI, lalu tarik (*drag & drop*) ke CorelDraw/Photoshop!
+            💡 <strong>Sudah Diperbaiki:</strong> Kop Logo Sekolah tampil jelas, Pasfoto diperbesar (Proporsi 2x3 cm), dan Teks Informasi Siswa ditata Seimbang Rapi 300 DPI untuk Cetak Stiker CorelDraw!
           </div>
 
         </div>
