@@ -21,6 +21,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
     const ctx = canvas.getContext('2d');
 
     const schoolLogoUrl = settings?.schoolLogoUrl || settings?.logoUrl || '/perpustakaansmart.png';
+    const schoolBgUrl = '/sekolah.jpeg';
     const memberAvatarUrl = member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`;
 
     // Helper to load image as Promise
@@ -56,18 +57,41 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       return currentY;
     };
 
-    Promise.all([loadImage(schoolLogoUrl), loadImage(memberAvatarUrl)]).then(([logoImg, photoImg]) => {
-      // Background Gradient
-      const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#0f172a');
-      gradient.addColorStop(0.4, '#1e1b4b');
-      gradient.addColorStop(1, '#1e293b');
-      ctx.fillStyle = gradient;
+    Promise.all([
+      loadImage(schoolLogoUrl), 
+      loadImage(schoolBgUrl), 
+      loadImage(memberAvatarUrl)
+    ]).then(([logoImg, bgImg, photoImg]) => {
+      
+      // Base Card Shape Clipping
+      ctx.save();
+      ctx.beginPath();
       ctx.roundRect(0, 0, width, height, 36);
-      ctx.fill();
+      ctx.clip();
 
-      // Card Border Glow Accent
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+      // 1. Draw School Building Background Image (/sekolah.jpeg) if loaded
+      if (bgImg) {
+        ctx.drawImage(bgImg, 0, 0, width, height);
+        // Dark Overlay for Contrast & Luxury Aesthetic
+        const darkOverlay = ctx.createLinearGradient(0, 0, width, height);
+        darkOverlay.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
+        darkOverlay.addColorStop(0.5, 'rgba(30, 27, 75, 0.85)');
+        darkOverlay.addColorStop(1, 'rgba(15, 23, 42, 0.92)');
+        ctx.fillStyle = darkOverlay;
+        ctx.fillRect(0, 0, width, height);
+      } else {
+        // Fallback Dark Luxury Gradient
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        gradient.addColorStop(0, '#0f172a');
+        gradient.addColorStop(0.5, '#1e1b4b');
+        gradient.addColorStop(1, '#1e293b');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+      }
+      ctx.restore();
+
+      // Card Border Accent Glow
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
       ctx.lineWidth = 6;
       ctx.roundRect(4, 4, width - 8, height - 8, 32);
       ctx.stroke();
@@ -77,64 +101,64 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
       // Draw School Logo if available
       if (logoImg) {
-        ctx.drawImage(logoImg, 40, 25, 80, 80);
-        headerTextStartX = 135;
+        ctx.drawImage(logoImg, 40, 22, 85, 85);
+        headerTextStartX = 140;
       }
 
       // Kop School Name (Bold & Large)
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 30px sans-serif';
-      ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), headerTextStartX, 60);
+      ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), headerTextStartX, 58);
 
       // Kop Library Subtitle
-      ctx.fillStyle = '#60a5fa';
+      ctx.fillStyle = '#fbbf24';
       ctx.font = 'bold 20px sans-serif';
-      ctx.fillText((settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID').toUpperCase(), headerTextStartX, 90);
+      ctx.fillText((settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID').toUpperCase(), headerTextStartX, 88);
 
       // Smart Chip Microchip Label Top Right
-      ctx.fillStyle = '#fbbf24';
+      ctx.fillStyle = '#34d399';
       ctx.font = 'bold 20px monospace';
-      ctx.fillText('⚡ SMART RFID', width - 200, 60);
+      ctx.fillText('⚡ SMART RFID', width - 200, 58);
 
-      // Kop Divider Line
-      ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)';
+      // Kop Divider Line (Gold Accent)
+      ctx.strokeStyle = '#f59e0b';
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(35, 120);
-      ctx.lineTo(width - 35, 120);
+      ctx.moveTo(35, 118);
+      ctx.lineTo(width - 35, 118);
       ctx.stroke();
 
-      // --- 2x3 PROPORTIONAL ENLARGED PHOTO BOX (Left) ---
+      // --- PRECISE 2.16 x 2.79 cm PHOTO FRAME RATIO ---
       const photoX = 40;
-      const photoY = 140;
-      const photoW = 230; // 2x3 Ratio
-      const photoH = 325;
+      const photoY = 138;
+      const photoW = 255; // 2.16 cm ratio at 300 DPI
+      const photoH = 330; // 2.79 cm ratio at 300 DPI (216 : 279 ratio)
 
       // Photo Frame White & Gold Border
       ctx.fillStyle = '#ffffff';
-      ctx.roundRect(photoX, photoY, photoW, photoH, 20);
+      ctx.roundRect(photoX, photoY, photoW, photoH, 18);
       ctx.fill();
       ctx.strokeStyle = '#fbbf24';
       ctx.lineWidth = 6;
-      ctx.roundRect(photoX, photoY, photoW, photoH, 20);
+      ctx.roundRect(photoX, photoY, photoW, photoH, 18);
       ctx.stroke();
 
       // Draw Photo Inside Frame
       if (photoImg) {
         ctx.save();
         ctx.beginPath();
-        ctx.roundRect(photoX + 4, photoY + 4, photoW - 8, photoH - 8, 16);
+        ctx.roundRect(photoX + 4, photoY + 4, photoW - 8, photoH - 8, 14);
         ctx.clip();
         ctx.drawImage(photoImg, photoX + 4, photoY + 4, photoW - 8, photoH - 8);
         ctx.restore();
       } else {
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 60px sans-serif';
-        ctx.fillText(member.name.charAt(0), photoX + 85, photoY + 170);
+        ctx.fillText(member.name.charAt(0), photoX + 95, photoY + 175);
       }
 
       // --- BALANCED STUDENT INFORMATION (Right Side) ---
-      const textX = 300;
+      const textX = 320;
       let currY = 175;
 
       // Nama Lengkap Siswa / Guru (Enlarged Bold)
@@ -160,13 +184,13 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       currY = drawMultiLineText(ctx, fullAddress, textX, currY, width - textX - 40, 24, '19px sans-serif', '#cbd5e1');
 
       // Status Badge Duta Baca Box Right Side
-      currY += 25;
-      ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
-      ctx.roundRect(textX, currY, 380, 42, 10);
+      currY += 22;
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
+      ctx.roundRect(textX, currY, 370, 42, 10);
       ctx.fill();
       ctx.strokeStyle = '#f59e0b';
       ctx.lineWidth = 2;
-      ctx.roundRect(textX, currY, 380, 42, 10);
+      ctx.roundRect(textX, currY, 370, 42, 10);
       ctx.stroke();
 
       ctx.fillStyle = '#fbbf24';
@@ -174,10 +198,10 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, textX + 15, currY + 28);
 
       // --- BOTTOM FOOTER: RFID UID CODE BAR ---
-      const footerY = 510;
+      const footerY = 505;
 
       // Footer Top Line
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(35, footerY);
@@ -190,7 +214,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       ctx.fillText('KODE CHIP RFID (UID ANGGOTA)', 40, footerY + 35);
 
       // RFID UID Box Badge (Bright Green & Bold Monospace)
-      ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
       ctx.roundRect(40, footerY + 45, 420, 60, 12);
       ctx.fill();
       ctx.strokeStyle = '#10b981';
@@ -229,17 +253,19 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
         <div className="modal-body printable-area" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           
-          {/* Credit Card sized ID Badge ON-SCREEN PREVIEW */}
+          {/* Credit Card sized ID Badge ON-SCREEN PREVIEW WITH SCHOOL BUILDING BG OVERLAY */}
           <div ref={cardRef} style={{
             width: '420px',
             height: '265px',
             borderRadius: '18px',
-            background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e293b 100%)',
+            backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.88), rgba(30, 27, 75, 0.90)), url('/sekolah.jpeg')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
             color: '#ffffff',
             padding: '16px',
             position: 'relative',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
-            border: '2px solid rgba(59, 130, 246, 0.4)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.7)',
+            border: '2px solid rgba(245, 158, 11, 0.5)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -258,7 +284,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
             }} />
 
             {/* Top Card Header with Logo */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderBottom: '2px solid rgba(96, 165, 250, 0.4)', paddingBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderBottom: '2px solid rgba(245, 158, 11, 0.6)', paddingBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <img 
                   src={settings?.schoolLogoUrl || settings?.logoUrl || '/perpustakaansmart.png'} 
@@ -270,36 +296,36 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                   <div style={{ fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#ffffff' }}>
                     {settings?.schoolName || 'SDIT QURRATU A\'YUN AL-ISLAMI'}
                   </div>
-                  <div style={{ fontSize: '0.62rem', color: '#60a5fa', fontWeight: 700 }}>
+                  <div style={{ fontSize: '0.62rem', color: '#fbbf24', fontWeight: 700 }}>
                     {settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID'}
                   </div>
                 </div>
               </div>
-              <Cpu size={20} color="#fbbf24" title="Smart RFID Microchip" />
+              <Cpu size={20} color="#34d399" title="Smart RFID Microchip" />
             </div>
 
-            {/* Middle Card Content: 2x3 Photo + Info */}
+            {/* Middle Card Content: 2.16 x 2.79 cm Photo + Info */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', margin: '8px 0', zIndex: 1, flex: 1 }}>
               
-              {/* 2x3 Enlarged Photo Frame */}
+              {/* 2.16 x 2.79 cm Photo Frame */}
               <div style={{
-                width: '95px',
-                height: '135px',
-                borderRadius: '12px',
+                width: '100px', // Exact 2.16 x 2.79 cm ratio (100px x 129.2px)
+                height: '129px',
+                borderRadius: '10px',
                 border: '3px solid #fbbf24',
                 padding: '2px',
                 background: '#ffffff',
                 flexShrink: 0,
-                boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
               }}>
                 <img 
                   src={member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`}
                   alt={member.name}
-                  style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }}
+                  style={{ width: '100%', height: '100%', borderRadius: '6px', objectFit: 'cover' }}
                 />
               </div>
 
-              {/* Member Information Details with Multi-line Address */}
+              {/* Member Information Details */}
               <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: '#ffffff' }}>
                   {member.name}
@@ -313,7 +339,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                   NISN / NIP: <strong>{member.nisn || '00001'}</strong>
                 </div>
 
-                {/* MULTI-LINE FULL ADDRESS (NO TRUNCATION) */}
+                {/* MULTI-LINE FULL ADDRESS */}
                 <div style={{
                   fontSize: '0.66rem',
                   color: '#cbd5e1',
@@ -327,7 +353,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                 </div>
 
                 <div style={{
-                  background: 'rgba(245, 158, 11, 0.15)',
+                  background: 'rgba(245, 158, 11, 0.2)',
                   border: '1px solid #f59e0b',
                   borderRadius: '6px',
                   padding: '2px 6px',
@@ -360,7 +386,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            💡 <strong>Sudah Solusi 100%:</strong> Alamat sekolah yang panjang kini otomatis dibungkus 2 baris (*multi-line*) tanpa terpotong!
+            ✨ <strong>Desain Khusus Sekolah Aktif:</strong> Foto Gedung Sekolah (<code style={{ color: '#fbbf24' }}>/sekolah.jpeg</code>) terpasang sebagai background mewah & Rasio Pasfoto disesuaikan ke <strong>2.16 x 2.79 cm</strong>!
           </div>
 
         </div>
