@@ -10,7 +10,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     e.preventDefault();
     saveSettings(formData);
     onRefreshData();
-    alert('Pengaturan sekolah, template kartu, label biodata, & sistem perpustakaan berhasil disimpan!');
+    alert('Pengaturan sekolah, logo instansi, & sistem perpustakaan berhasil disimpan!');
   };
 
   // Compress and save dedicated School Logo image (Logo Instansi Sekolah)
@@ -196,16 +196,16 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
               
               <div className="form-group">
-                <label className="form-label" style={{ color: '#60a5fa' }}>Pilihan Desain Template Kartu</label>
+                <label className="form-label" style={{ color: '#60a5fa' }}>Pilihan Desain Arsitektur Template Kartu</label>
                 <select
                   className="form-select"
                   value={formData.cardTemplate || 'school_luxury'}
                   onChange={e => setFormData({ ...formData, cardTemplate: e.target.value })}
                 >
-                  <option value="school_luxury">🏫 Gedung Sekolah Luxury (Navy + Background Gedung + Emas)</option>
-                  <option value="modern_emerald">🟢 Modern Emerald Glass (Hijau Emerald + Transparan)</option>
-                  <option value="royal_gold">👑 Classic Royal Gold (Biru Kerajaan + Akses Emas Murni)</option>
-                  <option value="clean_white">⚪ Minimalist Clean White (Putih Bersih Kontras Tinggi)</option>
+                  <option value="school_luxury">🏫 Gedung Sekolah Luxury (Kop Horisontal + Akses Emas)</option>
+                  <option value="vertical_split">📱 Modern Vertical Split (Kartu Split Dual-Tone Kiri-Kanan)</option>
+                  <option value="royal_gold">👑 Royal Gold Emblem (Bingkai Emas & Segel Sertifikat)</option>
+                  <option value="clean_corporate">💼 Minimalist Corporate ID (Gaya Kartu Pegawai Korporat)</option>
                 </select>
               </div>
 
@@ -260,17 +260,30 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
               />
             </div>
 
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <MapPin size={16} color="#f59e0b" /> Alamat Lengkap Sekolah & Perpustakaan (Tampil pada Struk & Kartu) *
+                <MapPin size={16} color="#f59e0b" /> Alamat Sekolah (Baris 1: Jalan / Dusun / Kelurahan) *
               </label>
               <input 
                 type="text"
                 className="form-input"
                 value={formData.address}
                 onChange={e => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Contoh: Jl. Raya Pendidikan No. 45, Komplek Masjid, Jakarta..."
+                placeholder="Contoh: Jalan Poros Makassar - Maros Km. 26 Maccopa"
                 required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#60a5fa' }}>
+                <MapPin size={16} /> Alamat Sekolah (Baris 2: Kota / Kabupaten / Provinsi)
+              </label>
+              <input 
+                type="text"
+                className="form-input"
+                value={formData.cityAddress || ''}
+                onChange={e => setFormData({ ...formData, cityAddress: e.target.value })}
+                placeholder="Contoh: Kabupaten Maros, Sulawesi Selatan"
               />
             </div>
 

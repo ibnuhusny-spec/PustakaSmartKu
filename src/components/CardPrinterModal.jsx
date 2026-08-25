@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Printer, X, CreditCard, Cpu, Sparkles, ShieldCheck, Download, MapPin, UserCheck, Layout } from 'lucide-react';
+import { Printer, X, CreditCard, Cpu, Sparkles, ShieldCheck, Download, MapPin, UserCheck, Layout, Award } from 'lucide-react';
 
 export default function CardPrinterModal({ isOpen, onClose, member, settings }) {
   const cardRef = useRef(null);
@@ -13,6 +13,9 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
   const idLabelText = settings?.idFieldLabel || 'NISN / NIP';
   const classLabelText = settings?.classFieldLabel || 'Peran / Kelas';
+
+  const line1Address = settings?.address || 'Jalan Poros Makassar - Maros Km. 26 Maccopa';
+  const line2Address = settings?.cityAddress || 'Kabupaten Maros, Sulawesi Selatan';
 
   // Convert HTML Card to HD PNG Image for CorelDraw / Photoshop / Sticker Printing
   const handleDownloadPNG = () => {
@@ -28,7 +31,6 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
     const schoolBgUrl = '/sekolah.jpeg';
     const memberAvatarUrl = member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`;
 
-    // Helper to load image as Promise
     const loadImage = (src) => new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -36,30 +38,6 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       img.onerror = () => resolve(null);
       img.src = src;
     });
-
-    // Helper function to draw multi-line text without cutting off long addresses!
-    const drawMultiLineText = (context, text, x, y, maxWidth, lineHeight, font, fillStyle) => {
-      context.font = font;
-      context.fillStyle = fillStyle;
-      const words = text.split(' ');
-      let line = '';
-      let currentY = y;
-
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + ' ';
-        const metrics = context.measureText(testLine);
-        const testWidth = metrics.width;
-        if (testWidth > maxWidth && n > 0) {
-          context.fillText(line.trim(), x, currentY);
-          line = words[n] + ' ';
-          currentY += lineHeight;
-        } else {
-          line = testLine;
-        }
-      }
-      context.fillText(line.trim(), x, currentY);
-      return currentY;
-    };
 
     Promise.all([
       loadImage(schoolLogoUrl), 
@@ -73,217 +51,500 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       ctx.roundRect(0, 0, width, height, 36);
       ctx.clip();
 
-      // TEMPLATE THEME CONFIGURATIONS
-      let accentBorderColor = '#f59e0b';
-      let headerTextColor = '#ffffff';
-      let libraryTextColor = '#fbbf24';
-      let textColor = '#ffffff';
-      let subTextColor = '#fbbf24';
-      let metaTextColor = '#cbd5e1';
-      let chipColor = '#34d399';
-
-      if (selectedTemplate === 'modern_emerald') {
-        accentBorderColor = '#10b981';
-        libraryTextColor = '#34d399';
-        subTextColor = '#34d399';
-        chipColor = '#fbbf24';
-
-        const darkOverlay = ctx.createLinearGradient(0, 0, width, height);
-        darkOverlay.addColorStop(0, 'rgba(6, 78, 59, 0.92)');
-        darkOverlay.addColorStop(0.5, 'rgba(15, 23, 42, 0.90)');
-        darkOverlay.addColorStop(1, 'rgba(4, 47, 46, 0.95)');
-        ctx.fillStyle = darkOverlay;
-        ctx.fillRect(0, 0, width, height);
-
-      } else if (selectedTemplate === 'royal_gold') {
-        accentBorderColor = '#eab308';
-        libraryTextColor = '#fde047';
-        subTextColor = '#fde047';
-
-        const darkOverlay = ctx.createLinearGradient(0, 0, width, height);
-        darkOverlay.addColorStop(0, 'rgba(30, 58, 138, 0.94)');
-        darkOverlay.addColorStop(0.5, 'rgba(15, 23, 42, 0.92)');
-        darkOverlay.addColorStop(1, 'rgba(23, 37, 84, 0.95)');
-        ctx.fillStyle = darkOverlay;
-        ctx.fillRect(0, 0, width, height);
-
-      } else if (selectedTemplate === 'clean_white') {
-        accentBorderColor = '#0284c7';
-        headerTextColor = '#0f172a';
-        libraryTextColor = '#0369a1';
-        textColor = '#0f172a';
-        subTextColor = '#0284c7';
-        metaTextColor = '#334155';
-        chipColor = '#16a34a';
-
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, width, height);
-
-      } else {
-        // school_luxury (Default)
+      // ==========================================
+      // ARCHITECTURE TEMPLATE 1: SCHOOL LUXURY
+      // ==========================================
+      if (selectedTemplate === 'school_luxury') {
         if (bgImg) {
           ctx.drawImage(bgImg, 0, 0, width, height);
           const darkOverlay = ctx.createLinearGradient(0, 0, width, height);
-          darkOverlay.addColorStop(0, 'rgba(15, 23, 42, 0.88)');
-          darkOverlay.addColorStop(0.5, 'rgba(30, 27, 75, 0.85)');
-          darkOverlay.addColorStop(1, 'rgba(15, 23, 42, 0.92)');
+          darkOverlay.addColorStop(0, 'rgba(15, 23, 42, 0.90)');
+          darkOverlay.addColorStop(0.5, 'rgba(30, 27, 75, 0.88)');
+          darkOverlay.addColorStop(1, 'rgba(15, 23, 42, 0.94)');
           ctx.fillStyle = darkOverlay;
           ctx.fillRect(0, 0, width, height);
         } else {
-          const gradient = ctx.createLinearGradient(0, 0, width, height);
-          gradient.addColorStop(0, '#0f172a');
-          gradient.addColorStop(0.5, '#1e1b4b');
-          gradient.addColorStop(1, '#1e293b');
-          ctx.fillStyle = gradient;
+          ctx.fillStyle = '#0f172a';
           ctx.fillRect(0, 0, width, height);
         }
-      }
-      ctx.restore();
-
-      // Card Border Accent Glow
-      ctx.strokeStyle = accentBorderColor;
-      ctx.lineWidth = 6;
-      ctx.roundRect(4, 4, width - 8, height - 8, 32);
-      ctx.stroke();
-
-      // --- KOP KARTU HEADER ---
-      let headerTextStartX = 40;
-
-      // Draw School Logo if available
-      if (logoImg) {
-        ctx.drawImage(logoImg, 40, 20, 90, 90);
-        headerTextStartX = 145;
-      }
-
-      // Kop School Name (Bold & Large)
-      ctx.fillStyle = headerTextColor;
-      ctx.font = 'bold 32px sans-serif';
-      ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), headerTextStartX, 58);
-
-      // Kop Library Subtitle
-      ctx.fillStyle = libraryTextColor;
-      ctx.font = 'bold 22px sans-serif';
-      ctx.fillText((settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID').toUpperCase(), headerTextStartX, 90);
-
-      // Smart Chip Microchip Label Top Right
-      ctx.fillStyle = chipColor;
-      ctx.font = 'bold 22px monospace';
-      ctx.fillText('⚡ SMART RFID', width - 210, 58);
-
-      // Kop Divider Line (Gold Accent)
-      ctx.strokeStyle = accentBorderColor;
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(35, 122);
-      ctx.lineTo(width - 35, 122);
-      ctx.stroke();
-
-      // --- PRECISE 2.16 x 2.79 cm PHOTO FRAME RATIO ---
-      const photoX = 40;
-      const photoY = 142;
-      const photoW = 260; // 2.16 cm ratio at 300 DPI
-      const photoH = 336; // 2.79 cm ratio at 300 DPI (216 : 279 ratio)
-
-      // Photo Frame White & Accent Border
-      ctx.fillStyle = '#ffffff';
-      ctx.roundRect(photoX, photoY, photoW, photoH, 18);
-      ctx.fill();
-      ctx.strokeStyle = accentBorderColor;
-      ctx.lineWidth = 6;
-      ctx.roundRect(photoX, photoY, photoW, photoH, 18);
-      ctx.stroke();
-
-      // Draw Photo Inside Frame
-      if (photoImg) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(photoX + 4, photoY + 4, photoW - 8, photoH - 8, 14);
-        ctx.clip();
-        ctx.drawImage(photoImg, photoX + 4, photoY + 4, photoW - 8, photoH - 8);
         ctx.restore();
-      } else {
-        ctx.fillStyle = '#334155';
-        ctx.font = 'bold 65px sans-serif';
-        ctx.fillText(member.name.charAt(0), photoX + 98, photoY + 180);
+
+        // Border Glow
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 6;
+        ctx.roundRect(4, 4, width - 8, height - 8, 32);
+        ctx.stroke();
+
+        // Kop Header
+        let textStartX = 40;
+        if (logoImg) {
+          ctx.drawImage(logoImg, 40, 20, 85, 85);
+          textStartX = 140;
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), textStartX, 55);
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText((settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID').toUpperCase(), textStartX, 85);
+
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText('⚡ SMART RFID', width - 200, 55);
+
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(35, 115);
+        ctx.lineTo(width - 35, 115);
+        ctx.stroke();
+
+        // Photo Frame (2.16 x 2.79 cm)
+        const pX = 40, pY = 135, pW = 255, pH = 330;
+        ctx.fillStyle = '#ffffff';
+        ctx.roundRect(pX, pY, pW, pH, 18);
+        ctx.fill();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 6;
+        ctx.roundRect(pX, pY, pW, pH, 18);
+        ctx.stroke();
+
+        if (photoImg) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(pX + 4, pY + 4, pW - 8, pH - 8, 14);
+          ctx.clip();
+          ctx.drawImage(photoImg, pX + 4, pY + 4, pW - 8, pH - 8);
+          ctx.restore();
+        }
+
+        // Student Meta
+        const tX = 320;
+        let currY = 175;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 42px sans-serif';
+        ctx.fillText(member.name, tX, currY);
+
+        currY += 45;
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, tX, currY);
+
+        currY += 38;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, tX, currY);
+
+        // 2-Line Address
+        currY += 36;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '22px sans-serif';
+        ctx.fillText(`Alamat Baris 1 : ${line1Address}`, tX, currY);
+
+        currY += 28;
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText(`Kota / Kab       : ${line2Address}`, tX, currY);
+
+        // Badge Duta Baca Box
+        currY += 30;
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
+        ctx.roundRect(tX, currY, 410, 48, 12);
+        ctx.fill();
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.roundRect(tX, currY, 410, 48, 12);
+        ctx.stroke();
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, tX + 15, currY + 32);
+
+        // Bottom Footer
+        const fY = 500;
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(35, fY);
+        ctx.lineTo(width - 35, fY);
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText('KODE CHIP RFID (UID ANGGOTA)', 40, fY + 32);
+
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
+        ctx.roundRect(40, fY + 42, 440, 65, 14);
+        ctx.fill();
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 3;
+        ctx.roundRect(40, fY + 42, 440, 65, 14);
+        ctx.stroke();
+
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 46px monospace';
+        ctx.fillText(member.rfidUid, 60, fY + 90);
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', width - 440, fY + 62);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', width - 440, fY + 92);
       }
 
-      // --- BALANCED STUDENT INFORMATION (Enlarged Fonts, Zero Empty Space) ---
-      const textX = 330;
-      let currY = 185;
+      // ==========================================
+      // ARCHITECTURE TEMPLATE 2: DUAL-TONE VERTICAL SPLIT
+      // ==========================================
+      else if (selectedTemplate === 'vertical_split') {
+        // Left Panel (Dark Teal)
+        ctx.fillStyle = '#042f2e';
+        ctx.fillRect(0, 0, 340, height);
 
-      // Nama Lengkap Siswa / Guru (Enlarged 42px Bold)
-      ctx.fillStyle = textColor;
-      ctx.font = 'bold 42px sans-serif';
-      ctx.fillText(member.name, textX, currY);
+        // Right Panel (Dark Slate Navy)
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(340, 0, width - 340, height);
+        ctx.restore();
 
-      // Custom Class/Role Label
-      currY += 45;
-      ctx.fillStyle = subTextColor;
-      ctx.font = 'bold 28px sans-serif';
-      ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, textX, currY);
+        // Border Accent
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 6;
+        ctx.roundRect(4, 4, width - 8, height - 8, 32);
+        ctx.stroke();
 
-      // Custom ID Field Label (NISN / NIP / NIS / NIK)
-      currY += 40;
-      ctx.fillStyle = metaTextColor;
-      ctx.font = 'bold 26px sans-serif';
-      ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, textX, currY);
+        // Left Panel Content: 2.16x2.79 Photo Frame
+        const pX = 40, pY = 40, pW = 260, pH = 336;
+        ctx.fillStyle = '#ffffff';
+        ctx.roundRect(pX, pY, pW, pH, 20);
+        ctx.fill();
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 6;
+        ctx.roundRect(pX, pY, pW, pH, 20);
+        ctx.stroke();
 
-      // FULL MULTI-LINE SCHOOL ADDRESS (NEVER CUT OFF!)
-      currY += 38;
-      const fullAddress = `Alamat : ${settings?.address || 'Jl. Raya Pendidikan No. 45, Jakarta'}`;
-      currY = drawMultiLineText(ctx, fullAddress, textX, currY, width - textX - 40, 28, '22px sans-serif', metaTextColor);
+        if (photoImg) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(pX + 4, pY + 4, pW - 8, pH - 8, 16);
+          ctx.clip();
+          ctx.drawImage(photoImg, pX + 4, pY + 4, pW - 8, pH - 8);
+          ctx.restore();
+        }
 
-      // Status Badge Duta Baca Box Right Side (Enlarged)
-      currY += 26;
-      ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
-      ctx.roundRect(textX, currY, 410, 48, 12);
-      ctx.fill();
-      ctx.strokeStyle = accentBorderColor;
-      ctx.lineWidth = 2;
-      ctx.roundRect(textX, currY, 410, 48, 12);
-      ctx.stroke();
+        // Left Vertical Badge
+        ctx.fillStyle = '#065f46';
+        ctx.roundRect(40, 400, 260, 190, 16);
+        ctx.fill();
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 2;
+        ctx.roundRect(40, 400, 260, 190, 16);
+        ctx.stroke();
 
-      ctx.fillStyle = subTextColor;
-      ctx.font = 'bold 24px sans-serif';
-      ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, textX + 15, currY + 32);
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText('STATUS GELAR:', 60, 440);
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText(member.badge || 'Pembaca Baru 🌱', 60, 480);
+        ctx.fillStyle = '#a7f3d0';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText('⚡ RFID VERIFIED', 60, 540);
 
-      // --- BOTTOM FOOTER: RFID UID CODE BAR & ZERO EMPTY SPACE FILL ---
-      const footerY = 500;
+        // Right Panel Content: Kop
+        let tX = 370;
+        if (logoImg) {
+          ctx.drawImage(logoImg, 370, 30, 80, 80);
+          tX = 465;
+        }
 
-      // Footer Top Line
-      ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(35, footerY);
-      ctx.lineTo(width - 35, footerY);
-      ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), tX, 60);
 
-      // RFID Chip Label
-      ctx.fillStyle = metaTextColor;
-      ctx.font = 'bold 20px monospace';
-      ctx.fillText('KODE CHIP RFID (UID ANGGOTA)', 40, footerY + 32);
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText((settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID').toUpperCase(), tX, 90);
 
-      // RFID UID Box Badge (Bright Green & Bold Monospace)
-      ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
-      ctx.roundRect(40, footerY + 42, 440, 65, 14);
-      ctx.fill();
-      ctx.strokeStyle = '#10b981';
-      ctx.lineWidth = 3;
-      ctx.roundRect(40, footerY + 42, 440, 65, 14);
-      ctx.stroke();
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(370, 125);
+        ctx.lineTo(width - 35, 125);
+        ctx.stroke();
 
-      ctx.fillStyle = '#34d399';
-      ctx.font = 'bold 46px monospace';
-      ctx.fillText(member.rfidUid, 60, footerY + 90);
+        // Right Panel Meta Info
+        let currY = 185;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 42px sans-serif';
+        ctx.fillText(member.name, 370, currY);
 
-      // Card Issuer Note Fill (Bottom Right - Eliminates Empty Space)
-      ctx.fillStyle = subTextColor;
-      ctx.font = 'bold 22px sans-serif';
-      ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', width - 440, footerY + 62);
+        currY += 45;
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, 370, currY);
 
-      ctx.fillStyle = metaTextColor;
-      ctx.font = 'bold 18px sans-serif';
-      ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', width - 440, footerY + 92);
+        currY += 40;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, 370, currY);
+
+        currY += 38;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '22px sans-serif';
+        ctx.fillText(`Alamat 1 : ${line1Address}`, 370, currY);
+
+        currY += 30;
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText(`Kota/Kab : ${line2Address}`, 370, currY);
+
+        // RFID UID Bar Bottom Right
+        currY += 50;
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
+        ctx.roundRect(370, currY, 600, 75, 16);
+        ctx.fill();
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 3;
+        ctx.roundRect(370, currY, 600, 75, 16);
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 18px monospace';
+        ctx.fillText('RFID CHIP UID:', 390, currY + 28);
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 44px monospace';
+        ctx.fillText(member.rfidUid, 390, currY + 62);
+      }
+
+      // ==========================================
+      // ARCHITECTURE TEMPLATE 3: ROYAL GOLD DIPLOMA
+      // ==========================================
+      else if (selectedTemplate === 'royal_gold') {
+        ctx.fillStyle = '#172554';
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+
+        // Ornate Gold Double Border
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 8;
+        ctx.roundRect(8, 8, width - 16, height - 16, 28);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(234, 179, 8, 0.5)';
+        ctx.lineWidth = 3;
+        ctx.roundRect(20, 20, width - 40, height - 40, 22);
+        ctx.stroke();
+
+        // Header Centered Diploma Seal
+        if (logoImg) {
+          ctx.drawImage(logoImg, 50, 35, 90, 90);
+        }
+
+        ctx.fillStyle = '#fde047';
+        ctx.font = 'bold 32px serif';
+        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), 160, 70);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px serif';
+        ctx.fillText((settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID').toUpperCase(), 160, 102);
+
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(40, 138);
+        ctx.lineTo(width - 40, 138);
+        ctx.stroke();
+
+        // 2.16x2.79 Photo Frame Gold Certificate
+        const pX = 50, pY = 160, pW = 255, pH = 330;
+        ctx.fillStyle = '#ffffff';
+        ctx.roundRect(pX, pY, pW, pH, 16);
+        ctx.fill();
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 6;
+        ctx.roundRect(pX, pY, pW, pH, 16);
+        ctx.stroke();
+
+        if (photoImg) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(pX + 4, pY + 4, pW - 8, pH - 8, 12);
+          ctx.clip();
+          ctx.drawImage(photoImg, pX + 4, pY + 4, pW - 8, pH - 8);
+          ctx.restore();
+        }
+
+        // Meta Info Serif Classic
+        const tX = 330;
+        let currY = 200;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 42px sans-serif';
+        ctx.fillText(member.name, tX, currY);
+
+        currY += 45;
+        ctx.fillStyle = '#fde047';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, tX, currY);
+
+        currY += 38;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, tX, currY);
+
+        currY += 36;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '22px sans-serif';
+        ctx.fillText(`Alamat 1 : ${line1Address}`, tX, currY);
+
+        currY += 28;
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText(`Kota/Kab : ${line2Address}`, tX, currY);
+
+        // Gold Ribbon Emblem
+        currY += 30;
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.25)';
+        ctx.roundRect(tX, currY, 410, 48, 12);
+        ctx.fill();
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 2;
+        ctx.roundRect(tX, currY, 410, 48, 12);
+        ctx.stroke();
+
+        ctx.fillStyle = '#fde047';
+        ctx.font = 'bold 24px serif';
+        ctx.fillText(`👑 ${member.badge || 'Pembaca Utama ⭐'}`, tX + 15, currY + 32);
+
+        // Bottom Footer
+        const fY = 510;
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(40, fY);
+        ctx.lineTo(width - 40, fY);
+        ctx.stroke();
+
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 44px monospace';
+        ctx.fillText(`UID: ${member.rfidUid}`, 50, fY + 70);
+
+        ctx.fillStyle = '#fde047';
+        ctx.font = 'bold 22px serif';
+        ctx.fillText('KARTU RESMI ANGGOTA PERPUSTAKAAN', width - 460, fY + 70);
+      }
+
+      // ==========================================
+      // ARCHITECTURE TEMPLATE 4: CLEAN CORPORATE ID
+      // ==========================================
+      else {
+        // Pristine White Card Background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+
+        // Top Corporate Blue Ribbon Stripe
+        ctx.fillStyle = '#0284c7';
+        ctx.fillRect(0, 0, width, 120);
+
+        // Header Text White
+        let textStartX = 40;
+        if (logoImg) {
+          ctx.drawImage(logoImg, 40, 20, 80, 80);
+          textStartX = 135;
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), textStartX, 55);
+
+        ctx.fillStyle = '#e0f2fe';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText((settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID').toUpperCase(), textStartX, 85);
+
+        // Photo Frame Floating Badge (2.16x2.79 cm)
+        const pX = 40, pY = 145, pW = 255, pH = 330;
+        ctx.fillStyle = '#ffffff';
+        ctx.roundRect(pX, pY, pW, pH, 18);
+        ctx.fill();
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = 6;
+        ctx.roundRect(pX, pY, pW, pH, 18);
+        ctx.stroke();
+
+        if (photoImg) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(pX + 4, pY + 4, pW - 8, pH - 8, 14);
+          ctx.clip();
+          ctx.drawImage(photoImg, pX + 4, pY + 4, pW - 8, pH - 8);
+          ctx.restore();
+        }
+
+        // Corporate Information Two-Column Dark Text
+        const tX = 320;
+        let currY = 185;
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 42px sans-serif';
+        ctx.fillText(member.name, tX, currY);
+
+        currY += 45;
+        ctx.fillStyle = '#0369a1';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, tX, currY);
+
+        currY += 38;
+        ctx.fillStyle = '#334155';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, tX, currY);
+
+        currY += 36;
+        ctx.fillStyle = '#475569';
+        ctx.font = '22px sans-serif';
+        ctx.fillText(`Alamat 1 : ${line1Address}`, tX, currY);
+
+        currY += 28;
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText(`Kota/Kab : ${line2Address}`, tX, currY);
+
+        currY += 30;
+        ctx.fillStyle = 'rgba(2, 132, 199, 0.1)';
+        ctx.roundRect(tX, currY, 410, 48, 12);
+        ctx.fill();
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = 2;
+        ctx.roundRect(tX, currY, 410, 48, 12);
+        ctx.stroke();
+
+        ctx.fillStyle = '#0369a1';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, tX + 15, currY + 32);
+
+        // Corporate Bottom Barcode & RFID Bar
+        const fY = 500;
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, fY, width, height - fY);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText('RFID CHIP UID:', 40, fY + 40);
+
+        ctx.fillStyle = '#34d399';
+        ctx.font = 'bold 44px monospace';
+        ctx.fillText(member.rfidUid, 40, fY + 95);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText('KARTU ANGGOTA RESMI', width - 380, fY + 55);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '18px sans-serif';
+        ctx.fillText('VALIDASI SCANNER OK', width - 380, fY + 85);
+      }
 
       // Trigger High Quality PNG Download
       const link = document.createElement('a');
@@ -296,7 +557,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '620px' }}>
         
         <div className="modal-header no-print">
           <h3 style={{ margin: 0, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -312,26 +573,26 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           {/* TEMPLATE CHOOSER BAR */}
           <div className="no-print" style={{ width: '100%', marginBottom: '16px', background: 'rgba(59, 130, 246, 0.1)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
             <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#60a5fa', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Layout size={16} /> Pilih Desain Template Kartu:
+              <Layout size={16} /> Pilih Desain Arsitektur Template Kartu:
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('school_luxury')}
                 className={`btn ${selectedTemplate === 'school_luxury' ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ fontSize: '0.75rem', padding: '6px' }}
               >
-                🏫 Luxury School
+                🏫 Kop Gedung Luxury
               </button>
 
               <button
                 type="button"
-                onClick={() => setSelectedTemplate('modern_emerald')}
-                className={`btn ${selectedTemplate === 'modern_emerald' ? 'btn-emerald' : 'btn-secondary'}`}
+                onClick={() => setSelectedTemplate('vertical_split')}
+                className={`btn ${selectedTemplate === 'vertical_split' ? 'btn-emerald' : 'btn-secondary'}`}
                 style={{ fontSize: '0.75rem', padding: '6px' }}
               >
-                🟢 Emerald Glass
+                📱 Modern Vertical Split
               </button>
 
               <button
@@ -340,56 +601,49 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                 className={`btn ${selectedTemplate === 'royal_gold' ? 'btn-amber' : 'btn-secondary'}`}
                 style={{ fontSize: '0.75rem', padding: '6px' }}
               >
-                👑 Royal Gold
+                👑 Royal Gold Emblem
               </button>
 
               <button
                 type="button"
-                onClick={() => setSelectedTemplate('clean_white')}
-                className={`btn ${selectedTemplate === 'clean_white' ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setSelectedTemplate('clean_corporate')}
+                className={`btn ${selectedTemplate === 'clean_corporate' ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ fontSize: '0.75rem', padding: '6px' }}
               >
-                ⚪ Clean White
+                💼 Clean Corporate ID
               </button>
             </div>
           </div>
 
-          {/* Credit Card sized ID Badge ON-SCREEN PREVIEW */}
+          {/* ON-SCREEN PREVIEW dynamically rendering the selected template layout */}
           <div ref={cardRef} style={{
             width: '450px',
             height: '280px',
             borderRadius: '20px',
             backgroundImage: selectedTemplate === 'school_luxury'
               ? `linear-gradient(rgba(15, 23, 42, 0.88), rgba(30, 27, 75, 0.90)), url('/sekolah.jpeg')`
-              : selectedTemplate === 'modern_emerald'
-              ? `linear-gradient(135deg, #064e3b 0%, #0f172a 60%, #042f2e 100%)`
+              : selectedTemplate === 'vertical_split'
+              ? `linear-gradient(to right, #042f2e 38%, #0f172a 38%)`
               : selectedTemplate === 'royal_gold'
-              ? `linear-gradient(135deg, #1e3a8a 0%, #0f172a 60%, #172554 100%)`
+              ? `linear-gradient(135deg, #172554 0%, #0f172a 60%, #1e1b4b 100%)`
               : `#ffffff`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            color: selectedTemplate === 'clean_white' ? '#0f172a' : '#ffffff',
+            color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#ffffff',
             padding: '18px',
             position: 'relative',
             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.7)',
-            border: selectedTemplate === 'clean_white' ? '2px solid #0284c7' : '2px solid rgba(245, 158, 11, 0.6)',
+            border: selectedTemplate === 'royal_gold' 
+              ? '4px double #eab308' 
+              : selectedTemplate === 'clean_corporate' 
+              ? '2px solid #0284c7' 
+              : '2px solid rgba(245, 158, 11, 0.6)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
             overflow: 'hidden'
           }}>
             
-            {/* Glossy Overlay */}
-            <div style={{
-              position: 'absolute',
-              top: '-50%',
-              right: '-50%',
-              width: '100%',
-              height: '100%',
-              background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
-              pointerEvents: 'none'
-            }} />
-
             {/* Top Card Header with Logo */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderBottom: '2px solid rgba(245, 158, 11, 0.6)', paddingBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -400,15 +654,15 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                   onError={e => { e.target.style.display = 'none'; }}
                 />
                 <div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: selectedTemplate === 'clean_white' ? '#0f172a' : '#ffffff' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#ffffff' }}>
                     {settings?.schoolName || 'SDIT QURRATU A\'YUN AL-ISLAMI'}
                   </div>
-                  <div style={{ fontSize: '0.66rem', color: selectedTemplate === 'clean_white' ? '#0369a1' : '#fbbf24', fontWeight: 700 }}>
+                  <div style={{ fontSize: '0.66rem', color: selectedTemplate === 'clean_corporate' ? '#0284c7' : '#fbbf24', fontWeight: 700 }}>
                     {settings?.libraryName || 'PERPUSTAKAAN DIGITAL SMART RFID'}
                   </div>
                 </div>
               </div>
-              <Cpu size={22} color={selectedTemplate === 'modern_emerald' ? '#fbbf24' : '#34d399'} title="Smart RFID Microchip" />
+              <Cpu size={22} color={selectedTemplate === 'vertical_split' ? '#34d399' : '#fbbf24'} title="Smart RFID Microchip" />
             </div>
 
             {/* Middle Card Content: 2.16 x 2.79 cm Photo + Info */}
@@ -432,31 +686,24 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                 />
               </div>
 
-              {/* Member Information Details */}
-              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: selectedTemplate === 'clean_white' ? '#0f172a' : '#ffffff' }}>
+              {/* Member Information Details (2-Line Address Included) */}
+              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#ffffff' }}>
                   {member.name}
                 </h4>
                 
-                <div style={{ fontSize: '0.85rem', color: selectedTemplate === 'clean_white' ? '#0284c7' : '#fbbf24', fontWeight: 800 }}>
+                <div style={{ fontSize: '0.85rem', color: selectedTemplate === 'clean_corporate' ? '#0284c7' : '#fbbf24', fontWeight: 800 }}>
                   {classLabelText} : {member.role || 'Siswa'} - {member.classGrade || 'Umum'}
                 </div>
                 
-                <div style={{ fontSize: '0.78rem', color: selectedTemplate === 'clean_white' ? '#334155' : '#cbd5e1', fontWeight: 700 }}>
+                <div style={{ fontSize: '0.78rem', color: selectedTemplate === 'clean_corporate' ? '#334155' : '#cbd5e1', fontWeight: 700 }}>
                   {idLabelText} : <strong>{member.nisn || '00001'}</strong>
                 </div>
 
-                {/* MULTI-LINE FULL ADDRESS */}
-                <div style={{
-                  fontSize: '0.7rem',
-                  color: selectedTemplate === 'clean_white' ? '#475569' : '#cbd5e1',
-                  lineHeight: '1.3',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
-                }}>
-                  Alamat : {settings?.address || 'Jl. Raya Pendidikan No. 45, Jakarta'}
+                {/* 2-LINE SEPARATE ADDRESS DISPLAY */}
+                <div style={{ fontSize: '0.68rem', color: selectedTemplate === 'clean_corporate' ? '#475569' : '#cbd5e1', lineHeight: '1.2' }}>
+                  <div>Alamat: {line1Address}</div>
+                  <div style={{ color: '#94a3b8', fontWeight: 600 }}>{line2Address}</div>
                 </div>
 
                 <div style={{
@@ -465,7 +712,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                   borderRadius: '6px',
                   padding: '3px 8px',
                   fontSize: '0.72rem',
-                  color: selectedTemplate === 'clean_white' ? '#b45309' : '#fbbf24',
+                  color: selectedTemplate === 'clean_corporate' ? '#b45309' : '#fbbf24',
                   fontWeight: 800,
                   marginTop: '2px',
                   display: 'inline-block',
@@ -479,17 +726,17 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
             {/* Bottom Card Footer with RFID UID Code & Filled Bottom Bar */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderTop: '1px solid rgba(245, 158, 11, 0.4)', paddingTop: '6px' }}>
               <div>
-                <div style={{ fontSize: '0.58rem', color: selectedTemplate === 'clean_white' ? '#64748b' : '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>KODE CHIP RFID (UID ANGGOTA)</div>
+                <div style={{ fontSize: '0.58rem', color: selectedTemplate === 'clean_corporate' ? '#64748b' : '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>KODE CHIP RFID (UID ANGGOTA)</div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', fontWeight: 900, color: '#34d399', letterSpacing: '1px' }}>
                   {member.rfidUid}
                 </div>
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.68rem', color: selectedTemplate === 'clean_white' ? '#0284c7' : '#fbbf24', fontWeight: 800 }}>
+                <div style={{ fontSize: '0.68rem', color: selectedTemplate === 'clean_corporate' ? '#0284c7' : '#fbbf24', fontWeight: 800 }}>
                   KARTU ANGGOTA PERPUSTAKAAN
                 </div>
-                <div style={{ fontSize: '0.58rem', color: selectedTemplate === 'clean_white' ? '#64748b' : '#94a3b8', fontWeight: 700 }}>
+                <div style={{ fontSize: '0.58rem', color: selectedTemplate === 'clean_corporate' ? '#64748b' : '#94a3b8', fontWeight: 700 }}>
                   RESI DIGITAL & VALIDASI CHIP OK
                 </div>
               </div>
@@ -498,7 +745,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            ✨ <strong>Template Aktif:</strong> {selectedTemplate} • Label ID: <strong>"{idLabelText}"</strong> • Ukuran Tulisan Diperbesar Rapi Tanpa Area Kosong!
+            ✨ <strong>Template Aktif:</strong> {selectedTemplate} • Alamat 2 Baris: <strong>"{line1Address}"</strong> & <strong>"{line2Address}"</strong>!
           </div>
 
         </div>

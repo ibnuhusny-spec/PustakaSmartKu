@@ -1,9 +1,10 @@
 // Initial Mock Data for PustakaSmart RFID School Library System
 
 export const DEFAULT_SETTINGS = {
-  schoolName: "SMA Negeri 1 Smart Literacy",
-  libraryName: "Perpustakaan Digital Smart RFID",
-  address: "Jl. Pendidikan No. 45, Jakarta",
+  schoolName: "SDIT QURRATU A'YUN AL-ISLAMI",
+  libraryName: "MAKTABAH AL-QIRO'AH",
+  address: "Jalan Poros Makassar - Maros Km. 26 Maccopa",
+  cityAddress: "Kabupaten Maros, Sulawesi Selatan", // Baris 2 Kota/Kabupaten
   finePerDay: 1000, // Rp 1.000 / hari
   maxLoanDays: 7,   // 7 Hari
   maxBooksPerStudent: 3,
@@ -13,7 +14,7 @@ export const DEFAULT_SETTINGS = {
   autoAttendanceOnTap: true,
   schoolLogoUrl: "", // Dedicated School Logo
   logoUrl: "/perpustakaansmart.png", // App Logo
-  cardTemplate: "school_luxury", // Default card template theme: school_luxury, modern_emerald, royal_gold, clean_white
+  cardTemplate: "school_luxury", // Default card template theme: school_luxury, vertical_split, royal_gold, clean_corporate
   idFieldLabel: "NISN / NIP", // Custom ID Label
   classFieldLabel: "Peran / Kelas" // Custom Class/Role Label
 };
