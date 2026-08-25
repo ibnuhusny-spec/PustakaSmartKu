@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
+import SplashScreen from './components/SplashScreen';
 import RFIDSimulator from './components/RFIDSimulator';
 import AttendanceBanner from './components/AttendanceBanner';
 import ReceiptModal from './components/ReceiptModal';
@@ -17,6 +18,7 @@ import SettingsView from './views/SettingsView';
 import {
   initDB,
   getSettings,
+  saveSettings,
   getBooks,
   getMembers,
   getTransactions,
@@ -29,6 +31,7 @@ import { initRfidKeyboardListener } from './services/rfidService';
 import { speakText, stopSpeech } from './services/audioService';
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('kiosk');
   
   // Theme state initialized from LocalStorage to persist across page refresh
@@ -54,7 +57,13 @@ export default function App() {
   const [activeCardPrinterModal, setActiveCardPrinterModal] = useState({ isOpen: false, member: null });
 
   const refreshData = () => {
-    setSettings(getSettings());
+    const s = getSettings();
+    // Set default logo to /perpustakaansmart.png if none specified
+    if (!s.logoUrl) {
+      s.logoUrl = '/perpustakaansmart.png';
+      saveSettings(s);
+    }
+    setSettings(s);
     setBooks(getBooks());
     setMembers(getMembers());
     setTransactions(getTransactions());
@@ -116,6 +125,15 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
+      {/* Animated Luxury Splash Screen */}
+      {showSplash && (
+        <SplashScreen 
+          onFinish={() => setShowSplash(false)}
+          schoolName={settings.schoolName}
+          libraryName={settings.libraryName}
+        />
+      )}
+
       {/* Top Navbar */}
       <Navbar 
         activeTab={activeTab}
@@ -189,6 +207,7 @@ export default function App() {
           <SettingsView 
             settings={settings}
             onRefreshData={refreshData}
+            onReplaySplash={() => setShowSplash(true)}
           />
         )}
       </main>

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen } from 'lucide-react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault } from '../services/db';
 
-export default function SettingsView({ settings, onRefreshData }) {
+export default function SettingsView({ settings, onRefreshData, onReplaySplash }) {
   const [formData, setFormData] = useState({ ...settings });
   const [importJsonText, setImportJsonText] = useState('');
 
@@ -86,9 +86,22 @@ export default function SettingsView({ settings, onRefreshData }) {
       <form onSubmit={handleSave}>
         <div className="glass-card" style={{ padding: '28px', marginBottom: '28px' }}>
           
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Settings color="#3b82f6" /> Pengaturan Identitas Sekolah, Logo, & Sistem Perpustakaan
-          </h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Settings color="#3b82f6" /> Pengaturan Identitas Sekolah, Logo, & Sistem Perpustakaan
+            </h2>
+
+            {onReplaySplash && (
+              <button 
+                type="button" 
+                onClick={onReplaySplash} 
+                className="btn btn-emerald"
+                style={{ fontSize: '0.82rem' }}
+              >
+                <Sparkles size={16} /> ✨ Putar Ulang Splash Screen
+              </button>
+            )}
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
             
@@ -179,7 +192,7 @@ export default function SettingsView({ settings, onRefreshData }) {
                     )}
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                    Logo akan otomatis tampil di **Navbar atas, Struk Bukti Peminjaman, & Kartu Anggota RFID Fisik**!
+                    Logo file <code style={{ color: '#38bdf8' }}>/perpustakaansmart.png</code> yang tersimpan di folder public otomatis aktif!
                   </div>
                 </div>
 
