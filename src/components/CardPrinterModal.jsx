@@ -73,7 +73,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       const activePhotoImg = (loadedPhotoImg && loadedPhotoImg.width > 0) ? loadedPhotoImg : (domPhoto && domPhoto.complete && domPhoto.naturalWidth > 0 ? domPhoto : null);
       const activeLogoImg = (logoImg && logoImg.width > 0) ? logoImg : (domLogo && domLogo.complete && domLogo.naturalWidth > 0 ? domLogo : null);
 
-      // Helper function to render Photo Box Bulletproof at 600 DPI
+      // Helper function to render Photo Box Bulletproof at 600 DPI (FIXED GEOMETRY & CLIP)
       const renderUltraPhotoBox = (pX, pY, pW, pH, strokeColor = '#0284c7') => {
         const scaledX = pX * s;
         const scaledY = pY * s;
@@ -107,7 +107,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           }
         }
 
-        // 3. Ultra Fallback Silhouette + Initial Badge if photo URL CORS blocked
+        // 3. Ultra Fallback Silhouette + Initial Badge if photo URL CORS blocked (FIXED GEOMETRY)
         if (!photoDrawn) {
           ctx.save();
           ctx.beginPath();
@@ -121,23 +121,23 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           ctx.fillStyle = bgGrad;
           ctx.fillRect(scaledX + (4 * s), scaledY + (4 * s), scaledW - (8 * s), scaledH - (8 * s));
 
-          // Head Silhouette Circle
+          // Head Silhouette Circle (Correct Y positioning)
           ctx.fillStyle = '#0284c7';
           ctx.beginPath();
-          ctx.arc(scaledX + (scaledW / 2), scaledY + (110 * s), 50 * s, 0, Math.PI * 2);
+          ctx.arc(scaledX + (scaledW / 2), scaledY + (scaledH * 0.4), 45 * s, 0, Math.PI * 2);
           ctx.fill();
 
-          // Body Silhouette Arc
+          // Body Silhouette Arc (Correct Y positioning)
           ctx.beginPath();
-          ctx.arc(scaledX + (scaledW / 2), scaledY + (280 * s), 100 * s, 0, Math.PI * 2);
+          ctx.arc(scaledX + (scaledW / 2), scaledY + (scaledH * 1.05), 85 * s, 0, Math.PI * 2);
           ctx.fill();
 
           // Big Bold Initial Letter
           ctx.fillStyle = '#ffffff';
-          ctx.font = `bold ${55 * s}px sans-serif`;
+          ctx.font = `bold ${50 * s}px sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(member.name.charAt(0).toUpperCase(), scaledX + (scaledW / 2), scaledY + (110 * s));
+          ctx.fillText(member.name.charAt(0).toUpperCase(), scaledX + (scaledW / 2), scaledY + (scaledH * 0.4));
 
           ctx.restore();
           ctx.textAlign = 'start';
@@ -687,6 +687,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <img 
                   ref={logoDomRef}
+                  crossOrigin="anonymous"
                   src={settings?.schoolLogoUrl || settings?.logoUrl || '/perpustakaansmart.png'} 
                   alt="Logo" 
                   style={{ width: '42px', height: '42px', objectFit: 'contain' }} 
@@ -724,6 +725,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
               }}>
                 <img 
                   ref={photoDomRef}
+                  crossOrigin="anonymous"
                   src={member.avatar || `https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80`}
                   alt={member.name}
                   style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }}
@@ -799,7 +801,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            🚀 <strong>Super Ultra HD 600 DPI (2426 x 1530 px):</strong> Pasfoto siswa kini menggunakan gambar foto asli berkualitas tinggi (*Unsplash Photo*)!
+            🚀 <strong>Perbaikan Geometri Tuntas:</strong> Siluet Fallback & Photo Ref DOM kini 100% Presisi tanpa menutup area kotak foto pada Modern Vertical Split!
           </div>
 
         </div>
