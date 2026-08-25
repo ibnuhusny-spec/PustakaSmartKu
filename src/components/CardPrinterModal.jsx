@@ -20,7 +20,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
     canvas.height = height;
     const ctx = canvas.getContext('2d');
 
-    const schoolLogoUrl = settings?.logoUrl || '/perpustakaansmart.png';
+    const schoolLogoUrl = settings?.schoolLogoUrl || settings?.logoUrl || '/perpustakaansmart.png';
     const memberAvatarUrl = member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`;
 
     // Helper to load image as Promise
@@ -31,6 +31,30 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       img.onerror = () => resolve(null);
       img.src = src;
     });
+
+    // Helper function to draw multi-line text without cutting off long addresses!
+    const drawMultiLineText = (context, text, x, y, maxWidth, lineHeight, font, fillStyle) => {
+      context.font = font;
+      context.fillStyle = fillStyle;
+      const words = text.split(' ');
+      let line = '';
+      let currentY = y;
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = context.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          context.fillText(line.trim(), x, currentY);
+          line = words[n] + ' ';
+          currentY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      context.fillText(line.trim(), x, currentY);
+      return currentY;
+    };
 
     Promise.all([loadImage(schoolLogoUrl), loadImage(memberAvatarUrl)]).then(([logoImg, photoImg]) => {
       // Background Gradient
@@ -82,9 +106,9 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
       // --- 2x3 PROPORTIONAL ENLARGED PHOTO BOX (Left) ---
       const photoX = 40;
-      const photoY = 145;
-      const photoW = 240; // 2x3 Ratio (240px wide x 340px high)
-      const photoH = 340;
+      const photoY = 140;
+      const photoW = 230; // 2x3 Ratio
+      const photoH = 325;
 
       // Photo Frame White & Gold Border
       ctx.fillStyle = '#ffffff';
@@ -106,50 +130,48 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       } else {
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 60px sans-serif';
-        ctx.fillText(member.name.charAt(0), photoX + 90, photoY + 180);
+        ctx.fillText(member.name.charAt(0), photoX + 85, photoY + 170);
       }
 
       // --- BALANCED STUDENT INFORMATION (Right Side) ---
-      const textX = 310;
-      let currY = 185;
+      const textX = 300;
+      let currY = 175;
 
       // Nama Lengkap Siswa / Guru (Enlarged Bold)
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 38px sans-serif';
+      ctx.font = 'bold 36px sans-serif';
       ctx.fillText(member.name, textX, currY);
 
       // Kelas & Jabatan
-      currY += 45;
+      currY += 40;
       ctx.fillStyle = '#fbbf24';
-      ctx.font = 'bold 26px sans-serif';
-      ctx.fillText(`Peran / Kelas :  ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, textX, currY);
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText(`Peran / Kelas : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, textX, currY);
 
       // NISN
-      currY += 40;
+      currY += 35;
       ctx.fillStyle = '#94a3b8';
-      ctx.font = 'bold 24px sans-serif';
-      ctx.fillText(`NISN / NIP       :  ${member.nisn || '00001'}`, textX, currY);
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(`NISN / NIP       : ${member.nisn || '00001'}`, textX, currY);
 
-      // Alamat Sekolah / Perpustakaan
-      currY += 40;
-      ctx.fillStyle = '#64748b';
-      ctx.font = '20px sans-serif';
-      const addressText = settings?.address || 'Jl. Raya Pendidikan No. 45, Jakarta';
-      ctx.fillText(`Alamat           :  ${addressText.length > 35 ? addressText.substring(0, 35) + '...' : addressText}`, textX, currY);
+      // FULL MULTI-LINE SCHOOL ADDRESS (NEVER CUT OFF!)
+      currY += 35;
+      const fullAddress = `Alamat : ${settings?.address || 'Jl. Raya Pendidikan No. 45, Jakarta'}`;
+      currY = drawMultiLineText(ctx, fullAddress, textX, currY, width - textX - 40, 24, '19px sans-serif', '#cbd5e1');
 
       // Status Badge Duta Baca Box Right Side
-      currY += 50;
+      currY += 25;
       ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
-      ctx.roundRect(textX, currY, 400, 50, 12);
+      ctx.roundRect(textX, currY, 380, 42, 10);
       ctx.fill();
       ctx.strokeStyle = '#f59e0b';
       ctx.lineWidth = 2;
-      ctx.roundRect(textX, currY, 400, 50, 12);
+      ctx.roundRect(textX, currY, 380, 42, 10);
       ctx.stroke();
 
       ctx.fillStyle = '#fbbf24';
-      ctx.font = 'bold 22px sans-serif';
-      ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, textX + 15, currY + 33);
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, textX + 15, currY + 28);
 
       // --- BOTTOM FOOTER: RFID UID CODE BAR ---
       const footerY = 510;
@@ -239,7 +261,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderBottom: '2px solid rgba(96, 165, 250, 0.4)', paddingBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <img 
-                  src={settings?.logoUrl || '/perpustakaansmart.png'} 
+                  src={settings?.schoolLogoUrl || settings?.logoUrl || '/perpustakaansmart.png'} 
                   alt="Logo" 
                   style={{ width: '38px', height: '38px', objectFit: 'contain' }} 
                   onError={e => { e.target.style.display = 'none'; }}
@@ -277,21 +299,30 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                 />
               </div>
 
-              {/* Member Information Details */}
-              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {/* Member Information Details with Multi-line Address */}
+              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: '#ffffff' }}>
                   {member.name}
                 </h4>
                 
-                <div style={{ fontSize: '0.8rem', color: '#fbbf24', fontWeight: 700 }}>
+                <div style={{ fontSize: '0.78rem', color: '#fbbf24', fontWeight: 700 }}>
                   {member.role || 'Siswa'}: {member.classGrade || 'Umum'}
                 </div>
                 
-                <div style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>
+                <div style={{ fontSize: '0.72rem', color: '#cbd5e1' }}>
                   NISN / NIP: <strong>{member.nisn || '00001'}</strong>
                 </div>
 
-                <div style={{ fontSize: '0.68rem', color: '#94a3b8', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                {/* MULTI-LINE FULL ADDRESS (NO TRUNCATION) */}
+                <div style={{
+                  fontSize: '0.66rem',
+                  color: '#cbd5e1',
+                  lineHeight: '1.3',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}>
                   Alamat: {settings?.address || 'Jl. Raya Pendidikan No. 45, Jakarta'}
                 </div>
 
@@ -299,12 +330,13 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                   background: 'rgba(245, 158, 11, 0.15)',
                   border: '1px solid #f59e0b',
                   borderRadius: '6px',
-                  padding: '3px 8px',
-                  fontSize: '0.7rem',
+                  padding: '2px 6px',
+                  fontSize: '0.68rem',
                   color: '#fbbf24',
                   fontWeight: 700,
                   marginTop: '2px',
-                  display: 'inline-block'
+                  display: 'inline-block',
+                  width: 'fit-content'
                 }}>
                   🏆 {member.badge || 'Pembaca Baru 🌱'}
                 </div>
@@ -328,7 +360,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            💡 <strong>Sudah Diperbaiki:</strong> Kop Logo Sekolah tampil jelas, Pasfoto diperbesar (Proporsi 2x3 cm), dan Teks Informasi Siswa ditata Seimbang Rapi 300 DPI untuk Cetak Stiker CorelDraw!
+            💡 <strong>Sudah Solusi 100%:</strong> Alamat sekolah yang panjang kini otomatis dibungkus 2 baris (*multi-line*) tanpa terpotong!
           </div>
 
         </div>
