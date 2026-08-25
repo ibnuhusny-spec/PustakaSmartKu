@@ -199,13 +199,12 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                 <label className="form-label" style={{ color: '#60a5fa' }}>Pilihan Desain Arsitektur Template Kartu</label>
                 <select
                   className="form-select"
-                  value={formData.cardTemplate || 'school_luxury'}
+                  value={formData.cardTemplate || 'clean_corporate'}
                   onChange={e => setFormData({ ...formData, cardTemplate: e.target.value })}
                 >
-                  <option value="school_luxury">🏫 Gedung Sekolah Luxury (Kop Horisontal + Akses Emas)</option>
-                  <option value="vertical_split">📱 Modern Vertical Split (Kartu Split Dual-Tone Kiri-Kanan)</option>
+                  <option value="clean_corporate">⚪ Pristine White Corporate (Nuansa Putih Dominan Kontras Tinggi)</option>
+                  <option value="school_luxury">🏫 Gedung Sekolah Luxury (Kop Horisontal + Background Gedung + Emas)</option>
                   <option value="royal_gold">👑 Royal Gold Emblem (Bingkai Emas & Segel Sertifikat)</option>
-                  <option value="clean_corporate">💼 Minimalist Corporate ID (Gaya Kartu Pegawai Korporat)</option>
                 </select>
               </div>
 

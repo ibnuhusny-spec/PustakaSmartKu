@@ -6,7 +6,12 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
   const photoDomRef = useRef(null);
   const logoDomRef = useRef(null);
 
-  const [selectedTemplate, setSelectedTemplate] = useState(settings?.cardTemplate || 'clean_corporate');
+  // 3 Rock-solid templates: clean_corporate (default), school_luxury, royal_gold
+  const [selectedTemplate, setSelectedTemplate] = useState(
+    settings?.cardTemplate && settings.cardTemplate !== 'vertical_split' 
+      ? settings.cardTemplate 
+      : 'clean_corporate'
+  );
 
   if (!isOpen || !member) return null;
 
@@ -49,7 +54,6 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       }
       img.onload = () => resolve(img);
       img.onerror = () => {
-        // Fallback retry without crossOrigin
         const retryImg = new Image();
         retryImg.onload = () => resolve(retryImg);
         retryImg.onerror = () => resolve(null);
@@ -66,14 +70,13 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       loadImage(memberAvatarSrc)
     ]).then(([logoImg, bgImg, loadedPhotoImg]) => {
       
-      // Grabbing photo from DOM if loadedPhotoImg is CORS blocked
       const domPhoto = photoDomRef.current;
       const domLogo = logoDomRef.current;
 
       const activePhotoImg = (loadedPhotoImg && loadedPhotoImg.width > 0) ? loadedPhotoImg : (domPhoto && domPhoto.complete && domPhoto.naturalWidth > 0 ? domPhoto : null);
       const activeLogoImg = (logoImg && logoImg.width > 0) ? logoImg : (domLogo && domLogo.complete && domLogo.naturalWidth > 0 ? domLogo : null);
 
-      // Helper function to render Photo Box Bulletproof at 600 DPI (FIXED GEOMETRY & CLIP)
+      // Helper function to render Photo Box Bulletproof at 600 DPI
       const renderUltraPhotoBox = (pX, pY, pW, pH, strokeColor = '#0284c7') => {
         const scaledX = pX * s;
         const scaledY = pY * s;
@@ -107,37 +110,21 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           }
         }
 
-        // 3. Ultra Fallback Silhouette + Initial Badge if photo URL CORS blocked (FIXED GEOMETRY)
+        // 3. Fallback Initial Badge if photo is missing
         if (!photoDrawn) {
           ctx.save();
           ctx.beginPath();
           ctx.roundRect(scaledX + (4 * s), scaledY + (4 * s), scaledW - (8 * s), scaledH - (8 * s), radius - (2 * s));
           ctx.clip();
 
-          // Soft blue gradient background
-          const bgGrad = ctx.createLinearGradient(scaledX, scaledY, scaledX, scaledY + scaledH);
-          bgGrad.addColorStop(0, '#e0f2fe');
-          bgGrad.addColorStop(1, '#bae6fd');
-          ctx.fillStyle = bgGrad;
+          ctx.fillStyle = '#e0f2fe';
           ctx.fillRect(scaledX + (4 * s), scaledY + (4 * s), scaledW - (8 * s), scaledH - (8 * s));
 
-          // Head Silhouette Circle (Correct Y positioning)
           ctx.fillStyle = '#0284c7';
-          ctx.beginPath();
-          ctx.arc(scaledX + (scaledW / 2), scaledY + (scaledH * 0.4), 45 * s, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Body Silhouette Arc (Correct Y positioning)
-          ctx.beginPath();
-          ctx.arc(scaledX + (scaledW / 2), scaledY + (scaledH * 1.05), 85 * s, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Big Bold Initial Letter
-          ctx.fillStyle = '#ffffff';
-          ctx.font = `bold ${50 * s}px sans-serif`;
+          ctx.font = `bold ${80 * s}px sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(member.name.charAt(0).toUpperCase(), scaledX + (scaledW / 2), scaledY + (scaledH * 0.4));
+          ctx.fillText(member.name.charAt(0).toUpperCase(), scaledX + (scaledW / 2), scaledY + (scaledH / 2));
 
           ctx.restore();
           ctx.textAlign = 'start';
@@ -145,14 +132,14 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         }
       };
 
-      // Base Canvas Background (100% White default)
+      // Base Canvas Background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
 
       // ==========================================
-      // TEMPLATE 1: PRISTINE WHITE CORPORATE (Nuansa Putih Dominan Kontras Tinggi)
+      // TEMPLATE 1: PRISTINE WHITE CORPORATE (DEFAULT - Nuansa Putih Dominan Kontras Tinggi)
       // ==========================================
-      if (selectedTemplate === 'clean_corporate') {
+      if (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
 
@@ -267,113 +254,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       }
 
       // ==========================================
-      // TEMPLATE 2: MODERN VERTICAL SPLIT (DUAL TONE)
-      // ==========================================
-      else if (selectedTemplate === 'vertical_split') {
-        // Left Panel (Dark Emerald Green)
-        ctx.fillStyle = '#064e3b';
-        ctx.fillRect(0, 0, 330 * s, height);
-
-        // Right Panel (Pristine White)
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(330 * s, 0, width - (330 * s), height);
-
-        // Left Panel Photo Frame (2.16x2.79 cm) BULLETPROOF DRAW
-        renderUltraPhotoBox(38, 38, 255, 330, '#34d399');
-
-        // Left Panel Gelar Badge
-        ctx.fillStyle = '#022c22';
-        ctx.roundRect(38 * s, 395 * s, 255 * s, 195 * s, 16 * s);
-        ctx.fill();
-        ctx.strokeStyle = '#34d399';
-        ctx.lineWidth = 1.5 * s;
-        ctx.roundRect(38 * s, 395 * s, 255 * s, 195 * s, 16 * s);
-        ctx.stroke();
-
-        ctx.fillStyle = '#34d399';
-        ctx.font = `bold ${20 * s}px sans-serif`;
-        ctx.fillText('STATUS GELAR:', 55 * s, 435 * s);
-        ctx.fillStyle = '#fbbf24';
-        ctx.font = `bold ${24 * s}px sans-serif`;
-        ctx.fillText(member.badge || 'Pembaca Baru 🌱', 55 * s, 475 * s);
-        ctx.fillStyle = '#a7f3d0';
-        ctx.font = `bold ${18 * s}px monospace`;
-        ctx.fillText('⚡ RFID VERIFIED', 55 * s, 535 * s);
-
-        // Right Panel Kop Header (High Contrast Dark Text)
-        let tX = 360 * s;
-        if (activeLogoImg) {
-          ctx.drawImage(activeLogoImg, 360 * s, 20 * s, 80 * s, 80 * s);
-          tX = 455 * s;
-        }
-
-        ctx.fillStyle = '#0f172a'; // Dark Navy Title
-        ctx.font = `bold ${28 * s}px sans-serif`;
-        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), tX, 55 * s);
-
-        ctx.fillStyle = '#059669'; // Emerald Subtitle
-        ctx.font = `bold ${20 * s}px sans-serif`;
-        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), tX, 85 * s);
-
-        ctx.strokeStyle = '#059669';
-        ctx.lineWidth = 2 * s;
-        ctx.beginPath();
-        ctx.moveTo(360 * s, 118 * s);
-        ctx.lineTo((1011 - 35) * s, 118 * s);
-        ctx.stroke();
-
-        // Right Panel Meta Info (High Contrast Dark Text)
-        let currY = 185 * s;
-
-        // Nama Siswa
-        ctx.fillStyle = '#0f172a';
-        ctx.font = `bold ${42 * s}px sans-serif`;
-        ctx.fillText(member.name, 360 * s, currY);
-
-        // Peran / Kelas
-        currY += 45 * s;
-        ctx.fillStyle = '#059669';
-        ctx.font = `bold ${28 * s}px sans-serif`;
-        ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, 360 * s, currY);
-
-        // NISN / NIP
-        currY += 38 * s;
-        ctx.fillStyle = '#1e293b';
-        ctx.font = `bold ${26 * s}px sans-serif`;
-        ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, 360 * s, currY);
-
-        // Alamat Baris 1
-        currY += 36 * s;
-        ctx.fillStyle = '#334155';
-        ctx.font = `bold ${22 * s}px sans-serif`;
-        ctx.fillText(`Alamat 1 : ${line1Address}`, 360 * s, currY);
-
-        // Alamat Baris 2
-        currY += 28 * s;
-        ctx.fillStyle = '#0f172a';
-        ctx.font = `bold ${20 * s}px sans-serif`;
-        ctx.fillText(`Kota/Kab : ${line2Address}`, 360 * s, currY);
-
-        // RFID UID Box Right Bottom
-        currY += 45 * s;
-        ctx.fillStyle = 'rgba(5, 150, 105, 0.1)';
-        ctx.roundRect(360 * s, currY, 610 * s, 75 * s, 16 * s);
-        ctx.fill();
-        ctx.strokeStyle = '#059669';
-        ctx.lineWidth = 2 * s;
-        ctx.roundRect(360 * s, currY, 610 * s, 75 * s, 16 * s);
-        ctx.stroke();
-
-        ctx.fillStyle = '#475569';
-        ctx.font = `bold ${18 * s}px monospace`;
-        ctx.fillText('RFID CHIP UID:', 380 * s, currY + (28 * s));
-        ctx.fillStyle = '#059669';
-        ctx.font = `bold ${44 * s}px monospace`;
-        ctx.fillText(member.rfidUid, 380 * s, currY + (62 * s));
-      }
-
-      // ==========================================
-      // TEMPLATE 3: SCHOOL LUXURY (DARK NAVY)
+      // TEMPLATE 2: SCHOOL LUXURY (DARK NAVY)
       // ==========================================
       else if (selectedTemplate === 'school_luxury') {
         if (bgImg) {
@@ -489,7 +370,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       }
 
       // ==========================================
-      // TEMPLATE 4: ROYAL GOLD DIPLOMA (BLUE & GOLD)
+      // TEMPLATE 3: ROYAL GOLD DIPLOMA (BLUE & GOLD)
       // ==========================================
       else {
         ctx.fillStyle = '#172554';
@@ -611,36 +492,27 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
         <div className="modal-body printable-area" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           
-          {/* TEMPLATE CHOOSER BAR */}
+          {/* TEMPLATE CHOOSER BAR (3 ROCK-SOLID TEMPLATES) */}
           <div className="no-print" style={{ width: '100%', marginBottom: '16px', background: 'rgba(59, 130, 246, 0.1)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
             <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#60a5fa', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Layout size={16} /> Pilih Desain Arsitektur Template Kartu:
+              <Layout size={16} /> Pilih Desain Template Kartu:
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
               <button
                 type="button"
                 onClick={() => setSelectedTemplate('clean_corporate')}
                 className={`btn ${selectedTemplate === 'clean_corporate' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ fontSize: '0.75rem', padding: '6px' }}
+                style={{ fontSize: '0.78rem', padding: '8px 12px' }}
               >
                 ⚪ Pristine White Corporate
               </button>
 
               <button
                 type="button"
-                onClick={() => setSelectedTemplate('vertical_split')}
-                className={`btn ${selectedTemplate === 'vertical_split' ? 'btn-emerald' : 'btn-secondary'}`}
-                style={{ fontSize: '0.75rem', padding: '6px' }}
-              >
-                📱 Modern Vertical Split
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setSelectedTemplate('school_luxury')}
                 className={`btn ${selectedTemplate === 'school_luxury' ? 'btn-amber' : 'btn-secondary'}`}
-                style={{ fontSize: '0.75rem', padding: '6px' }}
+                style={{ fontSize: '0.78rem', padding: '8px 12px' }}
               >
                 🏫 Kop Gedung Luxury
               </button>
@@ -649,7 +521,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                 type="button"
                 onClick={() => setSelectedTemplate('royal_gold')}
                 className={`btn ${selectedTemplate === 'royal_gold' ? 'btn-amber' : 'btn-secondary'}`}
-                style={{ fontSize: '0.75rem', padding: '6px' }}
+                style={{ fontSize: '0.78rem', padding: '8px 12px' }}
               >
                 👑 Royal Gold Emblem
               </button>
@@ -663,15 +535,13 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
             borderRadius: '18px',
             backgroundImage: selectedTemplate === 'school_luxury'
               ? `linear-gradient(rgba(15, 23, 42, 0.88), rgba(30, 27, 75, 0.90)), url('/sekolah.jpeg')`
-              : selectedTemplate === 'vertical_split'
-              ? `linear-gradient(to right, #064e3b 38%, #ffffff 38%)`
               : selectedTemplate === 'royal_gold'
               ? `linear-gradient(135deg, #172554 0%, #0f172a 60%, #1e1b4b 100%)`
               : `none`,
-            backgroundColor: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#ffffff' : 'transparent',
+            backgroundColor: selectedTemplate === 'clean_corporate' ? '#ffffff' : 'transparent',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#0f172a' : '#ffffff',
+            color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#ffffff',
             padding: '18px',
             position: 'relative',
             boxShadow: '0 15px 35px rgba(0, 0, 0, 0.4)',
@@ -683,7 +553,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           }}>
             
             {/* Top Card Header with Logo */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderBottom: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '2px solid #0284c7' : '2px solid rgba(245, 158, 11, 0.6)', paddingBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderBottom: selectedTemplate === 'clean_corporate' ? '2px solid #0284c7' : '2px solid rgba(245, 158, 11, 0.6)', paddingBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <img 
                   ref={logoDomRef}
@@ -694,15 +564,15 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                   onError={e => { e.target.style.display = 'none'; }}
                 />
                 <div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#0f172a' : '#ffffff' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#ffffff' }}>
                     {settings?.schoolName || 'SDIT QURRATU A\'YUN AL-ISLAMI'}
                   </div>
-                  <div style={{ fontSize: '0.66rem', color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#0284c7' : '#fbbf24', fontWeight: 700 }}>
+                  <div style={{ fontSize: '0.66rem', color: selectedTemplate === 'clean_corporate' ? '#0284c7' : '#fbbf24', fontWeight: 700 }}>
                     {settings?.libraryName || 'MAKTABAH AL-QIRO\'AH'}
                   </div>
                 </div>
               </div>
-              <Cpu size={22} color={selectedTemplate === 'clean_corporate' ? '#0284c7' : selectedTemplate === 'vertical_split' ? '#059669' : '#fbbf24'} title="Smart RFID Microchip" />
+              <Cpu size={22} color={selectedTemplate === 'clean_corporate' ? '#0284c7' : '#fbbf24'} title="Smart RFID Microchip" />
             </div>
 
             {/* Middle Card Content: 2.16 x 2.79 cm Photo + Info */}
@@ -713,7 +583,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                 width: '108px', // Exact 2.16 x 2.79 cm ratio
                 height: '140px',
                 borderRadius: '12px',
-                border: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '2px solid #0284c7' : '2px solid #fbbf24',
+                border: selectedTemplate === 'clean_corporate' ? '2px solid #0284c7' : '2px solid #fbbf24',
                 padding: '2px',
                 background: '#ffffff',
                 flexShrink: 0,
@@ -744,31 +614,31 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
               {/* Member Information Details (2-Line Address Included) */}
               <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#0f172a' : '#ffffff' }}>
+                <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#ffffff' }}>
                   {member.name}
                 </h4>
                 
-                <div style={{ fontSize: '0.85rem', color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#0284c7' : '#fbbf24', fontWeight: 800 }}>
+                <div style={{ fontSize: '0.85rem', color: selectedTemplate === 'clean_corporate' ? '#0284c7' : '#fbbf24', fontWeight: 800 }}>
                   {classLabelText} : {member.role || 'Siswa'} - {member.classGrade || 'Umum'}
                 </div>
                 
-                <div style={{ fontSize: '0.78rem', color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#1e293b' : '#cbd5e1', fontWeight: 700 }}>
+                <div style={{ fontSize: '0.78rem', color: selectedTemplate === 'clean_corporate' ? '#1e293b' : '#cbd5e1', fontWeight: 700 }}>
                   {idLabelText} : <strong>{member.nisn || '00001'}</strong>
                 </div>
 
                 {/* 2-LINE SEPARATE ADDRESS DISPLAY */}
-                <div style={{ fontSize: '0.68rem', color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#334155' : '#cbd5e1', lineHeight: '1.2' }}>
+                <div style={{ fontSize: '0.68rem', color: selectedTemplate === 'clean_corporate' ? '#334155' : '#cbd5e1', lineHeight: '1.2' }}>
                   <div>Alamat: {line1Address}</div>
-                  <div style={{ color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#0f172a' : '#94a3b8', fontWeight: 700 }}>{line2Address}</div>
+                  <div style={{ color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#94a3b8', fontWeight: 700 }}>{line2Address}</div>
                 </div>
 
                 <div style={{
-                  background: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? 'rgba(2, 132, 199, 0.08)' : 'rgba(245, 158, 11, 0.2)',
-                  border: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '1px solid #0284c7' : '1px solid #f59e0b',
+                  background: selectedTemplate === 'clean_corporate' ? 'rgba(2, 132, 199, 0.08)' : 'rgba(245, 158, 11, 0.2)',
+                  border: selectedTemplate === 'clean_corporate' ? '1px solid #0284c7' : '1px solid #f59e0b',
                   borderRadius: '6px',
                   padding: '3px 8px',
                   fontSize: '0.72rem',
-                  color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#0369a1' : '#fbbf24',
+                  color: selectedTemplate === 'clean_corporate' ? '#0369a1' : '#fbbf24',
                   fontWeight: 800,
                   marginTop: '2px',
                   display: 'inline-block',
@@ -780,19 +650,19 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
             </div>
 
             {/* Bottom Card Footer with RFID UID Code & Filled Bottom Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderTop: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '1px solid #e2e8f0' : '1px solid rgba(245, 158, 11, 0.4)', paddingTop: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderTop: selectedTemplate === 'clean_corporate' ? '1px solid #e2e8f0' : '1px solid rgba(245, 158, 11, 0.4)', paddingTop: '6px' }}>
               <div>
-                <div style={{ fontSize: '0.58rem', color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#64748b' : '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>KODE CHIP RFID (UID ANGGOTA)</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', fontWeight: 900, color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#0369a1' : '#34d399', letterSpacing: '1px' }}>
+                <div style={{ fontSize: '0.58rem', color: selectedTemplate === 'clean_corporate' ? '#64748b' : '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>KODE CHIP RFID (UID ANGGOTA)</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', fontWeight: 900, color: selectedTemplate === 'clean_corporate' ? '#0369a1' : '#34d399', letterSpacing: '1px' }}>
                   {member.rfidUid}
                 </div>
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.68rem', color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#0f172a' : '#fbbf24', fontWeight: 800 }}>
+                <div style={{ fontSize: '0.68rem', color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#fbbf24', fontWeight: 800 }}>
                   KARTU ANGGOTA PERPUSTAKAAN
                 </div>
-                <div style={{ fontSize: '0.58rem', color: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '#64748b' : '#94a3b8', fontWeight: 700 }}>
+                <div style={{ fontSize: '0.58rem', color: selectedTemplate === 'clean_corporate' ? '#64748b' : '#94a3b8', fontWeight: 700 }}>
                   RESI DIGITAL & VALIDASI CHIP OK
                 </div>
               </div>
@@ -801,7 +671,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            🚀 <strong>Perbaikan Geometri Tuntas:</strong> Siluet Fallback & Photo Ref DOM kini 100% Presisi tanpa menutup area kotak foto pada Modern Vertical Split!
+            🚀 <strong>Sistem Kartu Pelajar 3 Template Utama:</strong> Beresolusi Ultra HD 600 DPI (2426 x 1530 px) • 100% Pasfoto Terbukti Cetak Sempurna!
           </div>
 
         </div>
