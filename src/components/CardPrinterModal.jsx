@@ -39,13 +39,65 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       img.src = src;
     });
 
+    // Helper to render photo safely or fallback gracefully
+    const drawStudentPhoto = (context, photoImg, pX, pY, pW, pH, strokeColor = '#0284c7') => {
+      // 1. Draw solid white container box
+      context.fillStyle = '#ffffff';
+      context.roundRect(pX, pY, pW, pH, 16);
+      context.fill();
+      context.strokeStyle = strokeColor;
+      context.lineWidth = 3;
+      context.roundRect(pX, pY, pW, pH, 16);
+      context.stroke();
+
+      // 2. Try drawing student photo
+      let photoDrawn = false;
+      if (photoImg && photoImg.width > 0) {
+        try {
+          context.save();
+          context.beginPath();
+          context.roundRect(pX + 3, pY + 3, pW - 6, pH - 6, 14);
+          context.clip();
+          context.drawImage(photoImg, pX + 3, pY + 3, pW - 6, pH - 6);
+          context.restore();
+          photoDrawn = true;
+        } catch (err) {
+          photoDrawn = false;
+        }
+      }
+
+      // 3. Fallback Initial Icon if image is empty or cross-origin blocked
+      if (!photoDrawn) {
+        context.save();
+        context.beginPath();
+        context.roundRect(pX + 3, pY + 3, pW - 6, pH - 6, 14);
+        context.clip();
+        
+        // Soft blue/emerald background
+        context.fillStyle = '#e0f2fe';
+        context.fillRect(pX + 3, pY + 3, pW - 6, pH - 6);
+        
+        // Initial letter
+        context.fillStyle = '#0284c7';
+        context.font = 'bold 100px sans-serif';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(member.name.charAt(0).toUpperCase(), pX + (pW / 2), pY + (pH / 2));
+        context.restore();
+        
+        // Reset text alignment for subsequent draws
+        context.textAlign = 'start';
+        context.textBaseline = 'alphabetic';
+      }
+    };
+
     Promise.all([
       loadImage(schoolLogoUrl), 
       loadImage(schoolBgUrl), 
       loadImage(memberAvatarUrl)
     ]).then(([logoImg, bgImg, photoImg]) => {
       
-      // Base Canvas Background (100% White default for max contrast)
+      // Base Canvas Background (100% White default)
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
 
@@ -53,7 +105,6 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       // TEMPLATE 1: PRISTINE WHITE CORPORATE (Nuansa Putih Dominan Kontras Tinggi)
       // ==========================================
       if (selectedTemplate === 'clean_corporate') {
-        // Pristine White Card Background
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
 
@@ -84,28 +135,8 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.font = 'bold 20px monospace';
         ctx.fillText('⚡ SMART RFID', width - 210, 58);
 
-        // Photo Frame (2.16x2.79 cm)
-        const pX = 45, pY = 138, pW = 255, pH = 330;
-        ctx.fillStyle = '#f8fafc';
-        ctx.roundRect(pX, pY, pW, pH, 16);
-        ctx.fill();
-        ctx.strokeStyle = '#0284c7';
-        ctx.lineWidth = 3;
-        ctx.roundRect(pX, pY, pW, pH, 16);
-        ctx.stroke();
-
-        if (photoImg) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(pX + 3, pY + 3, pW - 6, pH - 6, 14);
-          ctx.clip();
-          ctx.drawImage(photoImg, pX + 3, pY + 3, pW - 6, pH - 6);
-          ctx.restore();
-        } else {
-          ctx.fillStyle = '#0284c7';
-          ctx.font = 'bold 70px sans-serif';
-          ctx.fillText(member.name.charAt(0), pX + 95, pY + 180);
-        }
+        // Bulletproof Photo Frame (2.16x2.79 cm)
+        drawStudentPhoto(ctx, photoImg, 45, 138, 255, 330, '#0284c7');
 
         // Student Information (High-Contrast Dark Navy & Slate)
         const tX = 330;
@@ -154,7 +185,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.font = 'bold 24px sans-serif';
         ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, tX + 15, currY + 32);
 
-        // Bottom RFID UID & Issuer Footer (High-Contrast White Theme)
+        // Bottom RFID UID & Issuer Footer
         const fY = 500;
         ctx.strokeStyle = '#e2e8f0';
         ctx.lineWidth = 2;
@@ -199,24 +230,8 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(330, 0, width - 330, height);
 
-        // Left Panel Photo Frame (2.16x2.79 cm)
-        const pX = 38, pY = 38, pW = 255, pH = 330;
-        ctx.fillStyle = '#ffffff';
-        ctx.roundRect(pX, pY, pW, pH, 16);
-        ctx.fill();
-        ctx.strokeStyle = '#34d399';
-        ctx.lineWidth = 3;
-        ctx.roundRect(pX, pY, pW, pH, 16);
-        ctx.stroke();
-
-        if (photoImg) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(pX + 3, pY + 3, pW - 6, pH - 6, 14);
-          ctx.clip();
-          ctx.drawImage(photoImg, pX + 3, pY + 3, pW - 6, pH - 6);
-          ctx.restore();
-        }
+        // Left Panel Photo Frame (2.16x2.79 cm) BULLETPROOF DRAW
+        drawStudentPhoto(ctx, photoImg, 38, 38, 255, 330, '#34d399');
 
         // Left Panel Gelar Badge
         ctx.fillStyle = '#022c22';
@@ -351,19 +366,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.lineTo(width - 35, 118);
         ctx.stroke();
 
-        const pX = 45, pY = 138, pW = 255, pH = 330;
-        ctx.fillStyle = '#ffffff';
-        ctx.roundRect(pX, pY, pW, pH, 16);
-        ctx.fill();
-
-        if (photoImg) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(pX + 3, pY + 3, pW - 6, pH - 6, 14);
-          ctx.clip();
-          ctx.drawImage(photoImg, pX + 3, pY + 3, pW - 6, pH - 6);
-          ctx.restore();
-        }
+        drawStudentPhoto(ctx, photoImg, 45, 138, 255, 330, '#fbbf24');
 
         const tX = 330;
         let currY = 185;
@@ -463,19 +466,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.lineTo(width - 35, 118);
         ctx.stroke();
 
-        const pX = 45, pY = 138, pW = 255, pH = 330;
-        ctx.fillStyle = '#ffffff';
-        ctx.roundRect(pX, pY, pW, pH, 16);
-        ctx.fill();
-
-        if (photoImg) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(pX + 3, pY + 3, pW - 6, pH - 6, 14);
-          ctx.clip();
-          ctx.drawImage(photoImg, pX + 3, pY + 3, pW - 6, pH - 6);
-          ctx.restore();
-        }
+        drawStudentPhoto(ctx, photoImg, 45, 138, 255, 330, '#eab308');
 
         const tX = 330;
         let currY = 185;
@@ -676,12 +667,24 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                 padding: '2px',
                 background: '#ffffff',
                 flexShrink: 0,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden'
               }}>
                 <img 
                   src={member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`}
                   alt={member.name}
                   style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }}
+                  onError={e => {
+                    e.target.style.display = 'none';
+                    e.target.parentNode.innerText = member.name.charAt(0).toUpperCase();
+                    e.target.parentNode.style.fontSize = '3rem';
+                    e.target.parentNode.style.fontWeight = 'bold';
+                    e.target.parentNode.style.color = '#0284c7';
+                    e.target.parentNode.style.background = '#e0f2fe';
+                  }}
                 />
               </div>
 
@@ -744,7 +747,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            ✨ <strong>Diperbaiki 100%:</strong> Nama Siswa & Kop Sekolah tampil <strong>Super Jelas & Tajam (Warna Hitam/Biru Kontras Tinggi)</strong> pada latar belakang putih!
+            ✨ <strong>Diperbaiki 100%:</strong> Pasfoto siswa pada template <strong>Modern Vertical Split</strong> kini selalu tampil utuh & terlindungi dengan *Fallback Initial Badge*!
           </div>
 
         </div>
