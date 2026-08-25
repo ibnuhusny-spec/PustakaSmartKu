@@ -12,7 +12,10 @@ export const DEFAULT_SETTINGS = {
   enableSoundFX: true,
   autoAttendanceOnTap: true,
   schoolLogoUrl: "", // Dedicated School Logo
-  logoUrl: "/perpustakaansmart.png" // App Logo
+  logoUrl: "/perpustakaansmart.png", // App Logo
+  cardTemplate: "school_luxury", // Default card template theme: school_luxury, modern_emerald, royal_gold, clean_white
+  idFieldLabel: "NISN / NIP", // Custom ID Label
+  classFieldLabel: "Peran / Kelas" // Custom Class/Role Label
 };
 
 export const INITIAL_BOOKS = [

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2 } from 'lucide-react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault } from '../services/db';
 
 export default function SettingsView({ settings, onRefreshData, onReplaySplash }) {
@@ -10,7 +10,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     e.preventDefault();
     saveSettings(formData);
     onRefreshData();
-    alert('Pengaturan sekolah, logo instansi, & sistem perpustakaan berhasil disimpan!');
+    alert('Pengaturan sekolah, template kartu, label biodata, & sistem perpustakaan berhasil disimpan!');
   };
 
   // Compress and save dedicated School Logo image (Logo Instansi Sekolah)
@@ -176,6 +176,59 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                     </button>
                   )}
                 </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* CUSTOM CARD TEMPLATE & LABEL BIODATA SECTION */}
+          <div style={{
+            background: 'rgba(59, 130, 246, 0.12)',
+            padding: '20px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid rgba(59, 130, 246, 0.4)',
+            marginBottom: '20px'
+          }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 12px 0', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Layout size={18} /> Pengaturan Desain Template & Label Biodata Kartu RFID
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+              
+              <div className="form-group">
+                <label className="form-label" style={{ color: '#60a5fa' }}>Pilihan Desain Template Kartu</label>
+                <select
+                  className="form-select"
+                  value={formData.cardTemplate || 'school_luxury'}
+                  onChange={e => setFormData({ ...formData, cardTemplate: e.target.value })}
+                >
+                  <option value="school_luxury">🏫 Gedung Sekolah Luxury (Navy + Background Gedung + Emas)</option>
+                  <option value="modern_emerald">🟢 Modern Emerald Glass (Hijau Emerald + Transparan)</option>
+                  <option value="royal_gold">👑 Classic Royal Gold (Biru Kerajaan + Akses Emas Murni)</option>
+                  <option value="clean_white">⚪ Minimalist Clean White (Putih Bersih Kontras Tinggi)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ color: '#60a5fa' }}>Label Item Biodata ID (Contoh: NISN / NIP / NIS / NIK / ID PEGAWAI)</label>
+                <input 
+                  type="text"
+                  className="form-input"
+                  value={formData.idFieldLabel || 'NISN / NIP'}
+                  onChange={e => setFormData({ ...formData, idFieldLabel: e.target.value })}
+                  placeholder="Contoh: NISN / NIP atau NIS atau ID PEGAWAI..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ color: '#60a5fa' }}>Label Item Peran / Kelas (Contoh: Peran / Kelas / Divisi)</label>
+                <input 
+                  type="text"
+                  className="form-input"
+                  value={formData.classFieldLabel || 'Peran / Kelas'}
+                  onChange={e => setFormData({ ...formData, classFieldLabel: e.target.value })}
+                  placeholder="Contoh: Peran / Kelas atau Jabatan / Divisi..."
+                />
               </div>
 
             </div>
