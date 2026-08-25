@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles } from 'lucide-react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2 } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault } from '../services/db';
 
 export default function SettingsView({ settings, onRefreshData, onReplaySplash }) {
@@ -10,11 +10,11 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     e.preventDefault();
     saveSettings(formData);
     onRefreshData();
-    alert('Pengaturan sekolah, logo, & sistem perpustakaan berhasil disimpan!');
+    alert('Pengaturan sekolah, logo instansi, & sistem perpustakaan berhasil disimpan!');
   };
 
-  // Compress and save custom uploaded logo image to lightweight data URL
-  const handleLogoUpload = (e) => {
+  // Compress and save dedicated School Logo image (Logo Instansi Sekolah)
+  const handleSchoolLogoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -43,7 +43,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
         const compressedDataUrl = canvas.toDataURL('image/png', 0.85);
-        setFormData(prev => ({ ...prev, logoUrl: compressedDataUrl }));
+        setFormData(prev => ({ ...prev, schoolLogoUrl: compressedDataUrl, logoUrl: compressedDataUrl }));
       };
       img.src = evt.target.result;
     };
@@ -103,6 +103,84 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
             )}
           </div>
 
+          {/* DEDICATED SCHOOL LOGO UPLOAD SECTION */}
+          <div style={{
+            background: 'rgba(245, 158, 11, 0.12)',
+            padding: '20px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            marginBottom: '20px'
+          }}>
+            <label className="form-label" style={{ color: '#fbbf24', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', margin: 0 }}>
+              <Building2 size={20} /> Upload Logo Resmi Sekolah / Yayasan Anda *
+            </label>
+            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: '4px 0 14px 0' }}>
+              Upload logo sekolah Anda (misal Logo SDIT Qurratu A'yun Al-Islami / Logo Sekolah Anda). Logo sekolah ini akan <strong>dicetak otomatis pada Kop Kartu Pelajar RFID & Struk Peminjaman Buku!</strong>
+            </p>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+              
+              {/* Logo Preview Frame */}
+              <div style={{ 
+                width: '85px', 
+                height: '85px', 
+                borderRadius: '14px', 
+                background: '#1e293b', 
+                border: '2px dashed #fbbf24',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                flexShrink: 0
+              }}>
+                {formData.schoolLogoUrl || formData.logoUrl ? (
+                  <img src={formData.schoolLogoUrl || formData.logoUrl} alt="Logo Sekolah" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
+                ) : (
+                  <ImageIcon size={32} color="#fbbf24" />
+                )}
+              </div>
+
+              <div style={{ flex: 1, minWidth: '240px' }}>
+                <label 
+                  className="btn btn-primary"
+                  style={{ cursor: 'pointer', fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '10px', padding: '10px 18px' }}
+                >
+                  <FolderOpen size={18} />
+                  <span>Pilih & Upload File Logo Sekolah dari Komputer/HP...</span>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleSchoolLogoUpload}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={formData.schoolLogoUrl || ''}
+                    onChange={e => setFormData({ ...formData, schoolLogoUrl: e.target.value, logoUrl: e.target.value })}
+                    placeholder="Atau paste link URL gambar logo sekolah..."
+                    style={{ fontSize: '0.82rem' }}
+                  />
+                  {formData.schoolLogoUrl && (
+                    <button 
+                      type="button"
+                      onClick={() => setFormData({ ...formData, schoolLogoUrl: '', logoUrl: '/perpustakaansmart.png' })}
+                      className="btn btn-rose"
+                      style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+                    >
+                      Reset Logo
+                    </button>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
             
             <div className="form-group">
@@ -127,76 +205,6 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                 placeholder="Contoh: Maktabah Al-Qiro'ah"
                 required
               />
-            </div>
-
-            {/* LOGO SCHOOL UPLOAD FIELD */}
-            <div className="form-group" style={{ gridColumn: '1 / -1', background: 'rgba(59, 130, 246, 0.1)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-              <label className="form-label" style={{ color: '#60a5fa', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
-                <ImageIcon size={18} /> Upload Logo Resmi Sekolah / Perpustakaan
-              </label>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '8px' }}>
-                
-                {/* Logo Preview */}
-                <div style={{ 
-                  width: '70px', 
-                  height: '70px', 
-                  borderRadius: '12px', 
-                  background: '#1e293b', 
-                  border: '2px dashed #60a5fa',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden'
-                }}>
-                  {formData.logoUrl ? (
-                    <img src={formData.logoUrl} alt="Logo Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                  ) : (
-                    <ImageIcon size={28} color="#60a5fa" />
-                  )}
-                </div>
-
-                <div style={{ flex: 1, minWidth: '240px' }}>
-                  <label 
-                    className="btn btn-primary"
-                    style={{ cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}
-                  >
-                    <FolderOpen size={16} />
-                    <span>Pilih / Upload File Logo dari Komputer/HP...</span>
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      value={formData.logoUrl || ''}
-                      onChange={e => setFormData({ ...formData, logoUrl: e.target.value })}
-                      placeholder="Atau paste URL link gambar logo..."
-                      style={{ fontSize: '0.8rem' }}
-                    />
-                    {formData.logoUrl && (
-                      <button 
-                        type="button"
-                        onClick={() => setFormData({ ...formData, logoUrl: '' })}
-                        className="btn btn-rose"
-                        style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}
-                      >
-                        Hapus Logo
-                      </button>
-                    )}
-                  </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                    Logo file <code style={{ color: '#38bdf8' }}>/perpustakaansmart.png</code> yang tersimpan di folder public otomatis aktif!
-                  </div>
-                </div>
-
-              </div>
             </div>
 
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>

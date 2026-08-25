@@ -8,6 +8,8 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
     window.print();
   };
 
+  const activeSchoolLogo = settings?.schoolLogoUrl || settings?.logoUrl || '/perpustakaansmart.png';
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
@@ -32,13 +34,14 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
             WebkitPrintColorAdjust: 'exact',
             printColorAdjust: 'exact'
           }}>
-            {/* Header with optional School Logo */}
+            {/* Header with School Logo */}
             <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px dashed #94a3b8', paddingBottom: '12px' }}>
-              {settings?.logoUrl && (
+              {activeSchoolLogo && (
                 <img 
-                  src={settings.logoUrl} 
+                  src={activeSchoolLogo} 
                   alt="Logo Sekolah" 
                   style={{ width: '50px', height: '50px', objectFit: 'contain', marginBottom: '6px' }} 
+                  onError={e => { e.target.style.display = 'none'; }}
                 />
               )}
               <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, fontFamily: 'var(--font-main)', color: '#0f172a' }}>

@@ -11,6 +11,8 @@ export const DEFAULT_SETTINGS = {
   enableVoice: true,
   enableSoundFX: true,
   autoAttendanceOnTap: true,
+  schoolLogoUrl: "", // Dedicated School Logo
+  logoUrl: "/perpustakaansmart.png" // App Logo
 };
 
 export const INITIAL_BOOKS = [
