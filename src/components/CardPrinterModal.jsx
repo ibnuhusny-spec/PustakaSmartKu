@@ -3,6 +3,9 @@ import { Printer, X, CreditCard, Cpu, Sparkles, ShieldCheck, Download, MapPin, U
 
 export default function CardPrinterModal({ isOpen, onClose, member, settings }) {
   const cardRef = useRef(null);
+  const photoDomRef = useRef(null);
+  const logoDomRef = useRef(null);
+
   const [selectedTemplate, setSelectedTemplate] = useState(settings?.cardTemplate || 'clean_corporate');
 
   if (!isOpen || !member) return null;
@@ -17,30 +20,36 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
   const line1Address = settings?.address || 'Jalan Poros Makassar - Maros Km. 26 Maccopa';
   const line2Address = settings?.cityAddress || 'Kabupaten Maros, Sulawesi Selatan';
 
-  // Convert HTML Card to HD PNG Image for CorelDraw / Photoshop / Sticker Printing
+  // Convert HTML Card to ULTRA HIGH RESOLUTION PNG (2426 x 1530 px @ 600 DPI) for CorelDraw / Sticker Printing
   const handleDownloadPNG = () => {
-    const width = 1011; // High resolution 300 DPI for CR80 card (85.6mm)
-    const height = 638;  // High resolution 300 DPI for CR80 card (53.98mm)
+    // Ultra 600 DPI Crisp Resolution (2426px x 1530px)
+    const width = 2426; 
+    const height = 1530;
 
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
 
+    // Enable maximum text smoothing & high quality image interpolation
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Scale factor ratio (2.4x scaling from 1011x638 base)
+    const s = 2.4;
+
     const schoolLogoUrl = settings?.schoolLogoUrl || settings?.logoUrl || '/perpustakaansmart.png';
     const schoolBgUrl = '/sekolah.jpeg';
 
-    // Helper to load image as Promise safely (handles data URLs, local assets, and remote images)
     const loadImage = (src) => new Promise((resolve) => {
       if (!src) return resolve(null);
       const img = new Image();
-      // Only set crossOrigin for remote http/https URLs, NOT for base64 data URIs!
-      if (src.startsWith('http')) {
+      if (src.startsWith('http') && !src.includes('data:image')) {
         img.crossOrigin = 'anonymous';
       }
       img.onload = () => resolve(img);
       img.onerror = () => {
-        // Retry without crossOrigin if CORS failed
+        // Fallback retry without crossOrigin
         const retryImg = new Image();
         retryImg.onload = () => resolve(retryImg);
         retryImg.onerror = () => resolve(null);
@@ -52,32 +61,45 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
     const memberAvatarSrc = member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`;
 
     Promise.all([
-      loadImage(schoolLogoUrl), 
-      loadImage(schoolBgUrl), 
+      loadImage(schoolLogoUrl),
+      loadImage(schoolBgUrl),
       loadImage(memberAvatarSrc)
-    ]).then(([logoImg, bgImg, photoImg]) => {
+    ]).then(([logoImg, bgImg, loadedPhotoImg]) => {
       
-      // Helper function to render photo container on canvas (100% Bulletproof)
-      const renderPhotoBox = (pX, pY, pW, pH, strokeColor = '#0284c7') => {
-        // 1. Draw solid white container background
+      // Grabbing photo from DOM if loadedPhotoImg is CORS blocked
+      const domPhoto = photoDomRef.current;
+      const domLogo = logoDomRef.current;
+
+      const activePhotoImg = (loadedPhotoImg && loadedPhotoImg.width > 0) ? loadedPhotoImg : (domPhoto && domPhoto.complete && domPhoto.naturalWidth > 0 ? domPhoto : null);
+      const activeLogoImg = (logoImg && logoImg.width > 0) ? logoImg : (domLogo && domLogo.complete && domLogo.naturalWidth > 0 ? domLogo : null);
+
+      // Helper function to render Photo Box Bulletproof at 600 DPI
+      const renderUltraPhotoBox = (pX, pY, pW, pH, strokeColor = '#0284c7') => {
+        const scaledX = pX * s;
+        const scaledY = pY * s;
+        const scaledW = pW * s;
+        const scaledH = pH * s;
+        const radius = 16 * s;
+
+        // 1. Draw solid white container box
         ctx.fillStyle = '#ffffff';
-        ctx.roundRect(pX, pY, pW, pH, 16);
+        ctx.roundRect(scaledX, scaledY, scaledW, scaledH, radius);
         ctx.fill();
         ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 4;
-        ctx.roundRect(pX, pY, pW, pH, 16);
+        ctx.lineWidth = 4 * s;
+        ctx.roundRect(scaledX, scaledY, scaledW, scaledH, radius);
         ctx.stroke();
 
         let photoDrawn = false;
 
-        // 2. Try drawing loaded photo
-        if (photoImg && photoImg.width > 0 && photoImg.height > 0) {
+        // 2. Draw photo if valid
+        if (activePhotoImg) {
           try {
             ctx.save();
             ctx.beginPath();
-            ctx.roundRect(pX + 4, pY + 4, pW - 8, pH - 8, 12);
+            ctx.roundRect(scaledX + (4 * s), scaledY + (4 * s), scaledW - (8 * s), scaledH - (8 * s), radius - (2 * s));
             ctx.clip();
-            ctx.drawImage(photoImg, pX + 4, pY + 4, pW - 8, pH - 8);
+            ctx.drawImage(activePhotoImg, scaledX + (4 * s), scaledY + (4 * s), scaledW - (8 * s), scaledH - (8 * s));
             ctx.restore();
             photoDrawn = true;
           } catch (e) {
@@ -85,37 +107,37 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           }
         }
 
-        // 3. Guaranteed Fallback if photo URL is CORS-blocked or missing
+        // 3. Ultra Fallback Silhouette + Initial Badge if photo URL CORS blocked
         if (!photoDrawn) {
           ctx.save();
           ctx.beginPath();
-          ctx.roundRect(pX + 4, pY + 4, pW - 8, pH - 8, 12);
+          ctx.roundRect(scaledX + (4 * s), scaledY + (4 * s), scaledW - (8 * s), scaledH - (8 * s), radius - (2 * s));
           ctx.clip();
 
-          // Soft Blue/Slate Student Silhouette Background
-          const avatarGradient = ctx.createLinearGradient(pX, pY, pX, pY + pH);
-          avatarGradient.addColorStop(0, '#e0f2fe');
-          avatarGradient.addColorStop(1, '#bae6fd');
-          ctx.fillStyle = avatarGradient;
-          ctx.fillRect(pX + 4, pY + 4, pW - 8, pH - 8);
+          // Soft blue gradient background
+          const bgGrad = ctx.createLinearGradient(scaledX, scaledY, scaledX, scaledY + scaledH);
+          bgGrad.addColorStop(0, '#e0f2fe');
+          bgGrad.addColorStop(1, '#bae6fd');
+          ctx.fillStyle = bgGrad;
+          ctx.fillRect(scaledX + (4 * s), scaledY + (4 * s), scaledW - (8 * s), scaledH - (8 * s));
 
-          // Student Head Silhouette Circle
+          // Head Silhouette Circle
           ctx.fillStyle = '#0284c7';
           ctx.beginPath();
-          ctx.arc(pX + (pW / 2), pY + 110, 50, 0, Math.PI * 2);
+          ctx.arc(scaledX + (scaledW / 2), scaledY + (110 * s), 50 * s, 0, Math.PI * 2);
           ctx.fill();
 
-          // Student Body Silhouette Shoulder Arc
+          // Body Silhouette Arc
           ctx.beginPath();
-          ctx.arc(pX + (pW / 2), pY + 280, 100, 0, Math.PI * 2);
+          ctx.arc(scaledX + (scaledW / 2), scaledY + (280 * s), 100 * s, 0, Math.PI * 2);
           ctx.fill();
 
-          // Student Initial Letter Emblem Center
+          // Big Bold Initial Letter
           ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 55px sans-serif';
+          ctx.font = `bold ${55 * s}px sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(member.name.charAt(0).toUpperCase(), pX + (pW / 2), pY + 110);
+          ctx.fillText(member.name.charAt(0).toUpperCase(), scaledX + (scaledW / 2), scaledY + (110 * s));
 
           ctx.restore();
           ctx.textAlign = 'start';
@@ -136,112 +158,112 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
         // Header Divider Line (Royal Blue)
         ctx.strokeStyle = '#0284c7';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3 * s;
         ctx.beginPath();
-        ctx.moveTo(35, 118);
-        ctx.lineTo(width - 35, 118);
+        ctx.moveTo(35 * s, 118 * s);
+        ctx.lineTo((1011 - 35) * s, 118 * s);
         ctx.stroke();
 
         // Kop Header Logo + School Name + Library Name
-        let textStartX = 45;
-        if (logoImg) {
-          ctx.drawImage(logoImg, 45, 20, 80, 80);
-          textStartX = 145;
+        let textStartX = 45 * s;
+        if (activeLogoImg) {
+          ctx.drawImage(activeLogoImg, 45 * s, 20 * s, 80 * s, 80 * s);
+          textStartX = 145 * s;
         }
 
         ctx.fillStyle = '#0f172a'; // Extra Dark Navy
-        ctx.font = 'bold 30px sans-serif';
-        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), textStartX, 58);
+        ctx.font = `bold ${30 * s}px sans-serif`;
+        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), textStartX, 58 * s);
 
         ctx.fillStyle = '#0284c7'; // Royal Blue Subtitle
-        ctx.font = 'bold 20px sans-serif';
-        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), textStartX, 88);
+        ctx.font = `bold ${20 * s}px sans-serif`;
+        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), textStartX, 88 * s);
 
         ctx.fillStyle = '#0284c7';
-        ctx.font = 'bold 20px monospace';
-        ctx.fillText('⚡ SMART RFID', width - 210, 58);
+        ctx.font = `bold ${20 * s}px monospace`;
+        ctx.fillText('⚡ SMART RFID', (1011 - 210) * s, 58 * s);
 
         // Bulletproof Photo Frame (2.16x2.79 cm)
-        renderPhotoBox(45, 138, 255, 330, '#0284c7');
+        renderUltraPhotoBox(45, 138, 255, 330, '#0284c7');
 
         // Student Information (High-Contrast Dark Navy & Slate)
-        const tX = 330;
-        let currY = 185;
+        const tX = 330 * s;
+        let currY = 185 * s;
 
-        // Nama Siswa (Deep Black Navy 42px Bold)
+        // Nama Siswa (Deep Black Navy Bold)
         ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 42px sans-serif';
+        ctx.font = `bold ${42 * s}px sans-serif`;
         ctx.fillText(member.name, tX, currY);
 
-        // Peran / Kelas (Vibrant Blue 28px Bold)
-        currY += 45;
+        // Peran / Kelas (Vibrant Blue Bold)
+        currY += 45 * s;
         ctx.fillStyle = '#0284c7';
-        ctx.font = 'bold 28px sans-serif';
+        ctx.font = `bold ${28 * s}px sans-serif`;
         ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, tX, currY);
 
-        // NISN / NIP (Dark Slate 26px Bold)
-        currY += 38;
+        // NISN / NIP (Dark Slate Bold)
+        currY += 38 * s;
         ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 26px sans-serif';
+        ctx.font = `bold ${26 * s}px sans-serif`;
         ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, tX, currY);
 
-        // Alamat Baris 1 (Dark Slate 22px Bold)
-        currY += 36;
+        // Alamat Baris 1 (Dark Slate Bold)
+        currY += 36 * s;
         ctx.fillStyle = '#334155';
-        ctx.font = 'bold 22px sans-serif';
+        ctx.font = `bold ${22 * s}px sans-serif`;
         ctx.fillText(`Alamat 1 : ${line1Address}`, tX, currY);
 
-        // Alamat Baris 2 Kota/Kab (Deep Navy 20px Bold)
-        currY += 28;
+        // Alamat Baris 2 Kota/Kab (Deep Navy Bold)
+        currY += 28 * s;
         ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 20px sans-serif';
+        ctx.font = `bold ${20 * s}px sans-serif`;
         ctx.fillText(`Kota/Kab : ${line2Address}`, tX, currY);
 
         // Duta Baca Badge Box
-        currY += 30;
+        currY += 30 * s;
         ctx.fillStyle = 'rgba(2, 132, 199, 0.1)';
-        ctx.roundRect(tX, currY, 420, 48, 12);
+        ctx.roundRect(tX, currY, 420 * s, 48 * s, 12 * s);
         ctx.fill();
         ctx.strokeStyle = '#0284c7';
-        ctx.lineWidth = 1.5;
-        ctx.roundRect(tX, currY, 420, 48, 12);
+        ctx.lineWidth = 1.5 * s;
+        ctx.roundRect(tX, currY, 420 * s, 48 * s, 12 * s);
         ctx.stroke();
 
         ctx.fillStyle = '#0369a1';
-        ctx.font = 'bold 24px sans-serif';
-        ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, tX + 15, currY + 32);
+        ctx.font = `bold ${24 * s}px sans-serif`;
+        ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, tX + (15 * s), currY + (32 * s));
 
         // Bottom RFID UID & Issuer Footer
-        const fY = 500;
+        const fY = 500 * s;
         ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 * s;
         ctx.beginPath();
-        ctx.moveTo(35, fY);
-        ctx.lineTo(width - 35, fY);
+        ctx.moveTo(35 * s, fY);
+        ctx.lineTo((1011 - 35) * s, fY);
         ctx.stroke();
 
         ctx.fillStyle = '#475569';
-        ctx.font = 'bold 18px monospace';
-        ctx.fillText('KODE CHIP RFID (UID ANGGOTA)', 45, fY + 32);
+        ctx.font = `bold ${18 * s}px monospace`;
+        ctx.fillText('KODE CHIP RFID (UID ANGGOTA)', 45 * s, fY + (32 * s));
 
         ctx.fillStyle = 'rgba(2, 132, 199, 0.1)';
-        ctx.roundRect(45, fY + 42, 440, 65, 14);
+        ctx.roundRect(45 * s, fY + (42 * s), 440 * s, 65 * s, 14 * s);
         ctx.fill();
         ctx.strokeStyle = '#0284c7';
-        ctx.lineWidth = 2;
-        ctx.roundRect(45, fY + 42, 440, 65, 14);
+        ctx.lineWidth = 2 * s;
+        ctx.roundRect(45 * s, fY + (42 * s), 440 * s, 65 * s, 14 * s);
         ctx.stroke();
 
         ctx.fillStyle = '#0369a1';
-        ctx.font = 'bold 46px monospace';
-        ctx.fillText(member.rfidUid, 65, fY + 90);
+        ctx.font = `bold ${46 * s}px monospace`;
+        ctx.fillText(member.rfidUid, 65 * s, fY + (90 * s));
 
         ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 22px sans-serif';
-        ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', width - 440, fY + 62);
+        ctx.font = `bold ${22 * s}px sans-serif`;
+        ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', (1011 - 440) * s, fY + (62 * s));
         ctx.fillStyle = '#64748b';
-        ctx.font = 'bold 18px sans-serif';
-        ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', width - 440, fY + 92);
+        ctx.font = `bold ${18 * s}px sans-serif`;
+        ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', (1011 - 440) * s, fY + (92 * s));
       }
 
       // ==========================================
@@ -250,104 +272,104 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       else if (selectedTemplate === 'vertical_split') {
         // Left Panel (Dark Emerald Green)
         ctx.fillStyle = '#064e3b';
-        ctx.fillRect(0, 0, 330, height);
+        ctx.fillRect(0, 0, 330 * s, height);
 
         // Right Panel (Pristine White)
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(330, 0, width - 330, height);
+        ctx.fillRect(330 * s, 0, width - (330 * s), height);
 
         // Left Panel Photo Frame (2.16x2.79 cm) BULLETPROOF DRAW
-        renderPhotoBox(38, 38, 255, 330, '#34d399');
+        renderUltraPhotoBox(38, 38, 255, 330, '#34d399');
 
         // Left Panel Gelar Badge
         ctx.fillStyle = '#022c22';
-        ctx.roundRect(38, 395, 255, 195, 16);
+        ctx.roundRect(38 * s, 395 * s, 255 * s, 195 * s, 16 * s);
         ctx.fill();
         ctx.strokeStyle = '#34d399';
-        ctx.lineWidth = 1.5;
-        ctx.roundRect(38, 395, 255, 195, 16);
+        ctx.lineWidth = 1.5 * s;
+        ctx.roundRect(38 * s, 395 * s, 255 * s, 195 * s, 16 * s);
         ctx.stroke();
 
         ctx.fillStyle = '#34d399';
-        ctx.font = 'bold 20px sans-serif';
-        ctx.fillText('STATUS GELAR:', 55, 435);
+        ctx.font = `bold ${20 * s}px sans-serif`;
+        ctx.fillText('STATUS GELAR:', 55 * s, 435 * s);
         ctx.fillStyle = '#fbbf24';
-        ctx.font = 'bold 24px sans-serif';
-        ctx.fillText(member.badge || 'Pembaca Baru 🌱', 55, 475);
+        ctx.font = `bold ${24 * s}px sans-serif`;
+        ctx.fillText(member.badge || 'Pembaca Baru 🌱', 55 * s, 475 * s);
         ctx.fillStyle = '#a7f3d0';
-        ctx.font = 'bold 18px monospace';
-        ctx.fillText('⚡ RFID VERIFIED', 55, 535);
+        ctx.font = `bold ${18 * s}px monospace`;
+        ctx.fillText('⚡ RFID VERIFIED', 55 * s, 535 * s);
 
         // Right Panel Kop Header (High Contrast Dark Text)
-        let tX = 360;
-        if (logoImg) {
-          ctx.drawImage(logoImg, 360, 20, 80, 80);
-          tX = 455;
+        let tX = 360 * s;
+        if (activeLogoImg) {
+          ctx.drawImage(activeLogoImg, 360 * s, 20 * s, 80 * s, 80 * s);
+          tX = 455 * s;
         }
 
         ctx.fillStyle = '#0f172a'; // Dark Navy Title
-        ctx.font = 'bold 28px sans-serif';
-        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), tX, 55);
+        ctx.font = `bold ${28 * s}px sans-serif`;
+        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), tX, 55 * s);
 
         ctx.fillStyle = '#059669'; // Emerald Subtitle
-        ctx.font = 'bold 20px sans-serif';
-        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), tX, 85);
+        ctx.font = `bold ${20 * s}px sans-serif`;
+        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), tX, 85 * s);
 
         ctx.strokeStyle = '#059669';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 * s;
         ctx.beginPath();
-        ctx.moveTo(360, 118);
-        ctx.lineTo(width - 35, 118);
+        ctx.moveTo(360 * s, 118 * s);
+        ctx.lineTo((1011 - 35) * s, 118 * s);
         ctx.stroke();
 
         // Right Panel Meta Info (High Contrast Dark Text)
-        let currY = 185;
+        let currY = 185 * s;
 
         // Nama Siswa
         ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 42px sans-serif';
-        ctx.fillText(member.name, 360, currY);
+        ctx.font = `bold ${42 * s}px sans-serif`;
+        ctx.fillText(member.name, 360 * s, currY);
 
         // Peran / Kelas
-        currY += 45;
+        currY += 45 * s;
         ctx.fillStyle = '#059669';
-        ctx.font = 'bold 28px sans-serif';
-        ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, 360, currY);
+        ctx.font = `bold ${28 * s}px sans-serif`;
+        ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, 360 * s, currY);
 
         // NISN / NIP
-        currY += 38;
+        currY += 38 * s;
         ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 26px sans-serif';
-        ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, 360, currY);
+        ctx.font = `bold ${26 * s}px sans-serif`;
+        ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, 360 * s, currY);
 
         // Alamat Baris 1
-        currY += 36;
+        currY += 36 * s;
         ctx.fillStyle = '#334155';
-        ctx.font = 'bold 22px sans-serif';
-        ctx.fillText(`Alamat 1 : ${line1Address}`, 360, currY);
+        ctx.font = `bold ${22 * s}px sans-serif`;
+        ctx.fillText(`Alamat 1 : ${line1Address}`, 360 * s, currY);
 
         // Alamat Baris 2
-        currY += 28;
+        currY += 28 * s;
         ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 20px sans-serif';
-        ctx.fillText(`Kota/Kab : ${line2Address}`, 360, currY);
+        ctx.font = `bold ${20 * s}px sans-serif`;
+        ctx.fillText(`Kota/Kab : ${line2Address}`, 360 * s, currY);
 
         // RFID UID Box Right Bottom
-        currY += 45;
+        currY += 45 * s;
         ctx.fillStyle = 'rgba(5, 150, 105, 0.1)';
-        ctx.roundRect(360, currY, 610, 75, 16);
+        ctx.roundRect(360 * s, currY, 610 * s, 75 * s, 16 * s);
         ctx.fill();
         ctx.strokeStyle = '#059669';
-        ctx.lineWidth = 2;
-        ctx.roundRect(360, currY, 610, 75, 16);
+        ctx.lineWidth = 2 * s;
+        ctx.roundRect(360 * s, currY, 610 * s, 75 * s, 16 * s);
         ctx.stroke();
 
         ctx.fillStyle = '#475569';
-        ctx.font = 'bold 18px monospace';
-        ctx.fillText('RFID CHIP UID:', 380, currY + 28);
+        ctx.font = `bold ${18 * s}px monospace`;
+        ctx.fillText('RFID CHIP UID:', 380 * s, currY + (28 * s));
         ctx.fillStyle = '#059669';
-        ctx.font = 'bold 44px monospace';
-        ctx.fillText(member.rfidUid, 380, currY + 62);
+        ctx.font = `bold ${44 * s}px monospace`;
+        ctx.fillText(member.rfidUid, 380 * s, currY + (62 * s));
       }
 
       // ==========================================
@@ -367,103 +389,103 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           ctx.fillRect(0, 0, width, height);
         }
 
-        let textStartX = 45;
-        if (logoImg) {
-          ctx.drawImage(logoImg, 45, 20, 80, 80);
-          textStartX = 145;
+        let textStartX = 45 * s;
+        if (activeLogoImg) {
+          ctx.drawImage(activeLogoImg, 45 * s, 20 * s, 80 * s, 80 * s);
+          textStartX = 145 * s;
         }
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 30px sans-serif';
-        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), textStartX, 58);
+        ctx.font = `bold ${30 * s}px sans-serif`;
+        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), textStartX, 58 * s);
 
         ctx.fillStyle = '#fbbf24';
-        ctx.font = 'bold 20px sans-serif';
-        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), textStartX, 88);
+        ctx.font = `bold ${20 * s}px sans-serif`;
+        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), textStartX, 88 * s);
 
         ctx.fillStyle = '#34d399';
-        ctx.font = 'bold 20px monospace';
-        ctx.fillText('⚡ SMART RFID', width - 210, 58);
+        ctx.font = `bold ${20 * s}px monospace`;
+        ctx.fillText('⚡ SMART RFID', (1011 - 210) * s, 58 * s);
 
         ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3 * s;
         ctx.beginPath();
-        ctx.moveTo(35, 118);
-        ctx.lineTo(width - 35, 118);
+        ctx.moveTo(35 * s, 118 * s);
+        ctx.lineTo((1011 - 35) * s, 118 * s);
         ctx.stroke();
 
-        renderPhotoBox(45, 138, 255, 330, '#fbbf24');
+        renderUltraPhotoBox(45, 138, 255, 330, '#fbbf24');
 
-        const tX = 330;
-        let currY = 185;
+        const tX = 330 * s;
+        let currY = 185 * s;
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 42px sans-serif';
+        ctx.font = `bold ${42 * s}px sans-serif`;
         ctx.fillText(member.name, tX, currY);
 
-        currY += 45;
+        currY += 45 * s;
         ctx.fillStyle = '#fbbf24';
-        ctx.font = 'bold 28px sans-serif';
+        ctx.font = `bold ${28 * s}px sans-serif`;
         ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, tX, currY);
 
-        currY += 38;
+        currY += 38 * s;
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = 'bold 26px sans-serif';
+        ctx.font = `bold ${26 * s}px sans-serif`;
         ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, tX, currY);
 
-        currY += 36;
+        currY += 36 * s;
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = '22px sans-serif';
+        ctx.font = `22 ${s}px sans-serif`;
         ctx.fillText(`Alamat 1 : ${line1Address}`, tX, currY);
 
-        currY += 28;
+        currY += 28 * s;
         ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 20px sans-serif';
+        ctx.font = `bold ${20 * s}px sans-serif`;
         ctx.fillText(`Kota/Kab : ${line2Address}`, tX, currY);
 
-        currY += 30;
+        currY += 30 * s;
         ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
-        ctx.roundRect(tX, currY, 420, 48, 12);
+        ctx.roundRect(tX, currY, 420 * s, 48 * s, 12 * s);
         ctx.fill();
         ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 1.5;
-        ctx.roundRect(tX, currY, 420, 48, 12);
+        ctx.lineWidth = 1.5 * s;
+        ctx.roundRect(tX, currY, 420 * s, 48 * s, 12 * s);
         ctx.stroke();
 
         ctx.fillStyle = '#fbbf24';
-        ctx.font = 'bold 24px sans-serif';
-        ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, tX + 15, currY + 32);
+        ctx.font = `bold ${24 * s}px sans-serif`;
+        ctx.fillText(`🏆 Duta Baca: ${member.badge || 'Pembaca Baru 🌱'}`, tX + (15 * s), currY + (32 * s));
 
-        const fY = 500;
+        const fY = 500 * s;
         ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 * s;
         ctx.beginPath();
-        ctx.moveTo(35, fY);
-        ctx.lineTo(width - 35, fY);
+        ctx.moveTo(35 * s, fY);
+        ctx.lineTo((1011 - 35) * s, fY);
         ctx.stroke();
 
         ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 18px monospace';
-        ctx.fillText('KODE CHIP RFID (UID ANGGOTA)', 45, fY + 32);
+        ctx.font = `bold ${18 * s}px monospace`;
+        ctx.fillText('KODE CHIP RFID (UID ANGGOTA)', 45 * s, fY + (32 * s));
 
         ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
-        ctx.roundRect(45, fY + 42, 440, 65, 14);
+        ctx.roundRect(45 * s, fY + (42 * s), 440 * s, 65 * s, 14 * s);
         ctx.fill();
         ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 2;
-        ctx.roundRect(45, fY + 42, 440, 65, 14);
+        ctx.lineWidth = 2 * s;
+        ctx.roundRect(45 * s, fY + (42 * s), 440 * s, 65 * s, 14 * s);
         ctx.stroke();
 
         ctx.fillStyle = '#34d399';
-        ctx.font = 'bold 46px monospace';
-        ctx.fillText(member.rfidUid, 65, fY + 90);
+        ctx.font = `bold ${46 * s}px monospace`;
+        ctx.fillText(member.rfidUid, 65 * s, fY + (90 * s));
 
         ctx.fillStyle = '#fbbf24';
-        ctx.font = 'bold 22px sans-serif';
-        ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', width - 440, fY + 62);
+        ctx.font = `bold ${22 * s}px sans-serif`;
+        ctx.fillText('KARTU ANGGOTA PERPUSTAKAAN', (1011 - 440) * s, fY + (62 * s));
         ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 18px sans-serif';
-        ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', width - 440, fY + 92);
+        ctx.font = `bold ${18 * s}px sans-serif`;
+        ctx.fillText('RESI DIGITAL & VALIDASI CHIP OK', (1011 - 440) * s, fY + (92 * s));
       }
 
       // ==========================================
@@ -473,92 +495,92 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.fillStyle = '#172554';
         ctx.fillRect(0, 0, width, height);
 
-        if (logoImg) {
-          ctx.drawImage(logoImg, 50, 25, 85, 85);
+        if (activeLogoImg) {
+          ctx.drawImage(activeLogoImg, 50 * s, 25 * s, 85 * s, 85 * s);
         }
 
         ctx.fillStyle = '#fde047';
-        ctx.font = 'bold 30px serif';
-        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), 155, 60);
+        ctx.font = `bold ${30 * s}px serif`;
+        ctx.fillText((settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI").toUpperCase(), 155 * s, 60 * s);
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 20px serif';
-        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), 155, 90);
+        ctx.font = `bold ${20 * s}px serif`;
+        ctx.fillText((settings?.libraryName || 'MAKTABAH AL-QIRO\'AH').toUpperCase(), 155 * s, 90 * s);
 
         ctx.strokeStyle = '#eab308';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3 * s;
         ctx.beginPath();
-        ctx.moveTo(35, 118);
-        ctx.lineTo(width - 35, 118);
+        ctx.moveTo(35 * s, 118 * s);
+        ctx.lineTo((1011 - 35) * s, 118 * s);
         ctx.stroke();
 
-        renderPhotoBox(45, 138, 255, 330, '#eab308');
+        renderUltraPhotoBox(45, 138, 255, 330, '#eab308');
 
-        const tX = 330;
-        let currY = 185;
+        const tX = 330 * s;
+        let currY = 185 * s;
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 42px sans-serif';
+        ctx.font = `bold ${42 * s}px sans-serif`;
         ctx.fillText(member.name, tX, currY);
 
-        currY += 45;
+        currY += 45 * s;
         ctx.fillStyle = '#fde047';
-        ctx.font = 'bold 28px sans-serif';
+        ctx.font = `bold ${28 * s}px sans-serif`;
         ctx.fillText(`${classLabelText} : ${member.role || 'Siswa'} - ${member.classGrade || 'Umum'}`, tX, currY);
 
-        currY += 38;
+        currY += 38 * s;
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = 'bold 26px sans-serif';
+        ctx.font = `bold ${26 * s}px sans-serif`;
         ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, tX, currY);
 
-        currY += 36;
+        currY += 36 * s;
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = '22px sans-serif';
+        ctx.font = `22 ${s}px sans-serif`;
         ctx.fillText(`Alamat 1 : ${line1Address}`, tX, currY);
 
-        currY += 28;
+        currY += 28 * s;
         ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 20px sans-serif';
+        ctx.font = `bold ${20 * s}px sans-serif`;
         ctx.fillText(`Kota/Kab : ${line2Address}`, tX, currY);
 
-        currY += 30;
+        currY += 30 * s;
         ctx.fillStyle = 'rgba(234, 179, 8, 0.25)';
-        ctx.roundRect(tX, currY, 420, 48, 12);
+        ctx.roundRect(tX, currY, 420 * s, 48 * s, 12 * s);
         ctx.fill();
 
         ctx.fillStyle = '#fde047';
-        ctx.font = 'bold 24px serif';
-        ctx.fillText(`👑 ${member.badge || 'Pembaca Utama ⭐'}`, tX + 15, currY + 32);
+        ctx.font = `bold ${24 * s}px serif`;
+        ctx.fillText(`👑 ${member.badge || 'Pembaca Utama ⭐'}`, tX + (15 * s), currY + (32 * s));
 
-        const fY = 500;
+        const fY = 500 * s;
         ctx.strokeStyle = '#eab308';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 * s;
         ctx.beginPath();
-        ctx.moveTo(35, fY);
-        ctx.lineTo(width - 35, fY);
+        ctx.moveTo(35 * s, fY);
+        ctx.lineTo((1011 - 35) * s, fY);
         ctx.stroke();
 
         ctx.fillStyle = '#34d399';
-        ctx.font = 'bold 46px monospace';
-        ctx.fillText(`UID: ${member.rfidUid}`, 45, fY + 70);
+        ctx.font = `bold ${46 * s}px monospace`;
+        ctx.fillText(`UID: ${member.rfidUid}`, 45 * s, fY + (70 * s));
 
         ctx.fillStyle = '#fde047';
-        ctx.font = 'bold 22px serif';
-        ctx.fillText('KARTU RESMI ANGGOTA PERPUSTAKAAN', width - 460, fY + 70);
+        ctx.font = `bold ${22 * s}px serif`;
+        ctx.fillText('KARTU RESMI ANGGOTA PERPUSTAKAAN', (1011 - 460) * s, fY + (70 * s));
       }
 
       // ==========================================
       // FINE 1PX CROP GUIDELINES FOR CUTTING STICKERS
       // ==========================================
       ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 1;
-      ctx.roundRect(1, 1, width - 2, height - 2, 32);
+      ctx.lineWidth = 2;
+      ctx.roundRect(2, 2, width - 4, height - 4, 32 * s);
       ctx.stroke();
 
       // Corner crop marks
-      const cLen = 25;
+      const cLen = 25 * s;
       ctx.strokeStyle = '#64748b';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 3;
 
       ctx.beginPath(); ctx.moveTo(0, cLen); ctx.lineTo(0, 0); ctx.lineTo(cLen, 0); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(width - cLen, 0); ctx.lineTo(width, 0); ctx.lineTo(width, cLen); ctx.stroke();
@@ -568,8 +590,8 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
       // Trigger High Quality PNG Download
       const link = document.createElement('a');
       const cleanName = member.name.replace(/[^a-zA-Z0-9]/g, '_');
-      link.download = `Kartu_RFID_${cleanName}_${member.rfidUid}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.download = `Kartu_RFID_UltraHD_${cleanName}_${member.rfidUid}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
     });
   };
@@ -664,6 +686,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, borderBottom: (selectedTemplate === 'clean_corporate' || selectedTemplate === 'vertical_split') ? '2px solid #0284c7' : '2px solid rgba(245, 158, 11, 0.6)', paddingBottom: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <img 
+                  ref={logoDomRef}
                   src={settings?.schoolLogoUrl || settings?.logoUrl || '/perpustakaansmart.png'} 
                   alt="Logo" 
                   style={{ width: '42px', height: '42px', objectFit: 'contain' }} 
@@ -699,38 +722,22 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                 justifyContent: 'center',
                 overflow: 'hidden'
               }}>
-                {member.avatar ? (
-                  <img 
-                    src={member.avatar}
-                    alt={member.name}
-                    style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }}
-                    onError={e => {
-                      e.target.style.display = 'none';
-                      if (e.target.parentNode) {
-                        e.target.parentNode.innerText = member.name.charAt(0).toUpperCase();
-                        e.target.parentNode.style.fontSize = '3rem';
-                        e.target.parentNode.style.fontWeight = 'bold';
-                        e.target.parentNode.style.color = '#0284c7';
-                        e.target.parentNode.style.background = '#e0f2fe';
-                      }
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '8px',
-                    background: '#e0f2fe',
-                    color: '#0284c7',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '2.8rem',
-                    fontWeight: 'bold'
-                  }}>
-                    {member.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <img 
+                  ref={photoDomRef}
+                  src={member.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(member.name)}`}
+                  alt={member.name}
+                  style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }}
+                  onError={e => {
+                    e.target.style.display = 'none';
+                    if (e.target.parentNode) {
+                      e.target.parentNode.innerText = member.name.charAt(0).toUpperCase();
+                      e.target.parentNode.style.fontSize = '3rem';
+                      e.target.parentNode.style.fontWeight = 'bold';
+                      e.target.parentNode.style.color = '#0284c7';
+                      e.target.parentNode.style.background = '#e0f2fe';
+                    }
+                  }}
+                />
               </div>
 
               {/* Member Information Details (2-Line Address Included) */}
@@ -792,7 +799,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            ✨ <strong>Diperbaiki 100%:</strong> Pasfoto siswa pada template <strong>Modern Vertical Split</strong> kini selalu tampil utuh & terlindungi dengan *Siluet / Inisial Nama Siswa* saat didownload!
+            🚀 <strong>Super Ultra HD 600 DPI (2426 x 1530 px):</strong> Kualitas gambar tajam tanpa pecah saat dizoom di CorelDraw + Pasfoto terhubung dari DOM Image!
           </div>
 
         </div>
