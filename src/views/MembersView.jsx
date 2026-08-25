@@ -1,40 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Users, 
-  Plus, 
+  UserPlus, 
   Search, 
-  CreditCard, 
-  Printer, 
-  Radio, 
   Edit, 
   Trash2, 
+  CreditCard, 
   X, 
-  DollarSign, 
   FileSpreadsheet, 
   Download, 
   Upload,
+  PlusCircle,
+  Radio,
+  Printer,
+  Sparkles,
+  FolderOpen,
+  Image as ImageIcon,
   CheckCircle2
 } from 'lucide-react';
-import { saveMember, deleteMember, updateMemberBalance, importMembersCSV, clearAllData } from '../services/db';
-import { playSoundEffect } from '../services/audioService';
+import { saveMember, deleteMember, updateMemberBalance, importMembersCSV } from '../services/db';
 
 export default function MembersView({ 
   members, 
   onRefreshData, 
-  onOpenCardPrinter, 
+  onOpenCardPrinter,
   prefilledUidToRegister,
-  onClearPrefilledUid 
+  onClearPrefilledUid
 }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  
-  const [selectedMemberForTopup, setSelectedMemberForTopup] = useState(null);
-  const [topupAmount, setTopupAmount] = useState(10000);
   const [csvText, setCsvText] = useState('');
-  const [scanNotification, setScanNotification] = useState(null);
 
+  const [topUpData, setTopUpData] = useState({ memberId: '', name: '', amount: 10000 });
   const [formData, setFormData] = useState({
     id: '',
     rfidUid: '',
@@ -43,105 +42,134 @@ export default function MembersView({
     classGrade: 'X MIPA 1',
     nisn: '',
     email: '',
-    phone: '081234567890',
+    phone: '',
     balance: 10000,
+    points: 10,
+    badge: 'Pembaca Baru 🌱',
+    avatar: ''
   });
-
-  // Listen to global RFID scan event when Add Member modal is open
-  useEffect(() => {
-    const handleRfidScanInModal = (e) => {
-      const { rfidUid } = e.detail;
-      if (isAddModalOpen && rfidUid) {
-        setFormData(prev => ({ ...prev, rfidUid: rfidUid }));
-        playSoundEffect('scan');
-        setScanNotification(`Kode UID Kartu ${rfidUid} berhasil dibaca!`);
-        setTimeout(() => setScanNotification(null), 4000);
-      }
-    };
-
-    window.addEventListener('rfid-scanned', handleRfidScanInModal);
-    return () => window.removeEventListener('rfid-scanned', handleRfidScanInModal);
-  }, [isAddModalOpen]);
-
-  // Handle prefilled UID from Kiosk View
-  useEffect(() => {
-    if (prefilledUidToRegister) {
-      setFormData({
-        id: '',
-        rfidUid: prefilledUidToRegister,
-        name: '',
-        role: 'Siswa',
-        classGrade: 'X MIPA 1',
-        nisn: Math.floor(1000000000 + Math.random() * 9000000000).toString(),
-        email: '',
-        phone: '081234567890',
-        balance: 10000,
-      });
-      setIsAddModalOpen(true);
-      if (onClearPrefilledUid) onClearPrefilledUid();
-    }
-  }, [prefilledUidToRegister]);
 
   const filteredMembers = members.filter(m => 
     m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.classGrade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.rfidUid.toLowerCase().includes(searchTerm.toLowerCase())
+    m.rfidUid.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (m.nisn && m.nisn.includes(searchTerm))
   );
 
-  const handleOpenAdd = (memberToEdit = null) => {
-    if (memberToEdit) {
-      setFormData({ ...memberToEdit });
+  // Compress local student photo upload to lightweight 20KB thumbnail
+  const handleLocalPhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 250;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        setFormData(prev => ({ ...prev, avatar: compressedDataUrl }));
+      };
+      img.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGenerateAvatar = () => {
+    const robotAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(formData.name || 'Student')}`;
+    setFormData(prev => ({ ...prev, avatar: robotAvatar }));
+  };
+
+  const handleOpenModal = (member = null) => {
+    if (member) {
+      setFormData({ ...member });
     } else {
       setFormData({
         id: '',
-        rfidUid: '',
+        rfidUid: prefilledUidToRegister || `RFID-${Math.floor(1000 + Math.random() * 9000)}`,
         name: '',
         role: 'Siswa',
         classGrade: 'X MIPA 1',
-        nisn: Math.floor(1000000000 + Math.random() * 9000000000).toString(),
+        nisn: `${Math.floor(1000000000 + Math.random() * 9000000000)}`,
         email: '',
-        phone: '081234567890',
+        phone: '08123456789',
         balance: 10000,
+        points: 10,
+        badge: 'Pembaca Baru 🌱',
+        avatar: ''
       });
     }
-    setIsAddModalOpen(true);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    if (onClearPrefilledUid) onClearPrefilledUid();
   };
 
   const handleSave = (e) => {
-    if (e) e.preventDefault();
-    if (!formData.name.trim() || !formData.rfidUid.trim()) {
-      alert('Nama Siswa dan UID RFID wajib diisi! Tempelkan kartu RFID Anda untuk mengisi UID.');
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!formData.name || !formData.name.trim()) {
+      alert('Nama Siswa / Anggota wajib diisi!');
       return;
     }
-    saveMember(formData);
+    if (!formData.rfidUid || !formData.rfidUid.trim()) {
+      alert('Kode RFID UID Kartu Fisik wajib diisi!');
+      return;
+    }
+
+    const finalAvatar = (formData.avatar && formData.avatar.trim())
+      ? formData.avatar.trim()
+      : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(formData.name)}`;
+
+    const memberToSave = { ...formData, avatar: finalAvatar };
+
+    saveMember(memberToSave);
     onRefreshData();
-    setIsAddModalOpen(false);
-    playSoundEffect('success');
-    alert(`BERHASIL! Siswa "${formData.name}" dengan Kartu RFID (${formData.rfidUid}) telah terdaftar.`);
+    handleCloseModal();
+    alert(`BERHASIL! Anggota "${memberToSave.name}" (${memberToSave.classGrade}) telah tersimpan.`);
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Yakin ingin menghapus anggota ini?')) {
+    if (window.confirm('Yakin ingin menghapus anggota ini dari database?')) {
       deleteMember(id);
       onRefreshData();
     }
   };
 
-  const handleClearAllSample = () => {
-    if (window.confirm('PERINGATAN: Apakah Anda yakin ingin MENGHAPUS SEMUA DATA ANGGOTA & DUMMY SAMPLE? Data akan dikosongkan agar Anda dapat mengimpor data asli.')) {
-      clearAllData();
-      onRefreshData();
-      alert('Seluruh data sample berhasil dikosongkan! Database siap diimpor.');
-    }
+  const handleOpenTopUp = (member) => {
+    setTopUpData({ memberId: member.id, name: member.name, amount: 10000 });
+    setIsTopUpOpen(true);
   };
 
-  const handleTopup = (e) => {
+  const handleSaveTopUp = (e) => {
     e.preventDefault();
-    if (!selectedMemberForTopup) return;
-    updateMemberBalance(selectedMemberForTopup.id, Number(topupAmount));
+    if (topUpData.amount <= 0) return;
+    updateMemberBalance(topUpData.memberId, topUpData.amount);
     onRefreshData();
-    setIsTopupModalOpen(false);
-    alert(`Berhasil isi saldo Rp ${Number(topupAmount).toLocaleString('id-ID')} untuk ${selectedMemberForTopup.name}`);
+    setIsTopUpOpen(false);
+    alert(`Isi ulang saldo kartu Rp ${topUpData.amount.toLocaleString('id-ID')} untuk ${topUpData.name} BERHASIL!`);
   };
 
   const handleFileUpload = (e) => {
@@ -156,7 +184,7 @@ export default function MembersView({
 
   const handleProcessImport = () => {
     if (!csvText.trim()) {
-      alert('Silakan pilih file CSV/Excel atau tempelkan teks CSV!');
+      alert('Silakan pilih file CSV atau tempelkan teks CSV!');
       return;
     }
     try {
@@ -164,142 +192,170 @@ export default function MembersView({
       onRefreshData();
       setIsImportModalOpen(false);
       setCsvText('');
-      alert(`BERHASIL! ${count} data siswa dari aplikasi presensi Anda telah diimpor dan terdaftar di perpustakaan!`);
+      alert(`BERHASIL! ${count} data anggota telah berhasil diimpor!`);
     } catch (err) {
       alert(err.message);
     }
   };
 
   const downloadSampleCSV = () => {
-    const csvContent = "Nama,Kelas,RFID_UID,NISN,Saldo\n" +
-      "Ahmad Fauzi,XII IPA 1,RFID-1001,0051239841,25000\n" +
-      "Siti Rahmawati,XI IPS 2,RFID-1002,0068741235,15000\n" +
-      "Budi Santoso,X MIPA 3,RFID-1003,0071122334,5000\n";
+    const csvContent = "Nama,RFID,Kelas,NISN,Peran,Saldo\n" +
+      "Ahmad Fauzi,RFID-1001,XII IPA 1,0051239841,Siswa,25000\n" +
+      "Siti Rahmawati,RFID-1002,XI IPS 2,0068741235,Siswa,15000\n" +
+      "Dra. Hj. Nurhayati,RFID-1004,Guru Bahasa Indonesia,197508122001122001,Guru,100000\n";
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'template_import_siswa_rfid.csv';
+    a.download = 'template_import_anggota_rfid.csv';
     a.click();
   };
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
       
+      {/* Registered Unregistered Card Alert Banner */}
+      {prefilledUidToRegister && (
+        <div style={{
+          background: 'rgba(245, 158, 11, 0.15)',
+          border: '1px solid #f59e0b',
+          borderRadius: 'var(--radius-md)',
+          padding: '14px 20px',
+          marginBottom: '24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Radio size={24} color="#f59e0b" />
+            <div>
+              <strong style={{ color: '#fbbf24' }}>KARTU RFID BARU TERDETEKSI: {prefilledUidToRegister}</strong>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Kartu ini belum terdaftar. Klik tombol "+ Daftarkan Kartu Ini Sekarang" untuk menghubungkannya dengan siswa!
+              </div>
+            </div>
+          </div>
+          <button onClick={() => handleOpenModal()} className="btn btn-emerald">
+            + Daftarkan Kartu Ini Sekarang
+          </button>
+        </div>
+      )}
+
+      {/* Main Glass Container */}
       <div className="glass-card" style={{ padding: '24px' }}>
         
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
           <div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Users color="#3b82f6" /> Managemen Anggota & Integrasi Data Presensi RFID
+              <Users color="#3b82f6" /> Managemen Anggota, Foto Siswa & Kartu RFID
             </h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
-              Impor data siswa dari aplikasi presensi Anda via CSV/Excel atau daftarkan kartu RFID baru.
+              Registrasi foto siswa asli, pemetaan chip RFID, top up saldo dompet digital, & cetak kartu ID fisik.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <button onClick={() => setIsImportModalOpen(true)} className="btn btn-emerald">
-              <FileSpreadsheet size={16} /> Import Data Presensi Siswa (CSV/Excel)
+              <FileSpreadsheet size={16} /> Import Data CSV / Excel
             </button>
-            <button onClick={() => handleOpenAdd()} className="btn btn-primary">
-              <Plus size={16} /> Registrasi Anggota RFID Baru
+            <button onClick={() => handleOpenModal()} className="btn btn-primary">
+              <UserPlus size={16} /> Registrasi Anggota Baru
             </button>
           </div>
         </div>
 
-        {/* Search & Actions Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
-            <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input 
-              type="text"
-              className="form-input"
-              placeholder="Cari nama anggota, kelas, NISN, atau RFID UID..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              style={{ paddingLeft: '40px' }}
-            />
-          </div>
-
-          <button onClick={handleClearAllSample} className="btn btn-rose" style={{ fontSize: '0.8rem' }}>
-            <Trash2 size={14} /> Kosongkan Data Sample
-          </button>
+        {/* Search Bar */}
+        <div style={{ position: 'relative', marginBottom: '20px' }}>
+          <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input 
+            type="text"
+            className="form-input"
+            placeholder="Cari nama siswa, kelas, NISN, atau Kode UID Kartu RFID..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{ paddingLeft: '40px' }}
+          />
         </div>
 
         {/* Table */}
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                <th style={{ padding: '12px' }}>Foto & Nama Siswa</th>
-                <th style={{ padding: '12px' }}>Peran / Kelas</th>
-                <th style={{ padding: '12px' }}>RFID UID</th>
+                <th style={{ padding: '12px' }}>Foto & Nama Siswa/Guru</th>
+                <th style={{ padding: '12px' }}>Kelas / Peran</th>
+                <th style={{ padding: '12px' }}>Kode Kartu RFID (UID)</th>
                 <th style={{ padding: '12px' }}>Saldo RFID</th>
-                <th style={{ padding: '12px' }}>Poin Membaca</th>
-                <th style={{ padding: '12px', textAlign: 'right' }}>Aksi Pustakawan</th>
+                <th style={{ padding: '12px' }}>Poin Literasi</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>Aksi & Cetak Kartu</th>
               </tr>
             </thead>
             <tbody>
               {filteredMembers.length === 0 ? (
                 <tr>
                   <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-                    Belum ada data siswa terdaftar. Klik tombol <strong>"+ Registrasi Anggota RFID Baru"</strong> atau <strong>"Import Data Presensi Siswa (CSV/Excel)"</strong> untuk menambah siswa!
+                    Belum ada data anggota yang cocok dengan pencarian Anda.
                   </td>
                 </tr>
               ) : (
                 filteredMembers.map(m => (
                   <tr key={m.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <img src={m.avatar} alt={m.name} style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1e293b' }} />
+                    <td style={{ padding: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <img 
+                        src={m.avatar} 
+                        alt={m.name} 
+                        style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', background: '#1e293b', border: '2px solid var(--border-color)' }} 
+                      />
                       <div>
-                        <div>{m.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>NISN: {m.nisn}</div>
+                        <div style={{ fontSize: '0.95rem' }}>{m.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>NISN: {m.nisn || '-'}</div>
                       </div>
                     </td>
                     <td style={{ padding: '12px' }}>
-                      <span className={`badge ${m.role === 'Guru' ? 'badge-purple' : 'badge-blue'}`}>{m.classGrade}</span>
+                      <div>{m.classGrade}</div>
+                      <span className="badge badge-purple" style={{ fontSize: '0.7rem', marginTop: '2px' }}>{m.role}</span>
                     </td>
-                    <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', color: '#34d399', fontWeight: 700 }}>
+                    <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#34d399' }}>
                       {m.rfidUid}
                     </td>
-                    <td style={{ padding: '12px', fontWeight: 700, color: '#34d399' }}>
-                      Rp {m.balance.toLocaleString('id-ID')}
+                    <td style={{ padding: '12px', fontWeight: 700 }}>
+                      Rp {(m.balance || 0).toLocaleString('id-ID')}
                     </td>
-                    <td style={{ padding: '12px', fontWeight: 700, color: '#fbbf24' }}>
-                      {m.points} pts
+                    <td style={{ padding: '12px' }}>
+                      <div style={{ fontWeight: 800, color: '#fbbf24' }}>{m.points || 0} pts</div>
+                      <div style={{ fontSize: '0.72rem', opacity: 0.8 }}>{m.badge || 'Pembaca Aktif ⭐'}</div>
                     </td>
                     <td style={{ padding: '12px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                        <button 
-                          onClick={() => { setSelectedMemberForTopup(m); setIsTopupModalOpen(true); }}
-                          className="btn btn-emerald"
-                          style={{ fontSize: '0.78rem', padding: '6px 10px' }}
-                          title="Top-up Saldo Kartu"
-                        >
-                          <DollarSign size={14} /> Top-Up
-                        </button>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                         <button 
                           onClick={() => onOpenCardPrinter(m)}
-                          className="btn btn-secondary"
+                          className="btn btn-emerald"
                           style={{ fontSize: '0.78rem', padding: '6px 10px' }}
-                          title="Cetak Kartu RFID"
+                          title="Cetak Kartu Tanda Anggota RFID PVC"
                         >
-                          <Printer size={14} /> Kartu
+                          <Printer size={14} /> Cetak Kartu
                         </button>
                         <button 
-                          onClick={() => handleOpenAdd(m)}
-                          className="btn btn-secondary"
+                          onClick={() => handleOpenTopUp(m)}
+                          className="btn btn-primary"
                           style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                          title="Isi Ulang Saldo Dompet RFID"
+                        >
+                          <CreditCard size={14} /> Top Up
+                        </button>
+                        <button 
+                          onClick={() => handleOpenModal(m)}
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.78rem', padding: '6px 8px' }}
                         >
                           <Edit size={14} />
                         </button>
                         <button 
                           onClick={() => handleDelete(m.id)}
                           className="btn btn-rose"
-                          style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                          style={{ fontSize: '0.78rem', padding: '6px 8px' }}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -314,25 +370,77 @@ export default function MembersView({
 
       </div>
 
-      {/* IMPORT MEMBERS CSV MODAL */}
-      {isImportModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-container" style={{ maxWidth: '600px' }}>
+      {/* TOP UP BALANCE MODAL */}
+      {isTopUpOpen && (
+        <div className="modal-overlay" onClick={() => setIsTopUpOpen(false)}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
             <div className="modal-header">
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FileSpreadsheet color="#10b981" /> Import Data Siswa dari Aplikasi Presensi RFID
+                <CreditCard color="#3b82f6" /> Top Up Saldo Kartu RFID
               </h3>
-              <button onClick={() => setIsImportModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={18}/></button>
+              <button onClick={() => setIsTopUpOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}><X size={18}/></button>
+            </div>
+            <form onSubmit={handleSaveTopUp}>
+              <div className="modal-body">
+                <p style={{ fontSize: '0.9rem', marginBottom: '16px' }}>
+                  Isi ulang saldo dompet RFID untuk: <strong style={{ color: '#34d399' }}>{topUpData.name}</strong>
+                </p>
+
+                <div className="form-group">
+                  <label className="form-label">Nominal Top Up (Rp) *</label>
+                  <input 
+                    type="number"
+                    className="form-input"
+                    value={topUpData.amount}
+                    onChange={e => setTopUpData({ ...topUpData, amount: Number(e.target.value) })}
+                    step="5000"
+                    min="1000"
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[10000, 20000, 50000, 100000].map(amt => (
+                    <button 
+                      key={amt} 
+                      type="button" 
+                      onClick={() => setTopUpData({ ...topUpData, amount: amt })}
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.78rem', flex: 1 }}
+                    >
+                      +Rp {amt.toLocaleString('id-ID')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsTopUpOpen(false)}>Batal</button>
+                <button type="submit" className="btn btn-primary">Simpan Saldo</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* IMPORT MEMBERS CSV MODAL */}
+      {isImportModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsImportModalOpen(false)}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileSpreadsheet color="#10b981" /> Import Data Anggota dari CSV / Excel
+              </h3>
+              <button onClick={() => setIsImportModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}><X size={18}/></button>
             </div>
             <div className="modal-body">
               
               <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                Unggah file **CSV / Excel** hasil export dari aplikasi presensi RFID Anda. Kolom yang dibutuhkan minimal memiliki judul **`Nama`** dan **`RFID`** (atau UID).
+                Unggah file **CSV / Excel** daftar siswa/guru Anda. Kolom yang dibutuhkan minimal memiliki judul **`Nama`** dan **`RFID`** (kode UID).
               </p>
 
               <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
                 <button onClick={downloadSampleCSV} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>
-                  <Download size={14} /> Download Format Contoh CSV
+                  <Download size={14} /> Download Format Contoh CSV Anggota
                 </button>
               </div>
 
@@ -347,11 +455,11 @@ export default function MembersView({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Atau Paste / Tempelkan Isi Teks CSV Di Sini:</label>
+                <label className="form-label">Atau Paste / Tempelkan Teks CSV Di Sini:</label>
                 <textarea 
                   className="form-textarea"
                   rows="5"
-                  placeholder="Nama,Kelas,RFID_UID,NISN&#10;Ahmad Fauzi,XII IPA 1,0004928120,0051239841..."
+                  placeholder="Nama,RFID,Kelas,NISN,Peran,Saldo&#10;Ahmad Fauzi,RFID-1001,XII IPA 1,0051239841,Siswa,25000..."
                   value={csvText}
                   onChange={e => setCsvText(e.target.value)}
                   style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}
@@ -362,48 +470,24 @@ export default function MembersView({
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setIsImportModalOpen(false)}>Batal</button>
               <button className="btn btn-emerald" onClick={handleProcessImport}>
-                <Upload size={16} /> Impor Data Sekarang
+                <Upload size={16} /> Impor Data Anggota
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ADD / EDIT MEMBER MODAL (STAYS OPEN SECURELY) */}
-      {isAddModalOpen && (
+      {/* ADD / EDIT MEMBER MODAL WITH REAL STUDENT PHOTO UPLOAD */}
+      {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-container" style={{ maxWidth: '520px' }}>
+          <div className="modal-container" style={{ maxWidth: '600px' }}>
             <div className="modal-header">
-              <h3 style={{ margin: 0 }}>Form Registrasi Anggota RFID</h3>
-              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={18}/></button>
+              <h3 style={{ margin: 0 }}>Form Registrasi Siswa / Guru & Foto Kartu</h3>
+              <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={18}/></button>
             </div>
             <form onSubmit={handleSave}>
               <div className="modal-body">
                 
-                <div style={{ background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '12px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Radio size={20} color="#60a5fa" className="rfid-pulse" />
-                  <span><strong>Panduan:</strong> Tempelkan kartu RFID Anda pada reader sekarang, nomor UID akan terisi otomatis di bawah!</span>
-                </div>
-
-                {scanNotification && (
-                  <div style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#34d399', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CheckCircle2 size={16} /> {scanNotification}
-                  </div>
-                )}
-
-                <div className="form-group">
-                  <label className="form-label">RFID UID Code (Tempel Kartu Anda) *</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    value={formData.rfidUid}
-                    onChange={e => setFormData({ ...formData, rfidUid: e.target.value })}
-                    placeholder="Tempelkan kartu RFID Anda ke alat..."
-                    required
-                    style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#34d399', fontSize: '1.1rem' }}
-                  />
-                </div>
-
                 <div className="form-group">
                   <label className="form-label">Nama Lengkap Siswa / Guru *</label>
                   <input 
@@ -411,12 +495,120 @@ export default function MembersView({
                     className="form-input" 
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Ketik Nama Siswa..."
+                    placeholder="Masukkan nama siswa..."
                     required
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Kode Chip RFID (UID Kartu Fisik) *</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={formData.rfidUid}
+                      onChange={e => setFormData({ ...formData, rfidUid: e.target.value.toUpperCase() })}
+                      placeholder="Tempelkan kartu ke reader..."
+                      style={{ fontFamily: 'var(--font-mono)', color: '#34d399', fontWeight: 700 }}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Kelas / Jabatan Guru *</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={formData.classGrade}
+                      onChange={e => setFormData({ ...formData, classGrade: e.target.value })}
+                      placeholder="Contoh: XII IPA 1 / Guru"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* REAL STUDENT PHOTO UPLOAD FIELD */}
+                <div className="form-group" style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.3)', marginBottom: '16px' }}>
+                  <label className="form-label" style={{ color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
+                    <ImageIcon size={18} /> Upload Foto Asli Siswa / Guru (Untuk Kartu RFID PVC)
+                  </label>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '8px' }}>
+                    
+                    {/* Photo Preview */}
+                    <div style={{ 
+                      width: '70px', 
+                      height: '70px', 
+                      borderRadius: '50%', 
+                      background: '#1e293b', 
+                      border: '2px solid #34d399',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      flexShrink: 0
+                    }}>
+                      {formData.avatar ? (
+                        <img src={formData.avatar} alt="Photo Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <ImageIcon size={28} color="#34d399" />
+                      )}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: '240px' }}>
+                      <label 
+                        className="btn btn-emerald"
+                        style={{ cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}
+                      >
+                        <FolderOpen size={16} />
+                        <span>Pilih Foto Asli dari Komputer/HP...</span>
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={handleLocalPhotoUpload}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          value={formData.avatar}
+                          onChange={e => setFormData({ ...formData, avatar: e.target.value })}
+                          placeholder="Atau paste URL foto / buat avatar robot..."
+                          style={{ fontSize: '0.78rem' }}
+                        />
+                        <button 
+                          type="button"
+                          onClick={handleGenerateAvatar}
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                          title="Buat Avatar Robot Otomatis"
+                        >
+                          <Sparkles size={14} /> Avatar Robot
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                        Foto asli yang diunggah akan **otomatis tercetak di Kartu Pelajar RFID**!
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">NISN / NIP</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={formData.nisn}
+                      onChange={e => setFormData({ ...formData, nisn: e.target.value })}
+                      placeholder="Nomor Induk Siswa..."
+                    />
+                  </div>
+
                   <div className="form-group">
                     <label className="form-label">Peran</label>
                     <select 
@@ -426,104 +618,26 @@ export default function MembersView({
                     >
                       <option value="Siswa">Siswa</option>
                       <option value="Guru">Guru</option>
-                      <option value="Staf">Staf Perpustakaan</option>
+                      <option value="Staf / Karyawan">Staf / Karyawan</option>
                     </select>
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Kelas / Jabatan</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      value={formData.classGrade}
-                      onChange={e => setFormData({ ...formData, classGrade: e.target.value })}
-                      placeholder="Contoh: XII IPA 1"
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="form-group">
-                    <label className="form-label">NISN / NIP</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      value={formData.nisn}
-                      onChange={e => setFormData({ ...formData, nisn: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Saldo Awal RFID (Rp)</label>
+                    <label className="form-label">Saldo Awal Kartu (Rp)</label>
                     <input 
                       type="number" 
                       className="form-input" 
                       value={formData.balance}
                       onChange={e => setFormData({ ...formData, balance: Number(e.target.value) })}
+                      step="5000"
                     />
                   </div>
                 </div>
 
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsAddModalOpen(false)}>Batal</button>
-                <button type="button" className="btn btn-emerald" onClick={handleSave}>Simpan Anggota Baru</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* TOP-UP SALDO MODAL */}
-      {isTopupModalOpen && selectedMemberForTopup && (
-        <div className="modal-overlay">
-          <div className="modal-container" style={{ maxWidth: '420px' }}>
-            <div className="modal-header">
-              <h3 style={{ margin: 0 }}>Top-Up Saldo E-Wallet RFID</h3>
-              <button onClick={() => setIsTopupModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={18}/></button>
-            </div>
-            <form onSubmit={handleTopup}>
-              <div className="modal-body">
-                <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                  <img src={selectedMemberForTopup.avatar} alt={selectedMemberForTopup.name} style={{ width: '50px', height: '50px', borderRadius: '50%' }} />
-                  <h4 style={{ margin: '6px 0 2px 0' }}>{selectedMemberForTopup.name}</h4>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    Saldo Saat Ini: <strong style={{ color: '#34d399' }}>Rp {selectedMemberForTopup.balance.toLocaleString('id-ID')}</strong>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Nominal Top-Up Saldo (Rp)</label>
-                  <input 
-                    type="number"
-                    className="form-input"
-                    value={topupAmount}
-                    onChange={e => setTopupAmount(Number(e.target.value))}
-                    step="5000"
-                    min="1000"
-                    required
-                    style={{ fontSize: '1.2rem', fontWeight: 700, color: '#34d399' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
-                  {[10000, 20000, 50000, 100000].map(amt => (
-                    <button
-                      type="button"
-                      key={amt}
-                      onClick={() => setTopupAmount(amt)}
-                      className="btn btn-secondary"
-                      style={{ fontSize: '0.78rem', padding: '4px 10px' }}
-                    >
-                      +Rp {amt.toLocaleString('id-ID')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsTopupModalOpen(false)}>Batal</button>
-                <button type="submit" className="btn btn-emerald">Isi Saldo Sekarang</button>
+                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Batal</button>
+                <button type="button" className="btn btn-primary" onClick={handleSave}>Simpan Anggota</button>
               </div>
             </form>
           </div>
