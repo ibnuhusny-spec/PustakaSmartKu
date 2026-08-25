@@ -4,7 +4,7 @@ export const DEFAULT_SETTINGS = {
   schoolName: "SDIT QURRATU A'YUN AL-ISLAMI",
   libraryName: "MAKTABAH AL-QIRO'AH",
   address: "Jalan Poros Makassar - Maros Km. 26 Maccopa",
-  cityAddress: "Kabupaten Maros, Sulawesi Selatan", // Baris 2 Kota/Kabupaten
+  cityAddress: "", // Kosong secara default sampai diisi user di pengaturan
   finePerDay: 1000, // Rp 1.000 / hari
   maxLoanDays: 7,   // 7 Hari
   maxBooksPerStudent: 3,
@@ -14,7 +14,7 @@ export const DEFAULT_SETTINGS = {
   autoAttendanceOnTap: true,
   schoolLogoUrl: "", // Dedicated School Logo
   logoUrl: "/perpustakaansmart.png", // App Logo
-  cardTemplate: "clean_corporate", // Default card template theme: clean_corporate, vertical_split, school_luxury, royal_gold
+  cardTemplate: "clean_corporate", // Default card template theme: clean_corporate, school_luxury, royal_gold
   idFieldLabel: "NISN / NIP", // Custom ID Label
   classFieldLabel: "Peran / Kelas" // Custom Class/Role Label
 };

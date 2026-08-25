@@ -23,7 +23,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
   const classLabelText = settings?.classFieldLabel || 'Peran / Kelas';
 
   const line1Address = settings?.address || 'Jalan Poros Makassar - Maros Km. 26 Maccopa';
-  const line2Address = settings?.cityAddress || 'Kabupaten Maros, Sulawesi Selatan';
+  const line2Address = settings?.cityAddress || '';
 
   // Convert HTML Card to ULTRA HIGH RESOLUTION PNG (2426 x 1530 px @ 600 DPI) for CorelDraw / Sticker Printing
   const handleDownloadPNG = () => {
@@ -194,20 +194,30 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.font = `bold ${26 * s}px sans-serif`;
         ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, tX, currY);
 
-        // Alamat Baris 1 (Dark Slate Bold)
+        // Alamat Seamless 2 Baris (Aligned Under "Jalan")
         currY += 36 * s;
-        ctx.fillStyle = '#334155';
         ctx.font = `bold ${22 * s}px sans-serif`;
-        ctx.fillText(`Alamat 1 : ${line1Address}`, tX, currY);
+        ctx.fillStyle = '#334155';
+        
+        // Draw "Alamat : "
+        const labelPrefix = 'Alamat : ';
+        ctx.fillText(labelPrefix, tX, currY);
+        const labelWidth = ctx.measureText(labelPrefix).width;
 
-        // Alamat Baris 2 Kota/Kab (Deep Navy Bold)
-        currY += 28 * s;
-        ctx.fillStyle = '#0f172a';
-        ctx.font = `bold ${20 * s}px sans-serif`;
-        ctx.fillText(`Kota/Kab : ${line2Address}`, tX, currY);
+        // Draw Line 1 Address
+        ctx.font = `${22 * s}px sans-serif`;
+        ctx.fillText(line1Address, tX + labelWidth, currY);
+
+        // Draw Line 2 Address if filled (Aligned perfectly under Line 1 Address start)
+        if (line2Address && line2Address.trim()) {
+          currY += 28 * s;
+          ctx.font = `bold ${20 * s}px sans-serif`;
+          ctx.fillStyle = '#0f172a';
+          ctx.fillText(line2Address, tX + labelWidth, currY);
+        }
 
         // Duta Baca Badge Box
-        currY += 30 * s;
+        currY += 32 * s;
         ctx.fillStyle = 'rgba(2, 132, 199, 0.1)';
         ctx.roundRect(tX, currY, 420 * s, 48 * s, 12 * s);
         ctx.fill();
@@ -314,17 +324,26 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.font = `bold ${26 * s}px sans-serif`;
         ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, tX, currY);
 
+        // Alamat Seamless 2 Baris (Aligned Under "Jalan")
         currY += 36 * s;
+        ctx.font = `bold ${22 * s}px sans-serif`;
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = `22 ${s}px sans-serif`;
-        ctx.fillText(`Alamat 1 : ${line1Address}`, tX, currY);
+        
+        const labelPrefix = 'Alamat : ';
+        ctx.fillText(labelPrefix, tX, currY);
+        const labelWidth = ctx.measureText(labelPrefix).width;
 
-        currY += 28 * s;
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = `bold ${20 * s}px sans-serif`;
-        ctx.fillText(`Kota/Kab : ${line2Address}`, tX, currY);
+        ctx.font = `${22 * s}px sans-serif`;
+        ctx.fillText(line1Address, tX + labelWidth, currY);
 
-        currY += 30 * s;
+        if (line2Address && line2Address.trim()) {
+          currY += 28 * s;
+          ctx.font = `bold ${20 * s}px sans-serif`;
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(line2Address, tX + labelWidth, currY);
+        }
+
+        currY += 32 * s;
         ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
         ctx.roundRect(tX, currY, 420 * s, 48 * s, 12 * s);
         ctx.fill();
@@ -414,17 +433,26 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
         ctx.font = `bold ${26 * s}px sans-serif`;
         ctx.fillText(`${idLabelText} : ${member.nisn || '00001'}`, tX, currY);
 
+        // Alamat Seamless 2 Baris (Aligned Under "Jalan")
         currY += 36 * s;
+        ctx.font = `bold ${22 * s}px sans-serif`;
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = `22 ${s}px sans-serif`;
-        ctx.fillText(`Alamat 1 : ${line1Address}`, tX, currY);
+        
+        const labelPrefix = 'Alamat : ';
+        ctx.fillText(labelPrefix, tX, currY);
+        const labelWidth = ctx.measureText(labelPrefix).width;
 
-        currY += 28 * s;
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = `bold ${20 * s}px sans-serif`;
-        ctx.fillText(`Kota/Kab : ${line2Address}`, tX, currY);
+        ctx.font = `${22 * s}px sans-serif`;
+        ctx.fillText(line1Address, tX + labelWidth, currY);
 
-        currY += 30 * s;
+        if (line2Address && line2Address.trim()) {
+          currY += 28 * s;
+          ctx.font = `bold ${20 * s}px sans-serif`;
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(line2Address, tX + labelWidth, currY);
+        }
+
+        currY += 32 * s;
         ctx.fillStyle = 'rgba(234, 179, 8, 0.25)';
         ctx.roundRect(tX, currY, 420 * s, 48 * s, 12 * s);
         ctx.fill();
@@ -612,7 +640,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                 />
               </div>
 
-              {/* Member Information Details (2-Line Address Included) */}
+              {/* Member Information Details (Clean Seamless 2-Line Address) */}
               <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#ffffff' }}>
                   {member.name}
@@ -626,10 +654,17 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
                   {idLabelText} : <strong>{member.nisn || '00001'}</strong>
                 </div>
 
-                {/* 2-LINE SEPARATE ADDRESS DISPLAY */}
-                <div style={{ fontSize: '0.68rem', color: selectedTemplate === 'clean_corporate' ? '#334155' : '#cbd5e1', lineHeight: '1.2' }}>
-                  <div>Alamat: {line1Address}</div>
-                  <div style={{ color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#94a3b8', fontWeight: 700 }}>{line2Address}</div>
+                {/* CLEAN SEAMLESS 2-LINE ADDRESS (ALIGNED DIRECTLY UNDER "Jalan") */}
+                <div style={{ fontSize: '0.68rem', color: selectedTemplate === 'clean_corporate' ? '#334155' : '#cbd5e1', lineHeight: '1.25' }}>
+                  <div style={{ display: 'flex' }}>
+                    <span style={{ fontWeight: 800, whiteSpace: 'pre' }}>Alamat : </span>
+                    <span>{line1Address}</span>
+                  </div>
+                  {line2Address && line2Address.trim() !== '' && (
+                    <div style={{ paddingLeft: '52px', color: selectedTemplate === 'clean_corporate' ? '#0f172a' : '#94a3b8', fontWeight: 700 }}>
+                      {line2Address}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{
@@ -671,7 +706,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
           </div>
 
           <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            🚀 <strong>Sistem Kartu Pelajar 3 Template Utama:</strong> Beresolusi Ultra HD 600 DPI (2426 x 1530 px) • 100% Pasfoto Terbukti Cetak Sempurna!
+            ✨ <strong>Diperbaiki Sempurna:</strong> Format alamat menyatu rapi tanpa label <i>"Kota/Kab:"</i> & Baris kedua otomatis rata persis di bawah kata <i>"Jalan"</i>!
           </div>
 
         </div>
