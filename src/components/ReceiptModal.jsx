@@ -32,16 +32,23 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
             WebkitPrintColorAdjust: 'exact',
             printColorAdjust: 'exact'
           }}>
-            {/* Header */}
+            {/* Header with optional School Logo */}
             <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px dashed #94a3b8', paddingBottom: '12px' }}>
+              {settings?.logoUrl && (
+                <img 
+                  src={settings.logoUrl} 
+                  alt="Logo Sekolah" 
+                  style={{ width: '50px', height: '50px', objectFit: 'contain', marginBottom: '6px' }} 
+                />
+              )}
               <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, fontFamily: 'var(--font-main)', color: '#0f172a' }}>
-                {settings.schoolName || 'SDIT Qurratu A\'yun Al-Islami'}
+                {settings?.schoolName || 'SDIT Qurratu A\'yun Al-Islami'}
               </h2>
               <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: '#475569', fontWeight: 600 }}>
-                {settings.libraryName || 'Maktabah Al-Qiro\'ah'}
+                {settings?.libraryName || 'Maktabah Al-Qiro\'ah'}
               </p>
               <p style={{ margin: '2px 0 0 0', fontSize: '0.72rem', color: '#64748b' }}>
-                {settings.address || 'Jl. Raya Pendidikan No. 45, Jakarta'}
+                {settings?.address || 'Jl. Raya Pendidikan No. 45, Jakarta'}
               </p>
             </div>
 

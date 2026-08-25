@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award } from 'lucide-react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault } from '../services/db';
 
 export default function SettingsView({ settings, onRefreshData }) {
@@ -10,7 +10,44 @@ export default function SettingsView({ settings, onRefreshData }) {
     e.preventDefault();
     saveSettings(formData);
     onRefreshData();
-    alert('Pengaturan sekolah & sistem perpustakaan berhasil disimpan!');
+    alert('Pengaturan sekolah, logo, & sistem perpustakaan berhasil disimpan!');
+  };
+
+  // Compress and save custom uploaded logo image to lightweight data URL
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 250;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/png', 0.85);
+        setFormData(prev => ({ ...prev, logoUrl: compressedDataUrl }));
+      };
+      img.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleExport = () => {
@@ -50,7 +87,7 @@ export default function SettingsView({ settings, onRefreshData }) {
         <div className="glass-card" style={{ padding: '28px', marginBottom: '28px' }}>
           
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Settings color="#3b82f6" /> Pengaturan Identitas Sekolah & Sistem Perpustakaan
+            <Settings color="#3b82f6" /> Pengaturan Identitas Sekolah, Logo, & Sistem Perpustakaan
           </h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
@@ -77,6 +114,76 @@ export default function SettingsView({ settings, onRefreshData }) {
                 placeholder="Contoh: Maktabah Al-Qiro'ah"
                 required
               />
+            </div>
+
+            {/* LOGO SCHOOL UPLOAD FIELD */}
+            <div className="form-group" style={{ gridColumn: '1 / -1', background: 'rgba(59, 130, 246, 0.1)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+              <label className="form-label" style={{ color: '#60a5fa', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
+                <ImageIcon size={18} /> Upload Logo Resmi Sekolah / Perpustakaan
+              </label>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '8px' }}>
+                
+                {/* Logo Preview */}
+                <div style={{ 
+                  width: '70px', 
+                  height: '70px', 
+                  borderRadius: '12px', 
+                  background: '#1e293b', 
+                  border: '2px dashed #60a5fa',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden'
+                }}>
+                  {formData.logoUrl ? (
+                    <img src={formData.logoUrl} alt="Logo Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  ) : (
+                    <ImageIcon size={28} color="#60a5fa" />
+                  )}
+                </div>
+
+                <div style={{ flex: 1, minWidth: '240px' }}>
+                  <label 
+                    className="btn btn-primary"
+                    style={{ cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}
+                  >
+                    <FolderOpen size={16} />
+                    <span>Pilih / Upload File Logo dari Komputer/HP...</span>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={formData.logoUrl || ''}
+                      onChange={e => setFormData({ ...formData, logoUrl: e.target.value })}
+                      placeholder="Atau paste URL link gambar logo..."
+                      style={{ fontSize: '0.8rem' }}
+                    />
+                    {formData.logoUrl && (
+                      <button 
+                        type="button"
+                        onClick={() => setFormData({ ...formData, logoUrl: '' })}
+                        className="btn btn-rose"
+                        style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+                      >
+                        Hapus Logo
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    Logo akan otomatis tampil di **Navbar atas, Struk Bukti Peminjaman, & Kartu Anggota RFID Fisik**!
+                  </div>
+                </div>
+
+              </div>
             </div>
 
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>

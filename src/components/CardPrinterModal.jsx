@@ -48,14 +48,19 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
               pointerEvents: 'none'
             }} />
 
-            {/* Top Card Header */}
+            {/* Top Card Header with School Logo */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1 }}>
-              <div>
-                <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#818cf8' }}>
-                  {settings.schoolName || 'SMA NEGERI 1 SMART LITERACY'}
-                </div>
-                <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>
-                  KARTU TANDA ANGGOTA PERPUSTAKAAN RFID
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {settings?.logoUrl && (
+                  <img src={settings.logoUrl} alt="Logo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                )}
+                <div>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: '#818cf8' }}>
+                    {settings?.schoolName || 'SMA NEGERI 1 SMART LITERACY'}
+                  </div>
+                  <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>
+                    KARTU TANDA ANGGOTA PERPUSTAKAAN RFID
+                  </div>
                 </div>
               </div>
               <Cpu size={22} color="#fbbf24" title="Smart RFID Microchip" />
