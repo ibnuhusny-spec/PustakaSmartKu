@@ -61,7 +61,8 @@ export default function LicenseModal({
 
   const handleUnlockVendorTool = (e) => {
     e.preventDefault();
-    if (vendorPasscodeInput.trim() === 'VENDOR2026' || vendorPasscodeInput.trim() === 'PustakaSmart2026') {
+    // Secret Passcode for Vendor Key Generator Access (Custom Vendor Passcode: Iy0ut1que77)
+    if (vendorPasscodeInput.trim() === 'Iy0ut1que77') {
       setIsVendorUnlocked(true);
       setVendorPasscodeError('');
     } else {
@@ -268,7 +269,7 @@ export default function LicenseModal({
               {!isVendorUnlocked ? (
                 <form onSubmit={handleUnlockVendorTool}>
                   <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#fb7185', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Lock size={14} /> Masukkan Passcode Vendor Anda (Hanya Untuk Anda Sebagai Pemilik Software)
+                    <Lock size={14} /> Masukkan Passcode Rahasia Vendor Anda
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <input 
@@ -279,7 +280,7 @@ export default function LicenseModal({
                         setVendorPasscodeInput(e.target.value);
                         if (vendorPasscodeError) setVendorPasscodeError('');
                       }}
-                      placeholder="Passcode Vendor (Default: VENDOR2026)..."
+                      placeholder="Masukkan Passcode Vendor Rahasia..."
                       style={{ fontSize: '0.8rem' }}
                       required
                     />
