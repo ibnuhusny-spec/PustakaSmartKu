@@ -28,6 +28,8 @@
     "@vitejs/plugin-react": "^6.1.0",
     "electron": "^33.4.11",
     "oxlint": "^1.79.0",
+    "png-to-ico": "^3.0.2",
+    "sharp": "^0.35.4",
     "vite": "^8.2.2"
   }
 }

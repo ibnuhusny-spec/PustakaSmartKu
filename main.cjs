@@ -20,13 +20,14 @@ function startBackendServer() {
 }
 
 function createWindow() {
+  const iconPath = path.join(__dirname, 'public/icon.ico');
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 1024,
     minHeight: 700,
-    title: "PustakaSmart RFID - Client-Server SQLite School Library System",
-    icon: path.join(__dirname, 'public/perpustakaansmart.png'),
+    title: "PustakaSmart RFID - Sistem Perpustakaan Sekolah Digital",
+    icon: iconPath,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false

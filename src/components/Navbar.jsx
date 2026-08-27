@@ -18,6 +18,8 @@ import {
   Award,
   Sparkles
 } from 'lucide-react';
+
+import defaultLogo from '../assets/logo.png';
 import { getTrialDaysRemaining } from '../services/licenseService';
 
 export default function Navbar({ 
@@ -41,6 +43,11 @@ export default function Navbar({
   const daysRemaining = getTrialDaysRemaining(settings?.trialStartDate);
   const isPro = settings?.licenseType === 'pro';
 
+  // Determine active logo source with reliable fallback to bundled defaultLogo
+  const logoSrc = (settings?.schoolLogoUrl && settings.schoolLogoUrl.trim()) 
+    ? settings.schoolLogoUrl 
+    : ((settings?.logoUrl && settings.logoUrl.trim() && settings.logoUrl.startsWith('data:')) ? settings.logoUrl : defaultLogo);
+
   return (
     <header className="glass-card" style={{ 
       margin: '12px 16px 0 16px', 
@@ -54,144 +61,144 @@ export default function Navbar({
         
         {/* Brand Logo & Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {settings?.logoUrl ? (
+          <div style={{
+            width: '46px',
+            height: '46px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2))',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '4px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+          }}>
             <img 
-              src={settings.logoUrl} 
+              src={logoSrc} 
               alt="Logo Sekolah" 
-              style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '8px' }} 
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              onError={(e) => { e.target.src = defaultLogo; }}
             />
-          ) : (
-            <div style={{ 
-              width: '42px', 
-              height: '42px', 
-              borderRadius: 'var(--radius-sm)', 
-              background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              boxShadow: 'var(--shadow-glow)'
-            }}>
-              <BookOpen size={24} />
-            </div>
-          )}
+          </div>
 
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
-                {settings?.schoolName || 'PustakaSmart RFID'}
-              </h1>
-              
-              {/* LICENSE BADGE (TRIAL 30 DAYS / PRO FULL VERSION) */}
-              <button
-                onClick={onOpenLicenseModal}
-                className="btn"
-                style={{
-                  padding: '2px 8px',
-                  fontSize: '0.72rem',
-                  borderRadius: 'var(--radius-full)',
-                  background: isPro ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                  color: isPro ? '#34d399' : '#fbbf24',
-                  border: isPro ? '1px solid #10b981' : '1px solid #f59e0b',
-                  fontWeight: 800,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  cursor: 'pointer'
-                }}
-                title={isPro ? 'Lisensi Pro Aktif Selamanya' : `Versi Percobaan 30 Hari (${daysRemaining} Hari Tersisa). Klik untuk Aktivasi Kode Lisensi.`}
-              >
-                {isPro ? (
-                  <>
-                    <Award size={12} /> PRO LICENSE
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={12} /> Trial 30 Hari ({daysRemaining} Hari)
-                  </>
-                )}
-              </button>
+            <h1 style={{ 
+              fontSize: '1.25rem', 
+              fontWeight: 800, 
+              margin: 0, 
+              background: 'linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.5px'
+            }}>
+              PustakaSmart <span style={{ color: '#10b981', WebkitTextFillColor: '#10b981' }}>RFID</span>
+            </h1>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>{settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI"}</span>
             </div>
-
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
-              {settings?.libraryName || 'Perpustakaan Digital Sekolah'}
-            </p>
           </div>
         </div>
 
-        {/* Public Tab Navigation Items */}
-        <nav style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+        {/* Center Tabs Navigation Bar */}
+        <nav style={{ display: 'flex', gap: '6px', background: 'rgba(15, 23, 42, 0.6)', padding: '4px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
           {publicTabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`btn ${isActive ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ 
-                  padding: '8px 14px', 
-                  fontSize: '0.82rem',
-                  whiteSpace: 'nowrap',
-                  display: 'inline-flex',
+                className={`nav-tab ${isActive ? 'active' : ''}`}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: isActive ? 'var(--primary-color)' : 'transparent',
+                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '8px',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <Icon size={16} />
+                <Icon size={16} color={isActive ? '#ffffff' : '#94a3b8'} />
                 <span>{tab.label}</span>
               </button>
             );
           })}
+
+          {/* Unified Single Admin Portal Drawer Button */}
+          <button
+            onClick={onOpenAdminPortal}
+            className={`nav-tab ${activeTab === 'admin_portal' ? 'active' : ''}`}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              background: activeTab === 'admin_portal' 
+                ? 'linear-gradient(135deg, #10b981, #059669)' 
+                : 'rgba(16, 185, 129, 0.15)',
+              color: activeTab === 'admin_portal' ? '#ffffff' : '#34d399',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: activeTab === 'admin_portal' ? '0 4px 14px rgba(16, 185, 129, 0.4)' : 'none'
+            }}
+          >
+            <ShieldCheck size={16} color={activeTab === 'admin_portal' ? '#ffffff' : '#34d399'} />
+            <span>🔐 Portal Admin</span>
+          </button>
         </nav>
 
-        {/* Action Quick Utilities (Portal Admin Button, Simulator & Theme Toggle) */}
+        {/* Right Tools & Theme Switcher */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           
-          {/* SINGLE UNIFIED ADMIN PORTAL BUTTON */}
-          <button 
-            onClick={onOpenAdminPortal}
-            className={`btn ${activeTab === 'admin_portal' ? 'btn-rose' : 'btn-secondary'}`}
-            style={{ 
-              fontSize: '0.82rem', 
-              padding: '8px 14px', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
+          {/* License Status Badge Button */}
+          <button
+            type="button"
+            onClick={onOpenLicenseModal}
+            className="btn btn-secondary"
+            style={{
+              fontSize: '0.78rem',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
               gap: '6px',
-              border: isAdminAuthed ? '1px solid #10b981' : '1px solid rgba(244, 63, 94, 0.4)' 
+              borderColor: isPro ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)',
+              background: isPro ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+              color: isPro ? '#34d399' : '#fbbf24',
+              fontWeight: 700
             }}
-            title="Portal Masuk Khusus Petugas Admin Perpustakaan"
           >
-            {isAdminAuthed ? (
-              <>
-                <ShieldCheck size={16} color="#34d399" />
-                <span style={{ color: '#34d399', fontWeight: 800 }}>Portal Admin</span>
-              </>
-            ) : (
-              <>
-                <Lock size={16} color="#fb7185" />
-                <span style={{ color: '#fb7185', fontWeight: 700 }}>Portal Admin</span>
-              </>
-            )}
+            <Award size={14} />
+            <span>{isPro ? '✨ PRO LICENSE' : `⏱️ Trial (${daysRemaining} Hari)`}</span>
           </button>
 
+          {/* Simulation Helper Tool */}
           <button 
             onClick={onOpenRfidSimulator}
-            className="btn btn-emerald"
-            style={{ fontSize: '0.78rem', padding: '6px 12px' }}
-            title="Simulator Scanner Hardware RFID"
+            className="btn btn-secondary"
+            title="Simulator RFID Test Tap Card"
+            style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            <Radio size={14} /> Simulator RFID
+            <Radio size={14} color="#10b981" />
+            <span style={{ display: 'none', '@media (minWidth: 640px)': { display: 'inline' } }}>Simulasi RFID</span>
           </button>
 
-          <button 
+          {/* Dark / Light Theme Toggle */}
+          <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="btn btn-secondary"
-            style={{ padding: '8px', borderRadius: 'var(--radius-full)' }}
-            title="Beralih Mode Gelap/Terang"
+            style={{ padding: '8px', borderRadius: '50%', minWidth: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            title={theme === 'dark' ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'}
           >
-            {theme === 'dark' ? <Sun size={16} color="#fbbf24" /> : <Moon size={16} color="#60a5fa" />}
+            {theme === 'dark' ? <Sun size={16} color="#fbbf24" /> : <Moon size={16} color="#3b82f6" />}
           </button>
         </div>
 
