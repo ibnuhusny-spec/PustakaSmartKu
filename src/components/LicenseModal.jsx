@@ -1,28 +1,60 @@
 import React, { useState } from 'react';
-import { Award, KeyRound, CheckCircle2, ShieldAlert, X, Sparkles, Building2 } from 'lucide-react';
-import { validateLicenseKey } from '../services/licenseService';
+import { Award, KeyRound, CheckCircle2, ShieldAlert, X, Sparkles, Building2, Copy, Check, Lock, Wrench } from 'lucide-react';
+import { 
+  generateSchoolRegistrationId, 
+  generateProLicenseKeyForSchool, 
+  validateDynamicLicenseKey 
+} from '../services/licenseService';
 
-export default function LicenseModal({ isOpen, onClose, onActivateSuccess, currentLicenseType = 'trial', daysRemaining = 30 }) {
+export default function LicenseModal({ 
+  isOpen, 
+  onClose, 
+  onActivateSuccess, 
+  currentLicenseType = 'trial', 
+  daysRemaining = 30,
+  schoolName = "SDIT QURRATU A'YUN AL-ISLAMI"
+}) {
   const [keyInput, setKeyInput] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
+
+  // Vendor Generator Tool State
+  const [showVendorGenerator, setShowVendorGenerator] = useState(false);
+  const [vendorSchoolIdInput, setVendorSchoolIdInput] = useState('');
+  const [generatedVendorKey, setGeneratedVendorKey] = useState('');
 
   if (!isOpen) return null;
 
+  const regId = generateSchoolRegistrationId(schoolName);
+
+  const handleCopyRegId = () => {
+    navigator.clipboard.writeText(regId);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (validateLicenseKey(keyInput)) {
+    if (validateDynamicLicenseKey(keyInput, schoolName)) {
       setErrorMessage('');
       setKeyInput('');
       onActivateSuccess(keyInput.trim().toUpperCase());
-      alert('🎉 SELAMAT! Lisensi Resmi PustakaSmart RFID Pro Aktif Selamanya untuk Sekolah Anda!');
+      alert(`🎉 SELAMAT! Lisensi Resmi PustakaSmart RFID Pro Aktif Selamanya Khusus Untuk "${schoolName}"!`);
     } else {
-      setErrorMessage('❌ Kode Lisensi tidak valid! Hubungi pengembang untuk mendapatkan Lisensi Resmi Pro.');
+      setErrorMessage(`❌ Kode Lisensi tidak cocok untuk "${schoolName}"! Kode lisensi terikat khusus per nama sekolah dan tidak dapat dibagikan.`);
     }
+  };
+
+  const handleGenerateVendorKey = (e) => {
+    e.preventDefault();
+    if (!vendorSchoolIdInput.trim()) return;
+    const key = generateProLicenseKeyForSchool(vendorSchoolIdInput.trim());
+    setGeneratedVendorKey(key);
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', padding: '24px' }}>
+      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', padding: '24px' }}>
         
         <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -40,7 +72,7 @@ export default function LicenseModal({ isOpen, onClose, onActivateSuccess, curre
               <Award size={24} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>Aktivasi Lisensi Resmi Pro</h3>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>Aktivasi Lisensi Unik Sekolah</h3>
               <div style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: 700 }}>PustakaSmart RFID School Edition</div>
             </div>
           </div>
@@ -63,7 +95,7 @@ export default function LicenseModal({ isOpen, onClose, onActivateSuccess, curre
                 <Sparkles size={16} /> Status: Versi Percobaan 30 Hari (Trial)
               </div>
               <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '2px' }}>
-                Sisa Masa Percobaan: <strong>{daysRemaining} Hari Lagi</strong>. Masukkan Kode Lisensi Resmi untuk mengaktifkan lisensi seumur hidup (*Lifetime*).
+                Sisa Masa Percobaan: <strong>{daysRemaining} Hari Lagi</strong>. Masukkan Kode Lisensi Pro khusus sekolah Anda.
               </div>
             </div>
           ) : (
@@ -78,14 +110,44 @@ export default function LicenseModal({ isOpen, onClose, onActivateSuccess, curre
                 <CheckCircle2 size={16} /> Lisensi Pro Aktif Selamanya (Full Version)
               </div>
               <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '2px' }}>
-                Aplikasi ini terdaftar resmi dengan Lisensi PustakaSmart Pro.
+                Terdaftar Resmi Khusus Untuk: <strong>{schoolName}</strong>
               </div>
             </div>
           )}
 
+          {/* DYNAMIC SCHOOL REGISTRATION ID DISPLAY */}
+          <div style={{
+            background: 'rgba(59, 130, 246, 0.12)',
+            padding: '14px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid rgba(59, 130, 246, 0.4)',
+            marginBottom: '16px'
+          }}>
+            <div style={{ fontSize: '0.78rem', color: '#60a5fa', fontWeight: 700, marginBottom: '4px' }}>
+              🏫 ID REGISTRASI SEKOLAH ANDA:
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1e293b', padding: '8px 12px', borderRadius: '6px' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#34d399', fontSize: '1rem', letterSpacing: '1px' }}>
+                {regId}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyRegId}
+                className="btn btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                {isCopied ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
+                <span>{isCopied ? 'Tersalin' : 'Salin ID'}</span>
+              </button>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px' }}>
+              💡 Kirimkan ID Registrasi Sekolah di atas ke Pengembang/Vendor untuk menerima Kode Lisensi Pro khusus sekolah Anda.
+            </div>
+          </div>
+
           <div className="form-group">
             <label className="form-label" style={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-              Kode Aktivasi Lisensi Resmi (License Key)
+              Kode Aktivasi Lisensi Pro (Khusus {schoolName})
             </label>
             <input 
               type="text" 
@@ -95,15 +157,14 @@ export default function LicenseModal({ isOpen, onClose, onActivateSuccess, curre
                 setKeyInput(e.target.value);
                 if (errorMessage) setErrorMessage('');
               }}
-              placeholder="Masukkan Kode Lisensi (Contoh: PUSTAKA-PRO-2026)..."
+              placeholder="Paste Kode Lisensi Pro Sekolah Anda (Contoh: PRO-SDIT-...)..."
               style={{
-                fontSize: '0.95rem',
+                fontSize: '0.92rem',
                 fontWeight: 800,
                 letterSpacing: '1px',
                 fontFamily: 'var(--font-mono)',
                 textTransform: 'uppercase'
               }}
-              autoFocus
               required
             />
           </div>
@@ -117,17 +178,13 @@ export default function LicenseModal({ isOpen, onClose, onActivateSuccess, curre
               fontSize: '0.8rem',
               fontWeight: 700,
               marginBottom: '16px',
-              textAlign: 'center'
+              lineHeight: '1.4'
             }}>
               {errorMessage}
             </div>
           )}
 
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: '1.4' }}>
-            💡 <em>Ingin Membeli Lisensi Resmi?</em> Hubungi vendor penyedia aplikasi untuk mendapatkan Kode Lisensi Pro beserta Hardware RFID Reader & Kartu Pelajar RFID sekolah Anda.
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
             <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
               Tutup
             </button>
@@ -135,7 +192,54 @@ export default function LicenseModal({ isOpen, onClose, onActivateSuccess, curre
               <KeyRound size={16} /> Aktifkan Lisensi Pro
             </button>
           </div>
+
         </form>
+
+        {/* SECRET VENDOR KEY GENERATOR ACCORDION */}
+        <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setShowVendorGenerator(!showVendorGenerator)}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+          >
+            <Wrench size={12} /> {showVendorGenerator ? 'Sembunyikan Generator Key Vendor' : '🛠️ Generator Key Khusus Pengembang/Vendor'}
+          </button>
+
+          {showVendorGenerator && (
+            <div style={{
+              marginTop: '12px',
+              background: 'rgba(30, 41, 59, 0.8)',
+              padding: '14px',
+              borderRadius: '8px',
+              border: '1px dashed #3b82f6',
+              textAlign: 'left'
+            }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#60a5fa', marginBottom: '8px' }}>
+                🔑 Generator Kunci Lisensi Unik Vendor
+              </div>
+              <form onSubmit={handleGenerateVendorKey} style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  value={vendorSchoolIdInput}
+                  onChange={e => setVendorSchoolIdInput(e.target.value)}
+                  placeholder="Paste ID Registrasi Sekolah (Misal: ID-SDIT-...)..."
+                  style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}
+                  required
+                />
+                <button type="submit" className="btn btn-primary" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                  Generate Key
+                </button>
+              </form>
+
+              {generatedVendorKey && (
+                <div style={{ background: '#0f172a', padding: '8px', borderRadius: '4px', border: '1px solid #10b981', color: '#34d399', fontSize: '0.82rem', fontFamily: 'var(--font-mono)', fontWeight: 800, wordBreak: 'break-all' }}>
+                  {generatedVendorKey}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
       </div>
     </div>

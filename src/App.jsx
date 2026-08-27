@@ -257,6 +257,7 @@ export default function App() {
         onActivateSuccess={handleActivateLicenseSuccess}
         currentLicenseType={settings?.licenseType || 'trial'}
         daysRemaining={daysRemaining}
+        schoolName={settings?.schoolName}
       />
 
       <RFIDSimulator 

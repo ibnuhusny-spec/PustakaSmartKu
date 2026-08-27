@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2 } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault } from '../services/db';
-import { getTrialDaysRemaining, validateLicenseKey } from '../services/licenseService';
+import { getTrialDaysRemaining, validateDynamicLicenseKey } from '../services/licenseService';
 
 export default function SettingsView({ settings, onRefreshData, onReplaySplash }) {
   const [formData, setFormData] = useState({ ...settings });
@@ -20,7 +20,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
 
   const handleActivateLicense = (e) => {
     e.preventDefault();
-    if (validateLicenseKey(licenseInput)) {
+    if (validateDynamicLicenseKey(licenseInput, formData.schoolName)) {
       const updated = {
         ...formData,
         licenseType: 'pro',
