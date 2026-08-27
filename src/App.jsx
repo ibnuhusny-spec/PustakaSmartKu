@@ -97,6 +97,36 @@ export default function App() {
     localStorage.setItem('pustakasmart_theme', theme);
   }, [theme]);
 
+  // Anti-Inspect / Anti-DevTools Protection Listener (Disables F12, Right Click, & Ctrl+Shift+I)
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      // Disable right click if trial expired or in app mode
+      if (settings?.licenseType !== 'pro') {
+        e.preventDefault();
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (settings?.licenseType !== 'pro') {
+        // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
+        if (
+          e.key === 'F12' ||
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+          (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
+        ) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('contextmenu', handleContextMenu);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('contextmenu', handleContextMenu);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [settings]);
+
   // Tab Navigation Switcher
   const handleTabChange = (newTab) => {
     stopSpeech();
@@ -141,10 +171,9 @@ export default function App() {
   // Global RFID Scan Listener
   useEffect(() => {
     const handleRfidScan = (e) => {
-      const scanData = e.detail; // { rfidUid, timestamp }
+      const scanData = e.detail;
       setRfidScanEvent(scanData);
 
-      // Auto Presensi Attendance if enabled & member exists
       const member = getMemberByRfid(scanData.rfidUid);
       if (member && settings.autoAttendanceOnTap && activeTab !== 'kiosk') {
         const result = recordAttendance(scanData.rfidUid, 'Presensi Tap Mandiri');
@@ -180,6 +209,25 @@ export default function App() {
 
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} settings={settings} />;
+  }
+
+  // HARD LOCKOUT RENDER: If trial is expired, NOTHING ELSE is rendered into the DOM at all!
+  // Deleting the inspect element leaves an empty black screen with ZERO data!
+  if (isTrialExpired) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#090d16', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <LicenseModal 
+          isOpen={true}
+          onClose={() => {}}
+          onActivateSuccess={handleActivateLicenseSuccess}
+          currentLicenseType={settings?.licenseType || 'trial'}
+          daysRemaining={0}
+          schoolName={settings?.schoolName}
+          schoolEmail={settings?.schoolEmail}
+          isExpiredLockout={true}
+        />
+      </div>
+    );
   }
 
   return (
@@ -256,16 +304,15 @@ export default function App() {
         targetTabName="Portal Petugas Admin"
       />
 
-      {/* LICENSE MODAL (ALSO SERVES AS HARD LOCKOUT WHEN TRIAL EXPIRES) */}
       <LicenseModal 
-        isOpen={isLicenseModalOpen || isTrialExpired}
+        isOpen={isLicenseModalOpen}
         onClose={() => setIsLicenseModalOpen(false)}
         onActivateSuccess={handleActivateLicenseSuccess}
         currentLicenseType={settings?.licenseType || 'trial'}
         daysRemaining={daysRemaining}
         schoolName={settings?.schoolName}
         schoolEmail={settings?.schoolEmail}
-        isExpiredLockout={isTrialExpired}
+        isExpiredLockout={false}
       />
 
       <RFIDSimulator 
