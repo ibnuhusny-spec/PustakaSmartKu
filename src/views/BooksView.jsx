@@ -17,7 +17,10 @@ import {
   Layers,
   CheckCircle2,
   Tag,
-  Bookmark
+  Bookmark,
+  FileText,
+  ExternalLink,
+  Eye
 } from 'lucide-react';
 import { saveBook, deleteBook, clearSampleBooks, importBooksCSV } from '../services/db';
 
@@ -25,6 +28,7 @@ export default function BooksView({ books, onRefreshData }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [activeEbook, setActiveEbook] = useState(null);
   const [csvText, setCsvText] = useState('');
 
   const [formData, setFormData] = useState({
@@ -41,7 +45,8 @@ export default function BooksView({ books, onRefreshData }) {
     available: 5,
     coverUrl: '',
     description: '',
-    ebookContent: ''
+    ebookContent: '',
+    pdfUrl: '' // PDF File Data URI or Online Link
   });
 
   const categoryCovers = {
@@ -98,36 +103,35 @@ export default function BooksView({ books, onRefreshData }) {
   // Smart Auto-DDC Suggestion Generator based on Title & Category
   const handleAutoRecommendDDC = () => {
     const titleLower = formData.title.toLowerCase();
-
-    let suggestedDdc = ddcCategoryMap[formData.category] || '800';
-
-    if (titleLower.includes('agama') || titleLower.includes('islam') || titleLower.includes('quran') || titleLower.includes('hadits') || titleLower.includes('shalat') || titleLower.includes('fiqih') || titleLower.includes('pai')) {
-      suggestedDdc = '297';
-    } else if (titleLower.includes('komputer') || titleLower.includes('web') || titleLower.includes('coding') || titleLower.includes('python') || titleLower.includes('javascript') || titleLower.includes('it')) {
-      suggestedDdc = '005';
-    } else if (titleLower.includes('fisika') || titleLower.includes('kimia') || titleLower.includes('biologi') || titleLower.includes('matematika') || titleLower.includes('sains') || titleLower.includes('ipa')) {
-      suggestedDdc = '530';
-    } else if (titleLower.includes('sejarah') || titleLower.includes('biografi') || titleLower.includes('perang') || titleLower.includes('kerajaan')) {
-      suggestedDdc = '900';
-    } else if (titleLower.includes('novel') || titleLower.includes('cerita') || titleLower.includes('dongeng') || titleLower.includes('fiksi')) {
-      suggestedDdc = '813';
+    
+    if (titleLower.includes('islam') || titleLower.includes('quran') || titleLower.includes('hadits') || titleLower.includes('fiqih') || titleLower.includes('doa') || titleLower.includes('shalat') || titleLower.includes('rasul') || titleLower.includes('nabi')) {
+      setFormData(prev => ({ ...prev, ddc: '297', category: 'Agama & Keimanan' }));
+    } else if (titleLower.includes('komputer') || titleLower.includes('web') || titleLower.includes('react') || titleLower.includes('javascript') || titleLower.includes('python') || titleLower.includes('program') || titleLower.includes('coding') || titleLower.includes('it') || titleLower.includes('software')) {
+      setFormData(prev => ({ ...prev, ddc: '005', category: 'Komputer & IT' }));
+    } else if (titleLower.includes('fisika') || titleLower.includes('kimia') || titleLower.includes('biologi') || titleLower.includes('matematika') || titleLower.includes('sains') || titleLower.includes('ipa') || titleLower.includes('hitung')) {
+      setFormData(prev => ({ ...prev, ddc: '530', category: 'Sains & Teknologi' }));
+    } else if (titleLower.includes('sejarah') || titleLower.includes('bangsa') || titleLower.includes('pahlawan') || titleLower.includes('perang') || titleLower.includes('indonesia') || titleLower.includes('kemerdekaan')) {
+      setFormData(prev => ({ ...prev, ddc: '959', category: 'Sejarah / Sastra' }));
+    } else if (titleLower.includes('psikologi') || titleLower.includes('sukses') || titleLower.includes('pikiran') || titleLower.includes('bahagia') || titleLower.includes('stoisisme') || titleLower.includes('teras') || titleLower.includes('diri')) {
+      setFormData(prev => ({ ...prev, ddc: '158', category: 'Pengembangan Diri' }));
+    } else {
+      const suggestedDdc = ddcCategoryMap[formData.category] || '800';
+      setFormData(prev => ({ ...prev, ddc: suggestedDdc }));
     }
-
-    setFormData(prev => ({ ...prev, ddc: suggestedDdc }));
-    alert(`✨ Rekomendasi DDC Diterapkan: Nomor ${suggestedDdc} cocok untuk buku "${formData.title || formData.category}"!`);
   };
 
-  // Compress local image upload to lightweight 30KB thumbnail so localStorage limit is never exceeded
+  // Local Image Upload Handler
   const handleLocalImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (evt) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 300;
-        const MAX_HEIGHT = 420;
+        const MAX_WIDTH = 500;
+        const MAX_HEIGHT = 700;
         let width = img.width;
         let height = img.height;
 
@@ -147,7 +151,8 @@ export default function BooksView({ books, onRefreshData }) {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
         setFormData(prev => ({ ...prev, coverUrl: compressedDataUrl }));
       };
       img.src = evt.target.result;
@@ -155,134 +160,108 @@ export default function BooksView({ books, onRefreshData }) {
     reader.readAsDataURL(file);
   };
 
-  const filteredBooks = books.filter(b => 
-    b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (b.ddc && b.ddc.includes(searchTerm)) ||
-    b.isbn.includes(searchTerm)
-  );
+  // Local PDF Upload Handler (Converts PDF to Data URI / File URL)
+  const handlePdfUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      alert('Mohon pilih file dalam format PDF (.pdf)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      setFormData(prev => ({ ...prev, pdfUrl: evt.target.result }));
+      alert('✓ File PDF E-Book berhasil diunggah!');
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleOpenModal = (book = null) => {
     if (book) {
-      setFormData({ ...book, ddc: book.ddc || ddcCategoryMap[book.category] || '800' });
+      setFormData({ 
+        ...book,
+        ddc: book.ddc || '813',
+        pdfUrl: book.pdfUrl || ''
+      });
     } else {
+      const defaultCategory = 'Novel / Fiksi';
       setFormData({
-        id: '',
+        id: `B-${Math.floor(100 + Math.random() * 900)}`,
         title: '',
         author: '',
-        isbn: `978-602-${Math.floor(100 + Math.random() * 900)}-${Math.floor(10 + Math.random() * 90)}-${Math.floor(1 + Math.random() * 9)}`,
-        category: 'Novel / Fiksi',
-        ddc: '813',
-        publisher: 'Penerbit Sekolah',
-        year: 2024,
+        isbn: '',
+        category: defaultCategory,
+        ddc: ddcCategoryMap[defaultCategory],
+        publisher: '',
+        year: new Date().getFullYear(),
         shelf: 'Rak A1',
         stock: 5,
         available: 5,
-        coverUrl: '',
-        description: 'Buku literasi inventaris sekolah.',
-        ebookContent: 'Bab 1: Pengenalan Wawasan Baru...'
+        coverUrl: categoryCovers[defaultCategory],
+        description: '',
+        ebookContent: '',
+        pdfUrl: ''
       });
     }
     setIsModalOpen(true);
   };
 
   const handleSave = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    
-    if (!formData.title || !formData.title.trim()) {
-      alert('Mohon isi Judul Buku terlebih dahulu di bagian atas form!');
-      return;
-    }
-    if (!formData.author || !formData.author.trim()) {
-      alert('Mohon isi Nama Penulis / Pengarang terlebih dahulu!');
+    e.preventDefault();
+    if (!formData.title || !formData.author) {
+      alert('Judul buku dan nama penulis wajib diisi!');
       return;
     }
 
-    try {
-      const finalCover = (formData.coverUrl && formData.coverUrl.trim()) 
-        ? formData.coverUrl.trim() 
-        : (categoryCovers[formData.category] || categoryCovers['Umum']);
-
-      const bookToSave = { 
-        ...formData, 
-        title: formData.title.trim(), 
-        author: formData.author.trim(), 
-        coverUrl: finalCover,
-        ddc: formData.ddc || '800'
-      };
-
-      saveBook(bookToSave);
-      onRefreshData();
-      setIsModalOpen(false);
-      alert(`BERHASIL! Buku "${bookToSave.title}" (Klasifikasi DDC: ${bookToSave.ddc}) telah disimpan ke inventaris.`);
-    } catch (err) {
-      alert(`Gagal menyimpan buku: ${err.message}`);
-    }
+    saveBook(formData);
+    onRefreshData();
+    setIsModalOpen(false);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Yakin ingin menghapus buku ini dari inventaris?')) {
+  const handleDelete = (id, title) => {
+    if (window.confirm(`Apakah Anda yakin ingin menghapus buku "${title}" dari inventaris?`)) {
       deleteBook(id);
       onRefreshData();
     }
   };
 
   const handleClearAllSampleBooks = () => {
-    if (window.confirm('PERINGATAN: Apakah Anda yakin ingin MENGHAPUS SEMUA DATA DUMMY BUKU SAMPLE? Inventaris buku akan dikosongkan agar Anda dapat menginput data buku asli.')) {
+    if (window.confirm('PERINGATAN: Apakah Anda yakin ingin MENGHAPUS SELURUH BUKU di inventaris untuk menggantinya dengan buku sekolah Anda?')) {
       clearSampleBooks();
       onRefreshData();
-      alert('Seluruh data sample buku berhasil dikosongkan!');
+      alert('Seluruh data contoh buku telah dikosongkan.');
     }
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setCsvText(evt.target.result);
-    };
-    reader.readAsText(file);
-  };
+  const handleImportCSVSubmit = (e) => {
+    e.preventDefault();
+    if (!csvText.trim()) return;
 
-  const handleProcessImport = () => {
-    if (!csvText.trim()) {
-      alert('Silakan pilih file CSV atau tempelkan teks CSV!');
-      return;
-    }
-    try {
-      const count = importBooksCSV(csvText);
+    const importedCount = importBooksCSV(csvText);
+    if (importedCount > 0) {
       onRefreshData();
       setIsImportModalOpen(false);
       setCsvText('');
-      alert(`BERHASIL! ${count} judul buku telah berhasil diimpor ke perpustakaan!`);
-    } catch (err) {
-      alert(err.message);
+      alert(`Berhasil mengimpor ${importedCount} data buku baru ke inventaris!`);
+    } else {
+      alert('Gagal mengimpor. Pastikan format CSV sesuai petunjuk.');
     }
   };
 
-  const downloadSampleBooksCSV = () => {
-    const csvContent = "Judul,Penulis,Kategori,DDC,ISBN,Lokasi_Rak,Stok\n" +
-      "Laskar Pelangi,Andrea Hirata,Novel / Fiksi,813,978-979-3062-79-2,Rak A1 - Novel,5\n" +
-      "Bumi Manusia,Pramoedya Ananta Toer,Sejarah / Sastra,959,978-979-97312-3-5,Rak B2 - Sejarah,4\n" +
-      "Fisika Modern SMA,Dr. Bambang Ruwanto,Sains & Teknologi,530,978-602-241-112-9,Rak C3 - IPA,8\n";
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'template_import_buku.csv';
-    a.click();
-  };
+  const filteredBooks = books.filter(b => 
+    b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    b.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    b.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (b.ddc && b.ddc.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    b.shelf.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    b.isbn.includes(searchTerm)
+  );
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
       
-      {/* Real-time Inventory Stat Summary Cards */}
+      {/* Inventory KPI Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <div className="glass-card" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>TOTAL JUDUL BUKU</div>
@@ -344,10 +323,10 @@ export default function BooksView({ books, onRefreshData }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
           <div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <BookOpen color="#3b82f6" /> Managemen Inventaris & Stok Buku
+              <BookOpen color="#3b82f6" /> Managemen Inventaris & E-Book PDF Sekolah
             </h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
-              Input buku manual, scan ISBN barcode, rekomendasi klasifikasi DDC otomatis, atau impor dari Excel/CSV.
+              Input buku fisik, upload E-Book PDF online, scan ISBN barcode, dan kelola katalog perpustakaan.
             </p>
           </div>
 
@@ -356,7 +335,7 @@ export default function BooksView({ books, onRefreshData }) {
               <FileSpreadsheet size={16} /> Import Data Buku (CSV/Excel)
             </button>
             <button onClick={() => handleOpenModal()} className="btn btn-primary">
-              <Plus size={16} /> Tambah Buku Baru
+              <Plus size={16} /> Tambah Buku / E-Book Baru
             </button>
           </div>
         </div>
@@ -389,8 +368,8 @@ export default function BooksView({ books, onRefreshData }) {
                 <th style={{ padding: '12px' }}>Penulis & Penerbit</th>
                 <th style={{ padding: '12px', color: '#fbbf24' }}>Nomor Klasifikasi DDC</th>
                 <th style={{ padding: '12px' }}>Kategori & Rak</th>
-                <th style={{ padding: '12px' }}>ISBN / Barcode</th>
-                <th style={{ padding: '12px' }}>Stok Tersedia / Total</th>
+                <th style={{ padding: '12px' }}>E-Book Digital / PDF</th>
+                <th style={{ padding: '12px' }}>Stok Tersedia</th>
                 <th style={{ padding: '12px', textAlign: 'right' }}>Aksi Admin</th>
               </tr>
             </thead>
@@ -398,7 +377,7 @@ export default function BooksView({ books, onRefreshData }) {
               {filteredBooks.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-                    Inventaris buku masih kosong. Klik <strong>"+ Tambah Buku Baru"</strong> atau <strong>"Import Data Buku (CSV/Excel)"</strong> untuk menginput buku pertama Anda!
+                    Inventaris buku masih kosong. Klik <strong>"+ Tambah Buku Baru"</strong> untuk menginput buku atau PDF E-Book pertama Anda!
                   </td>
                 </tr>
               ) : (
@@ -428,11 +407,26 @@ export default function BooksView({ books, onRefreshData }) {
                         <MapPin size={12} /> {b.shelf}
                       </div>
                     </td>
-                    <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{b.isbn}</td>
+                    
+                    {/* E-Book PDF Status Badge & Quick Reader */}
+                    <td style={{ padding: '12px' }}>
+                      {b.pdfUrl || b.ebookContent ? (
+                        <button
+                          onClick={() => setActiveEbook(b)}
+                          className="btn btn-emerald"
+                          style={{ fontSize: '0.75rem', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <FileText size={14} /> Baca E-Book PDF
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Fisik Sahaja</span>
+                      )}
+                    </td>
+
                     <td style={{ padding: '12px', fontWeight: 700 }}>
                       {b.available <= 0 ? (
                         <span className="badge badge-rose" style={{ fontSize: '0.78rem' }}>
-                          🔴 STOK HABIS (0 / {b.stock})
+                          🔴 HABIS (0/{b.stock})
                         </span>
                       ) : (
                         <span style={{ color: '#34d399' }}>
@@ -447,14 +441,14 @@ export default function BooksView({ books, onRefreshData }) {
                           className="btn btn-secondary"
                           style={{ fontSize: '0.78rem', padding: '6px 10px' }}
                         >
-                          <Edit size={14} /> Edit / Restok
+                          <Edit size={14} /> Edit
                         </button>
                         <button 
-                          onClick={() => handleDelete(b.id)}
+                          onClick={() => handleDelete(b.id, b.title)}
                           className="btn btn-rose"
                           style={{ fontSize: '0.78rem', padding: '6px 10px' }}
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={14} /> Hapus
                         </button>
                       </div>
                     </td>
@@ -467,71 +461,21 @@ export default function BooksView({ books, onRefreshData }) {
 
       </div>
 
-      {/* IMPORT BOOKS CSV MODAL */}
-      {isImportModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsImportModalOpen(false)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+      {/* MODAL TAMBAH / EDIT BUKU & E-BOOK PDF */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '680px' }}>
             <div className="modal-header">
-              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FileSpreadsheet color="#10b981" /> Import Koleksi Buku dari CSV / Excel
+              <h3 style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BookOpen color="#3b82f6" /> {formData.id ? 'Edit Data Buku & PDF E-Book' : 'Tambah Buku / PDF E-Book Baru'}
               </h3>
-              <button onClick={() => setIsImportModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}><X size={18}/></button>
-            </div>
-            <div className="modal-body">
-              
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                Unggah file **CSV / Excel** daftar buku sekolah Anda. Kolom yang dibutuhkan minimal memiliki judul **`Judul`** dan **`Penulis`**. Kolom **`DDC`** opsional.
-              </p>
-
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-                <button onClick={downloadSampleBooksCSV} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>
-                  <Download size={14} /> Download Format Contoh CSV Buku
-                </button>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Pilih File CSV / Excel (.csv)</label>
-                <input 
-                  type="file" 
-                  accept=".csv,.txt"
-                  onChange={handleFileUpload}
-                  className="form-input" 
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Atau Paste / Tempelkan Teks CSV Di Sini:</label>
-                <textarea 
-                  className="form-textarea"
-                  rows="5"
-                  placeholder="Judul,Penulis,Kategori,DDC,ISBN,Lokasi_Rak,Stok&#10;Laskar Pelangi,Andrea Hirata,Novel / Fiksi,813,978-979-3062-79-2,Rak A1 - Novel,5..."
-                  value={csvText}
-                  onChange={e => setCsvText(e.target.value)}
-                  style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}
-                />
-              </div>
-
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setIsImportModalOpen(false)}>Batal</button>
-              <button className="btn btn-emerald" onClick={handleProcessImport}>
-                <Upload size={16} /> Impor Koleksi Buku
+              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <X size={18} />
               </button>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* ADD / EDIT BOOK MODAL */}
-      {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-container" style={{ maxWidth: '650px' }}>
-            <div className="modal-header">
-              <h3 style={{ margin: 0 }}>Form Input Buku & Klasifikasi DDC Perpustakaan</h3>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={18}/></button>
-            </div>
             <form onSubmit={handleSave}>
-              <div className="modal-body">
+              <div className="modal-body" style={{ maxHeight: '72vh', overflowY: 'auto' }}>
                 
                 <div className="form-group">
                   <label className="form-label">Judul Buku *</label>
@@ -540,7 +484,7 @@ export default function BooksView({ books, onRefreshData }) {
                     className="form-input" 
                     value={formData.title}
                     onChange={e => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Masukkan judul buku..."
+                    placeholder="Contoh: Laskar Pelangi / Fisika Modern Class XII"
                     required
                   />
                 </div>
@@ -570,7 +514,57 @@ export default function BooksView({ books, onRefreshData }) {
                   </div>
                 </div>
 
-                {/* DDC CLASSIFICATION FIELD WITH SMART AUTO-RECOMMEND & HELPER */}
+                {/* E-BOOK PDF UPLOAD / URL SECTION */}
+                <div style={{
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  padding: '16px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  marginBottom: '16px'
+                }}>
+                  <label className="form-label" style={{ color: '#34d399', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 6px 0' }}>
+                    <FileText size={20} /> File E-Book Online (PDF / Google Drive / URL Link)
+                  </label>
+                  <p style={{ fontSize: '0.78rem', color: '#cbd5e1', margin: '0 0 12px 0' }}>
+                    Upload file PDF dari laptop/HP Anda atau masukkan link Google Drive / PDF online agar siswa dapat <strong>membaca buku secara digital!</strong>
+                  </p>
+
+                  {/* File Upload PDF Button */}
+                  <div style={{ marginBottom: '10px' }}>
+                    <label 
+                      className="btn btn-emerald"
+                      style={{ cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}
+                    >
+                      <FolderOpen size={16} />
+                      <span>Upload File PDF (.pdf) dari Komputer/HP Anda...</span>
+                      <input 
+                        type="file" 
+                        accept="application/pdf"
+                        onChange={handlePdfUpload}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      value={formData.pdfUrl || ''}
+                      onChange={e => setFormData({ ...formData, pdfUrl: e.target.value })}
+                      placeholder="Atau paste link URL File PDF / Google Drive PDF..."
+                      style={{ fontSize: '0.82rem' }}
+                    />
+                  </div>
+
+                  {formData.pdfUrl && (
+                    <div style={{ marginTop: '8px', fontSize: '0.78rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <CheckCircle2 size={14} /> File/URL PDF E-Book Siap Dibaca Digital!
+                    </div>
+                  )}
+                </div>
+
+                {/* DDC CLASSIFICATION FIELD */}
                 <div className="form-group" style={{ background: 'rgba(245, 158, 11, 0.12)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(245, 158, 11, 0.4)', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <label className="form-label" style={{ color: '#fbbf24', margin: 0, fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -593,12 +587,11 @@ export default function BooksView({ books, onRefreshData }) {
                       className="form-input" 
                       value={formData.ddc}
                       onChange={e => setFormData({ ...formData, ddc: e.target.value })}
-                      placeholder="Contoh: 813 (Novel/Fiksi) atau 297 (Islam)"
+                      placeholder="Contoh: 813"
                       style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', width: '160px', color: '#fbbf24', background: '#1e293b' }}
                       required
                     />
 
-                    {/* Quick Helper Selector */}
                     <select
                       className="form-select"
                       value=""
@@ -610,10 +603,6 @@ export default function BooksView({ books, onRefreshData }) {
                         <option key={item.code} value={item.code}>{item.label}</option>
                       ))}
                     </select>
-                  </div>
-
-                  <div style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>
-                    💡 <em>Tip Klasifikasi Cepat:</em> Klik tombol <strong>"✨ Rekomendasi Otomatis DDC"</strong> di atas atau pilih kodenya dari menu di kanan.
                   </div>
                 </div>
 
@@ -669,7 +658,7 @@ export default function BooksView({ books, onRefreshData }) {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Stok Tersedia Saat Ini</label>
+                    <label className="form-label">Stok Tersedia</label>
                     <input 
                       type="number" 
                       className="form-input" 
@@ -682,9 +671,8 @@ export default function BooksView({ books, onRefreshData }) {
 
                 {/* Cover Image Selection Options */}
                 <div className="form-group">
-                  <label className="form-label">Gambar Sampul Buku (Foto Komputer / HP)</label>
+                  <label className="form-label">Gambar Sampul Buku</label>
                   
-                  {/* File Upload Input */}
                   <div style={{ marginBottom: '8px' }}>
                     <label 
                       className="btn btn-secondary"
@@ -714,27 +702,14 @@ export default function BooksView({ books, onRefreshData }) {
                       onClick={handleGenerateCover}
                       className="btn btn-emerald"
                       style={{ whiteSpace: 'nowrap', fontSize: '0.78rem' }}
-                      title="Generasi Sampul Buku Sesuai Kategori"
                     >
                       <Sparkles size={14} /> Auto Sampul
                     </button>
                   </div>
-
-                  {/* Image Preview */}
-                  {formData.coverUrl && (
-                    <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <img 
-                        src={formData.coverUrl} 
-                        alt="Preview" 
-                        style={{ width: '50px', height: '70px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }} 
-                      />
-                      <span style={{ fontSize: '0.78rem', color: '#34d399' }}>✓ Pratinjau Sampul Gambar Berhasil Dimuat</span>
-                    </div>
-                  )}
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Deskripsi / Sinopsis Buku</label>
+                  <label className="form-label">Deskripsi / Ringkasan Buku</label>
                   <textarea 
                     className="form-textarea" 
                     rows="3"
@@ -745,9 +720,121 @@ export default function BooksView({ books, onRefreshData }) {
                 </div>
 
               </div>
+
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Batal</button>
-                <button type="button" className="btn btn-primary" onClick={(e) => handleSave(e)}>Simpan Buku</button>
+                <button type="submit" className="btn btn-primary">Simpan Buku & E-Book</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* E-BOOK DIGITAL READER MODAL WITH EMBEDDED PDF VIEWER */}
+      {activeEbook && (
+        <div className="modal-overlay" onClick={() => setActiveEbook(null)}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', width: '90%' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <FileText color="#10b981" size={22} />
+                <h3 style={{ margin: 0, fontSize: '1.1rem' }}>E-Book Digital Reader: {activeEbook.title}</h3>
+              </div>
+              <button onClick={() => setActiveEbook(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20}/></button>
+            </div>
+            
+            <div className="modal-body" style={{ padding: '16px' }}>
+              
+              {/* If PDF URL exists, render embed PDF viewer iframe or direct PDF link */}
+              {activeEbook.pdfUrl ? (
+                <div>
+                  <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 700 }}>
+                      📄 File PDF E-Book Online Siap Dibaca
+                    </span>
+                    <a 
+                      href={activeEbook.pdfUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn btn-emerald"
+                      style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+                    >
+                      <ExternalLink size={14} /> Buka PDF Layar Penuh / Download
+                    </a>
+                  </div>
+
+                  <iframe 
+                    src={activeEbook.pdfUrl} 
+                    title={activeEbook.title}
+                    style={{ width: '100%', height: '520px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff' }}
+                  />
+                </div>
+              ) : (
+                <div style={{
+                  background: 'var(--bg-secondary)',
+                  padding: '24px',
+                  borderRadius: 'var(--radius-md)',
+                  lineHeight: '1.8',
+                  fontFamily: 'serif',
+                  fontSize: '1.05rem',
+                  color: 'var(--text-primary)',
+                  maxHeight: '450px',
+                  overflowY: 'auto',
+                  border: '1px solid var(--border-color)'
+                }}>
+                  <h2 style={{ textAlign: 'center', marginBottom: '12px', fontFamily: 'var(--font-main)' }}>{activeEbook.title}</h2>
+                  <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '24px', fontFamily: 'var(--font-main)' }}>
+                    Karya: {activeEbook.author} ({activeEbook.publisher})
+                  </p>
+                  <p>{activeEbook.ebookContent || activeEbook.description || 'Pratinjau E-Book digital. Buku ini berisi pengetahuan berharga untuk pengembangan wawasan literasi sekolah.'}</p>
+                </div>
+              )}
+
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setActiveEbook(null)}>Tutup Reader</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL IMPORT BUKU DARI CSV/EXCEL */}
+      {isImportModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsImportModalOpen(false)}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '650px' }}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileSpreadsheet color="#10b981" /> Impor Data Buku Massal (CSV / Excel)
+              </h3>
+              <button onClick={() => setIsImportModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleImportCSVSubmit}>
+              <div className="modal-body">
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 0 }}>
+                  Copy-paste teks data CSV / Excel Anda ke dalam kotak di bawah ini. Format kolom CSV:
+                </p>
+                
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px 14px', borderRadius: '6px', fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: '#34d399', marginBottom: '14px' }}>
+                  Judul,Penulis,DDC,Kategori,Penerbit,Tahun,Rak,Stok,ISBN
+                </div>
+
+                <textarea 
+                  className="form-textarea" 
+                  rows="6"
+                  value={csvText}
+                  onChange={e => setCsvText(e.target.value)}
+                  placeholder="Contoh isi data CSV:&#10;Sejarah Indonesia,Sartono Kartodirdjo,959,Sejarah / Sastra,Gramedia,2020,Rak B1,5,9789791234567"
+                  style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}
+                  required
+                />
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsImportModalOpen(false)}>Batal</button>
+                <button type="submit" className="btn btn-emerald">Proses Impor Buku</button>
               </div>
             </form>
           </div>

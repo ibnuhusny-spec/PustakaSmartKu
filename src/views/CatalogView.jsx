@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, BookOpen, Layers, MapPin, Eye, FileText, CheckCircle2, X } from 'lucide-react';
+import { Search, BookOpen, Layers, MapPin, Eye, FileText, CheckCircle2, X, ExternalLink } from 'lucide-react';
 
 export default function CatalogView({ books }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -7,7 +7,7 @@ export default function CatalogView({ books }) {
   const [activeEbook, setActiveEbook] = useState(null);
   const [detailBook, setDetailBook] = useState(null);
 
-  const categories = ['Semua', 'Novel / Fiksi', 'Sejarah / Sastra', 'Sains & Teknologi', 'Komputer & IT', 'Pengembangan Diri'];
+  const categories = ['Semua', 'Novel / Fiksi', 'Sejarah / Sastra', 'Sains & Teknologi', 'Komputer & IT', 'Pengembangan Diri', 'Agama & Keimanan'];
 
   const filteredBooks = books.filter(book => {
     const matchesSearch = 
@@ -149,7 +149,7 @@ export default function CatalogView({ books }) {
       {/* DIGITAL E-BOOK READER PREVIEW MODAL */}
       {activeEbook && (
         <div className="modal-overlay" onClick={() => setActiveEbook(null)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '750px' }}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', width: '90%' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <FileText color="#10b981" size={20} />
@@ -157,28 +157,53 @@ export default function CatalogView({ books }) {
               </div>
               <button onClick={() => setActiveEbook(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}><X size={18}/></button>
             </div>
-            <div className="modal-body">
-              <div style={{
-                background: 'var(--bg-secondary)',
-                padding: '24px',
-                borderRadius: 'var(--radius-md)',
-                lineHeight: '1.8',
-                fontFamily: 'serif',
-                fontSize: '1.05rem',
-                color: 'var(--text-primary)',
-                maxHeight: '400px',
-                overflowY: 'auto',
-                border: '1px solid var(--border-color)'
-              }}>
-                <h2 style={{ textAlign: 'center', marginBottom: '16px', fontFamily: 'var(--font-main)' }}>{activeEbook.title}</h2>
-                <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '24px', fontFamily: 'var(--font-main)' }}>
-                  Karya: {activeEbook.author}
-                </p>
-                <p>{activeEbook.ebookContent || 'Ini adalah pratinjau E-Book digital. Buku ini berisi pengetahuan berharga untuk pengembangan wawasan literasi sekolah.'}</p>
-                <br/>
-                <p>Pembelajaran terus berlanjut sepanjang hayat. Dengan membaca buku ini, Anda telah mengambil satu langkah lebih maju menuju generasi unggul.</p>
-              </div>
+            
+            <div className="modal-body" style={{ padding: '16px' }}>
+              {activeEbook.pdfUrl ? (
+                <div>
+                  <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 700 }}>
+                      📄 File PDF E-Book Online Siap Dibaca
+                    </span>
+                    <a 
+                      href={activeEbook.pdfUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn btn-emerald"
+                      style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+                    >
+                      <ExternalLink size={14} /> Buka PDF Layar Penuh / Download
+                    </a>
+                  </div>
+
+                  <iframe 
+                    src={activeEbook.pdfUrl} 
+                    title={activeEbook.title}
+                    style={{ width: '100%', height: '520px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff' }}
+                  />
+                </div>
+              ) : (
+                <div style={{
+                  background: 'var(--bg-secondary)',
+                  padding: '24px',
+                  borderRadius: 'var(--radius-md)',
+                  lineHeight: '1.8',
+                  fontFamily: 'serif',
+                  fontSize: '1.05rem',
+                  color: 'var(--text-primary)',
+                  maxHeight: '450px',
+                  overflowY: 'auto',
+                  border: '1px solid var(--border-color)'
+                }}>
+                  <h2 style={{ textAlign: 'center', marginBottom: '12px', fontFamily: 'var(--font-main)' }}>{activeEbook.title}</h2>
+                  <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '24px', fontFamily: 'var(--font-main)' }}>
+                    Karya: {activeEbook.author} ({activeEbook.publisher})
+                  </p>
+                  <p>{activeEbook.ebookContent || activeEbook.description || 'Ini adalah pratinjau E-Book digital. Buku ini berisi pengetahuan berharga untuk pengembangan wawasan literasi sekolah.'}</p>
+                </div>
+              )}
             </div>
+
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setActiveEbook(null)}>Tutup Reader</button>
             </div>
