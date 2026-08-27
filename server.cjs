@@ -6,6 +6,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { execSync } = require('child_process');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -50,6 +51,41 @@ const dbGet = (sql, params = []) => new Promise((resolve, reject) => {
     else resolve(row);
   });
 });
+
+// Fetch Physical Hard Disk Serial Number (HID) via Native Windows CMD / PowerShell
+function getHardDiskSerialNumber() {
+  try {
+    if (process.platform === 'win32') {
+      // Method A: Physical Disk Serial Number via WMIC
+      const wmicOut = execSync('wmic diskdrive get serialnumber', { encoding: 'utf8', timeout: 1500 });
+      const lines = wmicOut.split('\n').map(l => l.trim()).filter(l => l && !l.toLowerCase().includes('serialnumber'));
+      if (lines.length > 0 && lines[0] && lines[0].length >= 4) {
+        return `HDD-${lines[0].replace(/[^A-Z0-9]/gi, '').toUpperCase()}`;
+      }
+
+      // Method B: Drive Volume Serial Number via CMD vol c:
+      const volOut = execSync('vol c:', { encoding: 'utf8', timeout: 1500 });
+      const match = volOut.match(/([A-Z0-9]{4}-[A-Z0-9]{4})/i);
+      if (match) {
+        return `VOL-${match[1].replace('-', '').toUpperCase()}`;
+      }
+    }
+  } catch (e) {
+    console.warn('Physical HDD Serial Query Fallback:', e.message);
+  }
+
+  // Fallback CPU & Machine ID
+  const platform = process.platform;
+  const cpus = os.cpus();
+  const model = cpus.length > 0 ? cpus[0].model : 'CPU';
+  const rawFp = `${platform}:${model}:${os.hostname()}`;
+  let hash = 0;
+  for (let i = 0; i < rawFp.length; i++) {
+    hash = ((hash << 5) - hash) + rawFp.charCodeAt(i);
+    hash |= 0;
+  }
+  return `HID-${Math.abs(hash).toString(36).toUpperCase()}`;
+}
 
 // Initialize Database Schemas & Default Tables
 async function initDatabaseSchemas() {
@@ -150,14 +186,26 @@ function getLocalServerIp() {
 
 // REST API ENDPOINTS
 
+// 0. Hardware ID API (Physical Hard Disk Serial Number)
+app.get('/api/hardware-id', (req, res) => {
+  const hddSerial = getHardDiskSerialNumber();
+  res.json({
+    hardwareId: hddSerial,
+    platform: process.platform,
+    hostname: os.hostname()
+  });
+});
+
 // 1. Health & Server Info
 app.get('/api/health', (req, res) => {
   const lanIp = getLocalServerIp();
+  const hddSerial = getHardDiskSerialNumber();
   res.json({
     status: 'ok',
     mode: 'client-server',
     database: 'SQLite',
     dbPath,
+    hardwareId: hddSerial,
     serverIp: lanIp,
     serverUrl: `http://${lanIp}:${PORT}`
   });
@@ -399,12 +447,14 @@ app.post('/api/sync-bulk', async (req, res) => {
 // Start Express Server
 const server = app.listen(PORT, () => {
   const lanIp = getLocalServerIp();
+  const hddSerial = getHardDiskSerialNumber();
   console.log(`===================================================`);
   console.log(`🚀 PustakaSmart RFID Client-Server SQLite Backend`);
-  console.log(`📍 Local Server URL  : http://localhost:${PORT}`);
-  console.log(`🌐 LAN Network URL   : http://${lanIp}:${PORT}`);
-  console.log(`💾 SQLite File Path  : ${dbPath}`);
+  console.log(`🔑 Hardware ID (HDD Serial) : ${hddSerial}`);
+  console.log(`📍 Local Server URL         : http://localhost:${PORT}`);
+  console.log(`🌐 LAN Network URL          : http://${lanIp}:${PORT}`);
+  console.log(`💾 SQLite File Path         : ${dbPath}`);
   console.log(`===================================================`);
 });
 
-module.exports = { app, server, getLocalServerIp };
+module.exports = { app, server, getLocalServerIp, getHardDiskSerialNumber };

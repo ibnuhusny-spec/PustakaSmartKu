@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Award, KeyRound, CheckCircle2, ShieldAlert, X, Sparkles, Building2, Copy, Check, Lock, Wrench, ShieldCheck, Mail } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Award, KeyRound, CheckCircle2, ShieldAlert, X, Sparkles, Building2, Copy, Check, Lock, Wrench, ShieldCheck, Mail, HardDrive } from 'lucide-react';
 import { 
   generateSchoolRegistrationId, 
   generateProLicenseKeyForSchool, 
-  validateDynamicLicenseKey 
+  validateDynamicLicenseKey,
+  fetchNativeHddSerial
 } from '../services/licenseService';
 
 export default function LicenseModal({ 
@@ -19,6 +20,7 @@ export default function LicenseModal({
   const [keyInput, setKeyInput] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [hddSerial, setHddSerial] = useState('');
 
   // Vendor Generator Security State
   const [showVendorPasscodeForm, setShowVendorPasscodeForm] = useState(false);
@@ -30,9 +32,15 @@ export default function LicenseModal({
   const [generatedVendorKey, setGeneratedVendorKey] = useState('');
   const [isVendorKeyCopied, setIsVendorKeyCopied] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      fetchNativeHddSerial().then(setHddSerial);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const regId = generateSchoolRegistrationId(schoolName, schoolEmail);
+  const regId = generateSchoolRegistrationId(schoolName, schoolEmail, hddSerial);
 
   const handleCopyRegId = () => {
     navigator.clipboard.writeText(regId);
@@ -55,13 +63,13 @@ export default function LicenseModal({
       onActivateSuccess(keyInput.trim().toUpperCase());
       alert(`🎉 SELAMAT! Lisensi Resmi PustakaSmart RFID Pro Aktif Selamanya Khusus Untuk "${schoolName}" (${schoolEmail})!`);
     } else {
-      setErrorMessage(`❌ Kode Lisensi tidak cocok! Kode lisensi terikat khusus untuk Email (${schoolEmail}) & Nama Sekolah (${schoolName}) dan tidak dapat dibagikan.`);
+      setErrorMessage(`❌ Kode Lisensi tidak cocok! Kode lisensi terikat khusus pada Serial Harddisk Physical Laptop (${hddSerial || 'HID'}), Email (${schoolEmail}) & Nama Sekolah (${schoolName}).`);
     }
   };
 
   const handleUnlockVendorTool = (e) => {
     e.preventDefault();
-    // Secret Passcode for Vendor Key Generator Access (Custom Vendor Passcode: Iy0ut1que77)
+    // Custom Passcode Vendor: Iy0ut1que77
     if (vendorPasscodeInput.trim() === 'Iy0ut1que77') {
       setIsVendorUnlocked(true);
       setVendorPasscodeError('');
@@ -98,10 +106,10 @@ export default function LicenseModal({
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>
-                {isExpiredLockout ? '🔒 Masa Percobaan 30 Hari Telah Berakhir' : 'Aktivasi Lisensi Unik Sekolah'}
+                {isExpiredLockout ? '🔒 Masa Percobaan 30 Hari Telah Berakhir' : 'Aktivasi Lisensi HID Unik Laptop'}
               </h3>
               <div style={{ fontSize: '0.78rem', color: isExpiredLockout ? '#fb7185' : '#10b981', fontWeight: 700 }}>
-                {isExpiredLockout ? 'Aplikasi Terkunci — Diperlukan Kode Lisensi Pro' : 'PustakaSmart RFID School Edition'}
+                PustakaSmart RFID - Hardware Harddisk Serial Binding
               </div>
             </div>
           </div>
@@ -155,7 +163,7 @@ export default function LicenseModal({
               marginBottom: '16px'
             }}>
               <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 size={16} /> Lisensi Pro Aktif Selamanya (Full Version)
+                <CheckCircle2 size={16} /> Lisensi Pro HID Aktif Selamanya (Full Version)
               </div>
               <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '2px' }}>
                 Terdaftar Resmi Khusus Untuk: <strong>{schoolName}</strong> ({schoolEmail})
@@ -163,7 +171,7 @@ export default function LicenseModal({
             </div>
           )}
 
-          {/* DYNAMIC SCHOOL REGISTRATION ID DISPLAY BIND TO EMAIL */}
+          {/* DYNAMIC SCHOOL REGISTRATION ID DISPLAY BIND TO HARDWARE HARDDISK SERIAL */}
           <div style={{
             background: 'rgba(59, 130, 246, 0.12)',
             padding: '14px',
@@ -171,12 +179,12 @@ export default function LicenseModal({
             border: '1px solid rgba(59, 130, 246, 0.4)',
             marginBottom: '16px'
           }}>
-            <div style={{ fontSize: '0.78rem', color: '#60a5fa', fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              🏫 STEP 1: ID REGISTRASI SEKOLAH (TERIKAT NAMA & EMAIL SEKOLAH):
+            <div style={{ fontSize: '0.78rem', color: '#60a5fa', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              🏫 STEP 1: ID REGISTRASI HARDWARE HID LAPTOP SEKOLAH ANDA:
             </div>
             
-            <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Mail size={14} color="#38bdf8" /> Email Resmi: <strong>{schoolEmail || 'perpustakaan@sekolah.sch.id'}</strong>
+            <div style={{ fontSize: '0.75rem', color: '#cbd5e1', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <HardDrive size={14} color="#34d399" /> Serial Harddisk Physical (HID): <strong style={{ fontFamily: 'var(--font-mono)', color: '#34d399' }}>{hddSerial || 'Mengambil HID Harddisk...'}</strong>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1e293b', padding: '8px 12px', borderRadius: '6px' }}>

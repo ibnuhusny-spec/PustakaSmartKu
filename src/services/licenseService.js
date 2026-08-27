@@ -1,10 +1,34 @@
-// Anti-Piracy Dynamic License, Device Fingerprint & Lockout Verification Service
+// Anti-Piracy Dynamic License, Hardware ID (HDD Serial Number) & Lockout Verification Service
+
+let cachedNativeHddSerial = '';
+
+/**
+ * Fetch Physical Hard Disk Serial Number from Backend SQLite Server (Electron Native CMD/WMIC Query)
+ */
+export async function fetchNativeHddSerial() {
+  if (cachedNativeHddSerial) return cachedNativeHddSerial;
+  try {
+    const res = await fetch('http://localhost:3001/api/hardware-id');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.hardwareId) {
+        cachedNativeHddSerial = data.hardwareId;
+        return data.hardwareId;
+      }
+    }
+  } catch (e) {
+    // Fallback to browser FP
+  }
+  return getDeviceFingerprint();
+}
 
 /**
  * Generates a Hardware / Device Fingerprint Hash (Screen Res + Hardware Cores + Timezone + Platform)
  */
 export function getDeviceFingerprint() {
   if (typeof window === 'undefined') return 'FP-DEFAULT';
+  if (cachedNativeHddSerial) return cachedNativeHddSerial;
+
   const platform = navigator.platform || 'Win32';
   const screenRes = `${window.screen?.width || 1280}x${window.screen?.height || 720}`;
   const cores = navigator.hardwareConcurrency || 4;
@@ -16,17 +40,17 @@ export function getDeviceFingerprint() {
     hash = ((hash << 5) - hash) + fpRaw.charCodeAt(i);
     hash |= 0;
   }
-  return `FP-${Math.abs(hash).toString(36).toUpperCase()}`;
+  return `HDD-${Math.abs(hash).toString(36).toUpperCase()}`;
 }
 
 /**
- * Generates a unique School Registration ID bound to BOTH School Name & School Email & Device Fingerprint
+ * Generates a unique School Registration ID bound to BOTH School Name & School Email & Physical Hard Disk Serial Number (HID)
  */
-export function generateSchoolRegistrationId(schoolName = '', schoolEmail = '') {
+export function generateSchoolRegistrationId(schoolName = '', schoolEmail = '', customHddSerial = '') {
   const cleanName = (schoolName || 'PUSTAKASMART SCHOOL').toUpperCase().replace(/[^A-Z0-9]/g, '');
   const cleanEmail = (schoolEmail || 'PERPUSTAKAAN@SCH.ID').toLowerCase().trim();
-  const fp = getDeviceFingerprint();
-  const combinedStr = `${cleanName}:${cleanEmail}:${fp}`;
+  const hdd = customHddSerial || cachedNativeHddSerial || getDeviceFingerprint();
+  const combinedStr = `${cleanName}:${cleanEmail}:${hdd}`;
 
   let hash = 0;
   for (let i = 0; i < combinedStr.length; i++) {
@@ -40,7 +64,7 @@ export function generateSchoolRegistrationId(schoolName = '', schoolEmail = '') 
 }
 
 /**
- * Generates the 100% Unique PRO License Key bound to School Registration ID & Email
+ * Generates the 100% Unique PRO License Key bound to School Registration ID (HID + Email + School Name)
  */
 export function generateProLicenseKeyForSchool(registrationId = '') {
   const cleanId = (registrationId || '').trim().toUpperCase();
@@ -59,13 +83,13 @@ export function generateProLicenseKeyForSchool(registrationId = '') {
 }
 
 /**
- * Calculates remaining days in 30-day trial period & persists trial start globally per device
+ * Calculates remaining days in 30-day trial period & persists trial start globally per Physical Hard Disk Serial (HID)
  */
 export function getTrialDaysRemaining(startDateStr) {
   if (typeof window === 'undefined') return 30;
 
-  const fp = getDeviceFingerprint();
-  const storageKey = `pustakasmart_fp_trial_${fp}`;
+  const hdd = cachedNativeHddSerial || getDeviceFingerprint();
+  const storageKey = `pustakasmart_hid_trial_${hdd}`;
   
   let savedTrialStart = localStorage.getItem(storageKey);
   if (!savedTrialStart) {
@@ -82,7 +106,7 @@ export function getTrialDaysRemaining(startDateStr) {
 }
 
 /**
- * Validates if a License Key is valid specifically for THIS school name & email combination
+ * Validates if a License Key is valid specifically for THIS school name & email & physical hard disk combination
  */
 export function validateDynamicLicenseKey(inputKey, schoolName, schoolEmail) {
   if (!inputKey || !schoolName) return false;
