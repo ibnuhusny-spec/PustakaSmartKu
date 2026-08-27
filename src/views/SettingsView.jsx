@@ -248,35 +248,55 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
             )}
           </div>
 
-          {/* ADMIN SECURITY PIN / PASSWORD SECTION */}
+          {/* ADMIN SECURITY PIN / PASSWORD SECTION WITH TOGGLE SWITCH */}
           <div style={{
-            background: 'rgba(244, 63, 94, 0.12)',
+            background: formData.enableAdminPin ? 'rgba(244, 63, 94, 0.12)' : 'rgba(16, 185, 129, 0.12)',
             padding: '20px',
             borderRadius: 'var(--radius-md)',
-            border: '1px solid rgba(244, 63, 94, 0.4)',
+            border: formData.enableAdminPin ? '1px solid rgba(244, 63, 94, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
             marginBottom: '20px'
           }}>
-            <label className="form-label" style={{ color: '#fb7185', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', margin: '0 0 6px 0' }}>
-              <Lock size={20} /> Pengamanan PIN / Password Admin Perpustakaan *
-            </label>
-            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: '0 0 14px 0' }}>
-              PIN ini digunakan untuk memproteksi tab Admin (Buku & Stok, Anggota, Transaksi, Pengaturan) saat link web dibagikan ke siswa/umum.
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <label className="form-label" style={{ color: formData.enableAdminPin ? '#fb7185' : '#34d399', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', margin: 0 }}>
+                <Lock size={20} /> Pengamanan PIN / Password Admin Perpustakaan
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#1e293b', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                <input 
+                  type="checkbox"
+                  checked={formData.enableAdminPin || false}
+                  onChange={e => setFormData({ ...formData, enableAdminPin: e.target.checked })}
+                />
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: formData.enableAdminPin ? '#fb7185' : '#cbd5e1' }}>
+                  {formData.enableAdminPin ? '🔒 PIN Aktif (Minta PIN Saat Masuk Admin)' : '🔓 PIN Nonaktif (Buka Admin Tanpa PIN)'}
+                </span>
+              </label>
+            </div>
+
+            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: '8px 0 14px 0' }}>
+              {formData.enableAdminPin ? (
+                <span>PIN ini digunakan untuk memproteksi tab Admin saat link web dibagikan ke siswa/umum.</span>
+              ) : (
+                <span style={{ color: '#34d399', fontWeight: 700 }}>✨ Bebas Masuk! Tab Portal Admin dapat dibuka langsung tanpa meminta PIN lagi.</span>
+              )}
             </p>
 
-            <div style={{ maxWidth: '360px' }}>
-              <input 
-                type="text" 
-                className="form-input" 
-                value={formData.adminPin || 'PustakaSmart2026'}
-                onChange={e => setFormData({ ...formData, adminPin: e.target.value })}
-                placeholder="Masukkan PIN Admin Baru..."
-                style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '1px', fontFamily: 'var(--font-mono)', color: '#fb7185', background: '#1e293b' }}
-                required
-              />
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>
-                💡 <em>PIN Bawaan Pabrik:</em> <strong>PustakaSmart2026</strong>. Ubah PIN ini untuk keamanan maksimal!
+            {formData.enableAdminPin && (
+              <div style={{ maxWidth: '360px' }}>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  value={formData.adminPin || 'PustakaSmart2026'}
+                  onChange={e => setFormData({ ...formData, adminPin: e.target.value })}
+                  placeholder="Masukkan PIN Admin Baru..."
+                  style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '1px', fontFamily: 'var(--font-mono)', color: '#fb7185', background: '#1e293b' }}
+                  required
+                />
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>
+                  💡 <em>PIN Bawaan Pabrik:</em> <strong>PustakaSmart2026</strong>. Ubah PIN ini untuk keamanan maksimal!
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* DEDICATED SCHOOL LOGO UPLOAD SECTION */}

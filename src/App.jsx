@@ -100,7 +100,6 @@ export default function App() {
   // Anti-Inspect / Anti-DevTools Protection Listener (Disables F12, Right Click, & Ctrl+Shift+I)
   useEffect(() => {
     const handleContextMenu = (e) => {
-      // Disable right click if trial expired or in app mode
       if (settings?.licenseType !== 'pro') {
         e.preventDefault();
       }
@@ -108,7 +107,6 @@ export default function App() {
 
     const handleKeyDown = (e) => {
       if (settings?.licenseType !== 'pro') {
-        // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
         if (
           e.key === 'F12' ||
           (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
@@ -133,10 +131,10 @@ export default function App() {
     setActiveTab(newTab);
   };
 
-  // Open Admin Portal (prompt PIN if not logged in)
+  // Open Admin Portal (Direct entry if enableAdminPin === false or already authenticated)
   const handleOpenAdminPortal = () => {
     stopSpeech();
-    if (isAdminAuthed) {
+    if (!settings.enableAdminPin || isAdminAuthed) {
       setActiveTab('admin_portal');
     } else {
       setIsAdminPinModalOpen(true);
@@ -212,7 +210,6 @@ export default function App() {
   }
 
   // HARD LOCKOUT RENDER: If trial is expired, NOTHING ELSE is rendered into the DOM at all!
-  // Deleting the inspect element leaves an empty black screen with ZERO data!
   if (isTrialExpired) {
     return (
       <div style={{ minHeight: '100vh', background: '#090d16', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

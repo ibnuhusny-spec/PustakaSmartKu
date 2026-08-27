@@ -13,12 +13,13 @@ export const DEFAULT_SETTINGS = {
   enableVoice: true,
   enableSoundFX: true,
   autoAttendanceOnTap: true,
+  enableAdminPin: false, // Toggle PIN Admin: Set to false to disable PIN requirement completely!
   schoolLogoUrl: "", // Dedicated School Logo
   logoUrl: "/perpustakaansmart.png", // App Logo
   cardTemplate: "clean_corporate", // Default card template theme: clean_corporate, school_luxury, royal_gold
   idFieldLabel: "NISN / NIP", // Custom ID Label
   classFieldLabel: "Peran / Kelas", // Custom Class/Role Label
-  adminPin: "PustakaSmart2026", // Strong Default Secure Admin PIN (Not 1234)
+  adminPin: "PustakaSmart2026", // Strong Default Secure Admin PIN
   
   // Anti-Piracy 30-Day Trial & Pro Licensing System
   licenseType: "trial", // 'trial' or 'pro'
