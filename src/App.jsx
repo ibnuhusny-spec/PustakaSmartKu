@@ -73,6 +73,10 @@ export default function App() {
       s.adminPin = 'PustakaSmart2026';
       saveSettings(s);
     }
+    if (!s.schoolEmail) {
+      s.schoolEmail = 'perpustakaan@sditqurratuayun.sch.id';
+      saveSettings(s);
+    }
     setSettings(s);
     setBooks(getBooks());
     setMembers(getMembers());
@@ -172,6 +176,7 @@ export default function App() {
   };
 
   const daysRemaining = getTrialDaysRemaining(settings?.trialStartDate);
+  const isTrialExpired = daysRemaining <= 0 && settings?.licenseType !== 'pro';
 
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} settings={settings} />;
@@ -251,13 +256,16 @@ export default function App() {
         targetTabName="Portal Petugas Admin"
       />
 
+      {/* LICENSE MODAL (ALSO SERVES AS HARD LOCKOUT WHEN TRIAL EXPIRES) */}
       <LicenseModal 
-        isOpen={isLicenseModalOpen}
+        isOpen={isLicenseModalOpen || isTrialExpired}
         onClose={() => setIsLicenseModalOpen(false)}
         onActivateSuccess={handleActivateLicenseSuccess}
         currentLicenseType={settings?.licenseType || 'trial'}
         daysRemaining={daysRemaining}
         schoolName={settings?.schoolName}
+        schoolEmail={settings?.schoolEmail}
+        isExpiredLockout={isTrialExpired}
       />
 
       <RFIDSimulator 

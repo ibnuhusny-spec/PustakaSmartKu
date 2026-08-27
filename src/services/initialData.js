@@ -2,6 +2,7 @@
 
 export const DEFAULT_SETTINGS = {
   schoolName: "SDIT QURRATU A'YUN AL-ISLAMI",
+  schoolEmail: "perpustakaan@sditqurratuayun.sch.id", // Dedicated School Email for License Binding
   libraryName: "MAKTABAH AL-QIRO'AH",
   address: "Jalan Poros Makassar - Maros Km. 26 Maccopa",
   cityAddress: "", // Kosong secara default sampai diisi user di pengaturan
@@ -19,7 +20,7 @@ export const DEFAULT_SETTINGS = {
   classFieldLabel: "Peran / Kelas", // Custom Class/Role Label
   adminPin: "PustakaSmart2026", // Strong Default Secure Admin PIN (Not 1234)
   
-  // 30-Day Trial & Pro Licensing System
+  // Anti-Piracy 30-Day Trial & Pro Licensing System
   licenseType: "trial", // 'trial' or 'pro'
   trialStartDate: new Date().toISOString().split('T')[0], // 30-day countdown start
   licenseKey: "" // Permanent Pro Key

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Award, KeyRound, CheckCircle2, ShieldAlert, X, Sparkles, Building2, Copy, Check, Lock, Wrench, ShieldCheck, HelpCircle } from 'lucide-react';
+import { Award, KeyRound, CheckCircle2, ShieldAlert, X, Sparkles, Building2, Copy, Check, Lock, Wrench, ShieldCheck, Mail } from 'lucide-react';
 import { 
   generateSchoolRegistrationId, 
   generateProLicenseKeyForSchool, 
@@ -12,7 +12,9 @@ export default function LicenseModal({
   onActivateSuccess, 
   currentLicenseType = 'trial', 
   daysRemaining = 30,
-  schoolName = "SDIT QURRATU A'YUN AL-ISLAMI"
+  schoolName = "SDIT QURRATU A'YUN AL-ISLAMI",
+  schoolEmail = "perpustakaan@sditqurratuayun.sch.id",
+  isExpiredLockout = false
 }) {
   const [keyInput, setKeyInput] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -30,7 +32,7 @@ export default function LicenseModal({
 
   if (!isOpen) return null;
 
-  const regId = generateSchoolRegistrationId(schoolName);
+  const regId = generateSchoolRegistrationId(schoolName, schoolEmail);
 
   const handleCopyRegId = () => {
     navigator.clipboard.writeText(regId);
@@ -47,13 +49,13 @@ export default function LicenseModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (validateDynamicLicenseKey(keyInput, schoolName)) {
+    if (validateDynamicLicenseKey(keyInput, schoolName, schoolEmail)) {
       setErrorMessage('');
       setKeyInput('');
       onActivateSuccess(keyInput.trim().toUpperCase());
-      alert(`🎉 SELAMAT! Lisensi Resmi PustakaSmart RFID Pro Aktif Selamanya Khusus Untuk "${schoolName}"!`);
+      alert(`🎉 SELAMAT! Lisensi Resmi PustakaSmart RFID Pro Aktif Selamanya Khusus Untuk "${schoolName}" (${schoolEmail})!`);
     } else {
-      setErrorMessage(`❌ Kode Lisensi tidak cocok untuk "${schoolName}"! Kode lisensi terikat khusus per nama sekolah dan tidak dapat dibagikan.`);
+      setErrorMessage(`❌ Kode Lisensi tidak cocok! Kode lisensi terikat khusus untuk Email (${schoolEmail}) & Nama Sekolah (${schoolName}) dan tidak dapat dibagikan.`);
     }
   };
 
@@ -75,7 +77,7 @@ export default function LicenseModal({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={isExpiredLockout ? null : onClose}>
       <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '540px', padding: '24px' }}>
         
         <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
@@ -84,29 +86,51 @@ export default function LicenseModal({
               width: '44px',
               height: '44px',
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, #10b981, #3b82f6)',
+              background: isExpiredLockout ? 'linear-gradient(135deg, #f43f5e, #e11d48)' : 'linear-gradient(135deg, #10b981, #3b82f6)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
               boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
             }}>
-              <Award size={24} />
+              {isExpiredLockout ? <ShieldAlert size={24} /> : <Award size={24} />}
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>Aktivasi Lisensi Unik Sekolah</h3>
-              <div style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: 700 }}>PustakaSmart RFID School Edition</div>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>
+                {isExpiredLockout ? '🔒 Masa Percobaan 30 Hari Telah Berakhir' : 'Aktivasi Lisensi Unik Sekolah'}
+              </h3>
+              <div style={{ fontSize: '0.78rem', color: isExpiredLockout ? '#fb7185' : '#10b981', fontWeight: 700 }}>
+                {isExpiredLockout ? 'Aplikasi Terkunci — Diperlukan Kode Lisensi Pro' : 'PustakaSmart RFID School Edition'}
+              </div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-            <X size={18} />
-          </button>
+
+          {!isExpiredLockout && (
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         {/* 📥 BAGIAN 1: KHUSUS SEKOLAH / PEMBELI (INPUT KODE LISENSI) */}
         <form onSubmit={handleSubmit} style={{ marginTop: '16px' }}>
           
-          {currentLicenseType === 'trial' ? (
+          {isExpiredLockout ? (
+            <div style={{
+              background: 'rgba(244, 63, 94, 0.15)',
+              padding: '14px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid rgba(244, 63, 94, 0.5)',
+              marginBottom: '16px'
+            }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#fb7185', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Lock size={16} /> Waktu Trial 30 Hari Telah Habis
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '4px', lineHeight: '1.4' }}>
+                Masa percobaan 30 hari telah selesai. Masukkan **Kode Lisensi Pro** dari Vendor/Pengembang untuk membuka kembali aplikasi secara permanen.
+              </div>
+            </div>
+          ) : currentLicenseType === 'trial' ? (
             <div style={{
               background: 'rgba(245, 158, 11, 0.15)',
               padding: '12px 14px',
@@ -133,12 +157,12 @@ export default function LicenseModal({
                 <CheckCircle2 size={16} /> Lisensi Pro Aktif Selamanya (Full Version)
               </div>
               <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '2px' }}>
-                Terdaftar Resmi Khusus Untuk: <strong>{schoolName}</strong>
+                Terdaftar Resmi Khusus Untuk: <strong>{schoolName}</strong> ({schoolEmail})
               </div>
             </div>
           )}
 
-          {/* DYNAMIC SCHOOL REGISTRATION ID DISPLAY */}
+          {/* DYNAMIC SCHOOL REGISTRATION ID DISPLAY BIND TO EMAIL */}
           <div style={{
             background: 'rgba(59, 130, 246, 0.12)',
             padding: '14px',
@@ -147,8 +171,13 @@ export default function LicenseModal({
             marginBottom: '16px'
           }}>
             <div style={{ fontSize: '0.78rem', color: '#60a5fa', fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              🏫 STEP 1: ID REGISTRASI UNIK SEKOLAH ANDA (KIRIMKAN KE VENDOR):
+              🏫 STEP 1: ID REGISTRASI SEKOLAH (TERIKAT NAMA & EMAIL SEKOLAH):
             </div>
+            
+            <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Mail size={14} color="#38bdf8" /> Email Resmi: <strong>{schoolEmail || 'perpustakaan@sekolah.sch.id'}</strong>
+            </div>
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1e293b', padding: '8px 12px', borderRadius: '6px' }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#34d399', fontSize: '1rem', letterSpacing: '1px' }}>
                 {regId}
@@ -205,9 +234,11 @@ export default function LicenseModal({
           )}
 
           <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
-            <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
-              Tutup
-            </button>
+            {!isExpiredLockout && (
+              <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
+                Tutup
+              </button>
+            )}
             <button type="submit" className="btn btn-emerald" style={{ flex: 1 }}>
               <KeyRound size={16} /> Aktifkan Lisensi Pro
             </button>

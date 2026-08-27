@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2, Mail } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault } from '../services/db';
 import { getTrialDaysRemaining, validateDynamicLicenseKey } from '../services/licenseService';
 
@@ -15,12 +15,12 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     e.preventDefault();
     saveSettings(formData);
     onRefreshData();
-    alert('Pengaturan sekolah, PIN Admin, logo instansi, & sistem perpustakaan berhasil disimpan!');
+    alert('Pengaturan sekolah, Email Resmi, PIN Admin, logo instansi, & sistem perpustakaan berhasil disimpan!');
   };
 
   const handleActivateLicense = (e) => {
     e.preventDefault();
-    if (validateDynamicLicenseKey(licenseInput, formData.schoolName)) {
+    if (validateDynamicLicenseKey(licenseInput, formData.schoolName, formData.schoolEmail)) {
       const updated = {
         ...formData,
         licenseType: 'pro',
@@ -32,7 +32,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
       setLicenseInput('');
       alert('🎉 SELAMAT! Aplikasi Berhasil Diaktivasi Menjadi PustakaSmart RFID Pro Full Version!');
     } else {
-      alert('❌ Kode Lisensi tidak valid. Pastikan mengetik Kode Lisensi Resmi dengan benar.');
+      alert('❌ Kode Lisensi tidak cocok. Pastikan Kode Lisensi dibuat khusus untuk Email & Nama Sekolah Anda.');
     }
   };
 
@@ -337,6 +337,20 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                 value={formData.schoolName}
                 onChange={e => setFormData({ ...formData, schoolName: e.target.value })}
                 placeholder="Contoh: SDIT Qurratu A'yun Al-Islami"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8' }}>
+                <Mail size={16} /> Email Resmi Perpustakaan / Sekolah (Pengikat Lisensi Unik) *
+              </label>
+              <input 
+                type="email"
+                className="form-input"
+                value={formData.schoolEmail || ''}
+                onChange={e => setFormData({ ...formData, schoolEmail: e.target.value })}
+                placeholder="Contoh: perpustakaan@sditqurratuayun.sch.id"
                 required
               />
             </div>

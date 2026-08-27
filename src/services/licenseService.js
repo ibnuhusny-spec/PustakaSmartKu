@@ -1,22 +1,26 @@
-// Dynamic School-Specific License Verification & Key Generator Service
+// Anti-Piracy Dynamic License & Lockout Verification Service
 
 /**
- * Generates a unique School Registration ID based on School Name
+ * Generates a unique School Registration ID bound to BOTH School Name & School Email
  */
-export function generateSchoolRegistrationId(schoolName = '') {
+export function generateSchoolRegistrationId(schoolName = '', schoolEmail = '') {
   const cleanName = (schoolName || 'PUSTAKASMART SCHOOL').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const cleanEmail = (schoolEmail || 'PERPUSTAKAAN@SCH.ID').toLowerCase().trim();
+  const combinedStr = `${cleanName}:${cleanEmail}`;
+
   let hash = 0;
-  for (let i = 0; i < cleanName.length; i++) {
-    hash = ((hash << 5) - hash) + cleanName.charCodeAt(i);
+  for (let i = 0; i < combinedStr.length; i++) {
+    hash = ((hash << 5) - hash) + combinedStr.charCodeAt(i);
     hash |= 0;
   }
+  
   const positiveHash = Math.abs(hash).toString(36).toUpperCase();
   const prefix = cleanName.substring(0, 4).padEnd(4, 'X');
   return `ID-${prefix}-${positiveHash}`;
 }
 
 /**
- * Generates the 100% Unique PRO License Key for a specific School Registration ID
+ * Generates the 100% Unique PRO License Key bound to School Registration ID & Email
  */
 export function generateProLicenseKeyForSchool(registrationId = '') {
   const cleanId = (registrationId || '').trim().toUpperCase();
@@ -48,16 +52,16 @@ export function getTrialDaysRemaining(startDateStr) {
 }
 
 /**
- * Validates if a License Key is valid specifically for THIS school
+ * Validates if a License Key is valid specifically for THIS school name & email combination
  */
-export function validateDynamicLicenseKey(inputKey, schoolName) {
+export function validateDynamicLicenseKey(inputKey, schoolName, schoolEmail) {
   if (!inputKey || !schoolName) return false;
   const cleanInput = inputKey.trim().toUpperCase();
   
-  // Master emergency override key
+  // Master emergency vendor key
   if (cleanInput === 'PUSTAKASMART-FULL-MASTER-KEY-2026') return true;
 
-  const regId = generateSchoolRegistrationId(schoolName);
+  const regId = generateSchoolRegistrationId(schoolName, schoolEmail);
   const expectedKey = generateProLicenseKeyForSchool(regId);
   
   return cleanInput === expectedKey;
