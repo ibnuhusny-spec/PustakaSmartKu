@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Radio, Sparkles, ShieldCheck, Cpu, ChevronRight } from 'lucide-react';
+import defaultLogo from '../assets/logo.png';
 
-export default function SplashScreen({ onFinish, schoolName, libraryName }) {
+export default function SplashScreen({ onFinish, settings }) {
   const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState('Menginisialisasi Ekosistem PustakaSmart RFID...');
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -39,6 +40,10 @@ export default function SplashScreen({ onFinish, schoolName, libraryName }) {
 
     return () => clearInterval(timer);
   }, [onFinish]);
+
+  const logoSrc = (settings?.schoolLogoUrl && settings.schoolLogoUrl.trim()) 
+    ? settings.schoolLogoUrl 
+    : ((settings?.logoUrl && settings.logoUrl.trim() && settings.logoUrl.startsWith('data:')) ? settings.logoUrl : defaultLogo);
 
   return (
     <div style={{
@@ -124,7 +129,7 @@ export default function SplashScreen({ onFinish, schoolName, libraryName }) {
           }} />
 
           <img 
-            src="/perpustakaansmart.png" 
+            src={logoSrc} 
             alt="Logo PustakaSmart"
             style={{
               width: '120px',
@@ -133,11 +138,7 @@ export default function SplashScreen({ onFinish, schoolName, libraryName }) {
               filter: 'drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5))',
               display: 'block'
             }}
-            onError={(e) => {
-              // Fallback icon if logo fails to render
-              e.target.style.display = 'none';
-              e.target.parentNode.innerHTML = '<div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;color:#60a5fa"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>';
-            }}
+            onError={(e) => { e.target.src = defaultLogo; }}
           />
         </div>
 
@@ -158,79 +159,96 @@ export default function SplashScreen({ onFinish, schoolName, libraryName }) {
           fontSize: '0.92rem',
           fontWeight: 700,
           color: '#fbbf24',
-          marginBottom: '6px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px'
+          marginBottom: '2px',
+          letterSpacing: '0.5px',
+          textTransform: 'uppercase'
         }}>
-          <Sparkles size={16} /> {schoolName || 'SDIT Qurratu A\'yun Al-Islami'}
+          {settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI"}
         </div>
 
-        <p style={{
-          fontSize: '0.82rem',
+        <div style={{
+          fontSize: '0.78rem',
           color: '#94a3b8',
-          margin: '0 0 28px 0',
-          maxWidth: '380px'
+          marginBottom: '28px',
+          fontStyle: 'italic'
         }}>
-          {libraryName || 'Sistem Mandiri Kios & Presensi Perpustakaan Digital'}
-        </p>
+          Sistem Perpustakaan Sekolah Digital, E-Book PDF & RFID Klien-Server
+        </div>
 
         {/* Progress Bar Container */}
-        <div style={{ width: '100%', marginBottom: '14px' }}>
+        <div style={{ width: '100%', marginBottom: '16px' }}>
           <div style={{
             display: 'flex',
             justify: 'space-between',
-            alignItems: 'center',
             fontSize: '0.78rem',
+            fontWeight: 700,
             color: '#cbd5e1',
-            marginBottom: '8px',
-            fontWeight: 600
+            marginBottom: '8px'
           }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Cpu size={14} color="#38bdf8" /> {statusMessage}
+              <Cpu size={14} color="#10b981" /> System Booting...
             </span>
-            <span style={{ color: '#38bdf8', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>{progress}%</span>
+            <span style={{ color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>{progress}%</span>
           </div>
 
+          {/* Progress Bar Track */}
           <div style={{
+            height: '10px',
             width: '100%',
-            height: '8px',
             background: 'rgba(30, 41, 59, 0.8)',
-            borderRadius: '999px',
+            borderRadius: '10px',
             overflow: 'hidden',
             border: '1px solid rgba(255, 255, 255, 0.1)',
-            padding: '1px'
+            padding: '2px',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)'
           }}>
+            {/* Progress Fill */}
             <div style={{
               height: '100%',
               width: `${progress}%`,
-              background: 'linear-gradient(90deg, #3b82f6 0%, #10b981 50%, #f59e0b 100%)',
-              borderRadius: '999px',
-              transition: 'width 0.1s ease-out',
-              boxShadow: '0 0 12px rgba(59, 130, 246, 0.8)'
+              borderRadius: '8px',
+              background: 'linear-gradient(90deg, #10b981 0%, #3b82f6 50%, #6366f1 100%)',
+              boxShadow: '0 0 12px rgba(59, 130, 246, 0.8)',
+              transition: 'width 0.1s linear'
             }} />
           </div>
         </div>
 
-        {/* System Badges Footer */}
+        {/* Dynamic Status Text */}
         <div style={{
+          fontSize: '0.8rem',
+          color: '#94a3b8',
+          height: '20px',
           display: 'flex',
-          gap: '12px',
-          marginTop: '8px',
-          fontSize: '0.72rem',
-          color: '#64748b'
+          alignItems: 'center',
+          gap: '6px',
+          justifyContent: 'center'
         }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <ShieldCheck size={14} color="#10b981" /> 100% Standalone Offline DB
-          </span>
-          <span>•</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Radio size={14} color="#60a5fa" /> USB RFID Plug & Play
+          <Sparkles size={14} color="#fbbf24" style={{ flexShrink: 0 }} />
+          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {statusMessage}
           </span>
         </div>
 
-      </div>
+        {/* Footer Badge */}
+        <div style={{
+          marginTop: '24px',
+          paddingTop: '16px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          width: '100%',
+          display: 'flex',
+          justify: 'space-between',
+          alignItems: 'center',
+          fontSize: '0.72rem',
+          color: '#64748b'
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#34d399', fontWeight: 700 }}>
+            <ShieldCheck size={14} /> SQLite Central Database
+          </span>
+          <span>v1.0.0 Pro Edition</span>
+        </div>
 
+      </div>
     </div>
   );
 }
