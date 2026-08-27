@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2, Mail } from 'lucide-react';
-import { saveSettings, exportData, importData, resetToDefault } from '../services/db';
+import React, { useState, useEffect } from 'react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2, Mail, Server, Network, Wifi } from 'lucide-react';
+import { saveSettings, exportData, importData, resetToDefault, getServerUrl, setServerUrl, checkServerConnection } from '../services/db';
 import { getTrialDaysRemaining, validateDynamicLicenseKey } from '../services/licenseService';
 
 export default function SettingsView({ settings, onRefreshData, onReplaySplash }) {
   const [formData, setFormData] = useState({ ...settings });
-  const [importJsonText, setImportJsonText] = useState('');
   const [licenseInput, setLicenseInput] = useState('');
+  
+  // Server State
+  const [serverUrlInput, setServerUrlInput] = useState(getServerUrl());
+  const [serverStatus, setServerStatus] = useState({ connected: false, info: null });
+
+  useEffect(() => {
+    checkServerConnection().then(setServerStatus);
+  }, []);
 
   const daysRemaining = getTrialDaysRemaining(formData.trialStartDate);
   const isPro = formData.licenseType === 'pro';
@@ -16,6 +23,20 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     saveSettings(formData);
     onRefreshData();
     alert('Pengaturan sekolah, Email Resmi, PIN Admin, logo instansi, & sistem perpustakaan berhasil disimpan!');
+  };
+
+  const handleSaveServerUrl = (e) => {
+    e.preventDefault();
+    setServerUrl(serverUrlInput);
+    checkServerConnection().then(res => {
+      setServerStatus(res);
+      if (res.connected) {
+        alert(`🟢 BERHASIL TERHUBUNG! Komputer ini kini terhubung ke Database SQLite Server di: ${serverUrlInput}`);
+        onRefreshData();
+      } else {
+        alert(`⚠️ Tidak dapat terhubung ke Server di ${serverUrlInput}. Memakai mode penyimpanan lokal.`);
+      }
+    });
   };
 
   const handleActivateLicense = (e) => {
@@ -36,7 +57,6 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     }
   };
 
-  // Compress and save dedicated School Logo image (Logo Instansi Sekolah)
   const handleSchoolLogoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -83,7 +103,6 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     a.click();
   };
 
-  // File Upload Handler for Importing Backup JSON directly from computer file
   const handleJsonFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -93,7 +112,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
       const success = importData(jsonContent);
       if (success) {
         onRefreshData();
-        alert('🎉 BERHASIL! Seluruh data ribuan buku, anggota, presensi, & transaksi berhasil dipulihkan total!');
+        alert('🎉 BERHASIL! Seluruh data ribuan buku, anggota, presensi, & transaksi berhasil dipulihkan total ke SQLite Database!');
       } else {
         alert('❌ Gagal mengimpor data. File cadangan JSON tidak valid.');
       }
@@ -144,6 +163,68 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
               </button>
             </form>
           )}
+        </div>
+      </div>
+
+      {/* CLIENT-SERVER & SQLITE DATABASE NETWORK CARD */}
+      <div className="glass-card" style={{ padding: '24px', marginBottom: '28px', border: '1px solid rgba(59, 130, 246, 0.4)', background: 'rgba(30, 41, 59, 0.7)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'linear-gradient(135deg, #3b82f6, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <Server size={22} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)', fontWeight: 800 }}>
+              🌐 Arsitektur Klien-Server (SQLite Database Multi-Komputer LAN)
+            </h3>
+            <div style={{ fontSize: '0.78rem', color: '#60a5fa' }}>
+              Penyimpanan Terpusat Anti-Hilang Pada File <code>pustakasmart.sqlite</code> Di Disk Laptop Utama
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', background: '#0f172a', padding: '16px', borderRadius: '8px', border: '1px solid #334155' }}>
+          
+          <div>
+            <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700 }}>STATUS KONEKSI SQLITE DATABASE SERVER:</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: serverStatus.connected ? '#10b981' : '#f59e0b' }} />
+              <span style={{ fontSize: '0.92rem', fontWeight: 800, color: serverStatus.connected ? '#34d399' : '#fbbf24' }}>
+                {serverStatus.connected ? '🟢 Terhubung Ke Backend Server SQLite' : '🟡 Mode Penyimpanan Lokal (Fallback Browser)'}
+              </span>
+            </div>
+            {serverStatus.connected && serverStatus.info && (
+              <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginTop: '6px' }}>
+                📍 Local Server: <code>{serverStatus.info.serverUrl}</code><br/>
+                💾 File Disk: <code>{serverStatus.info.dbPath}</code>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <form onSubmit={handleSaveServerUrl}>
+              <div style={{ fontSize: '0.75rem', color: '#60a5fa', fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Wifi size={14} /> URL ALAMAT IP SERVER (UNTUK KOMPUTER CLIENT LAIN):
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input 
+                  type="text" 
+                  className="form-input"
+                  value={serverUrlInput}
+                  onChange={e => setServerUrlInput(e.target.value)}
+                  placeholder="http://192.168.1.XX:3001..."
+                  style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)' }}
+                  required
+                />
+                <button type="submit" className="btn btn-primary" style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+                  Hubungkan
+                </button>
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '4px' }}>
+                💡 <em>Petunjuk Multi-Komputer:</em> Masukkan IP komputer server utama (misal <code>http://192.168.1.15:3001</code>) agar komputer kios presensi terhubung ke database yang sama!
+              </div>
+            </form>
+          </div>
+
         </div>
       </div>
 
@@ -485,10 +566,10 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
       {/* BACKUP & RESTORE DATABASE CARD WITH DIRECT FILE UPLOAD */}
       <div className="glass-card" style={{ padding: '28px' }}>
         <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Database color="#10b981" /> Cadangan & Pemulihan Data Anti-Hilang (Offline Backup JSON)
+          <Database color="#10b981" /> Cadangan & Pemulihan Data SQLite Anti-Hilang (Offline Backup JSON)
         </h3>
         <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-          Seluruh data buku, anggota, presensi, & transaksi tersimpan aman secara otomatis di browser lokal Anda (*IndexedDB/LocalStorage*). Untuk mengamankan data jika laptop rusak/di-install ulang, Anda cukup mengunduh file cadangan <strong>Backup JSON</strong>.
+          Seluruh data tersimpan aman secara permanen di file disk <code>pustakasmart.sqlite</code>. Untuk mengamankan data ekstra jika laptop rusak/di-install ulang, Anda cukup mengunduh file cadangan <strong>Backup JSON</strong>.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>

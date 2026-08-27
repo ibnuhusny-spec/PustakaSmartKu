@@ -12,7 +12,8 @@ const KEYS = {
   MEMBERS: 'pustakasmart_members',
   TRANSACTIONS: 'pustakasmart_transactions',
   ATTENDANCE: 'pustakasmart_attendance',
-  QUIZZES: 'pustakasmart_quizzes'
+  QUIZZES: 'pustakasmart_quizzes',
+  SERVER_URL: 'pustakasmart_server_url'
 };
 
 const DEFAULT_QUIZZES = [
@@ -82,352 +83,322 @@ const DEFAULT_QUIZZES = [
   }
 ];
 
+// Server Connection State
+let activeServerUrl = localStorage.getItem(KEYS.SERVER_URL) || 'http://localhost:3001';
+let isSqliteConnected = false;
+let serverInfo = null;
+
+export const setServerUrl = (url) => {
+  activeServerUrl = url;
+  localStorage.setItem(KEYS.SERVER_URL, url);
+};
+
+export const getServerUrl = () => activeServerUrl;
+
+// Check connection to SQLite Express Server
+export const checkServerConnection = async () => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const res = await fetch(`${activeServerUrl}/api/health`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      isSqliteConnected = true;
+      serverInfo = data;
+      return { connected: true, info: data };
+    }
+  } catch (e) {
+    isSqliteConnected = false;
+    serverInfo = null;
+  }
+  return { connected: false, info: null };
+};
+
+// Sync LocalStorage to SQLite Server on startup
+export const syncLocalToSqliteServer = async () => {
+  const conn = await checkServerConnection();
+  if (!conn.connected) return false;
+
+  try {
+    const localBooks = JSON.parse(localStorage.getItem(KEYS.BOOKS) || '[]');
+    const localMembers = JSON.parse(localStorage.getItem(KEYS.MEMBERS) || '[]');
+    const localTx = JSON.parse(localStorage.getItem(KEYS.TRANSACTIONS) || '[]');
+    const localAtt = JSON.parse(localStorage.getItem(KEYS.ATTENDANCE) || '[]');
+    const localSettings = JSON.parse(localStorage.getItem(KEYS.SETTINGS) || '{}');
+
+    await fetch(`${activeServerUrl}/api/sync-bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        books: localBooks.length > 0 ? localBooks : INITIAL_BOOKS,
+        members: localMembers.length > 0 ? localMembers : INITIAL_MEMBERS,
+        transactions: localTx.length > 0 ? localTx : INITIAL_TRANSACTIONS,
+        attendance: localAtt.length > 0 ? localAtt : INITIAL_ATTENDANCE,
+        settings: localSettings.schoolName ? localSettings : DEFAULT_SETTINGS
+      })
+    });
+
+    await loadFromSqliteServerToLocalCache();
+    return true;
+  } catch (e) {
+    console.warn('Sync to SQLite failed, using LocalStorage:', e);
+    return false;
+  }
+};
+
+const loadFromSqliteServerToLocalCache = async () => {
+  try {
+    const [bRes, mRes, tRes, aRes, sRes] = await Promise.all([
+      fetch(`${activeServerUrl}/api/books`),
+      fetch(`${activeServerUrl}/api/members`),
+      fetch(`${activeServerUrl}/api/transactions`),
+      fetch(`${activeServerUrl}/api/attendance`),
+      fetch(`${activeServerUrl}/api/settings`)
+    ]);
+
+    if (bRes.ok) localStorage.setItem(KEYS.BOOKS, JSON.stringify(await bRes.json()));
+    if (mRes.ok) localStorage.setItem(KEYS.MEMBERS, JSON.stringify(await mRes.json()));
+    if (tRes.ok) localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(await tRes.json()));
+    if (aRes.ok) localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify(await aRes.json()));
+    if (sRes.ok) {
+      const s = await sRes.json();
+      if (Object.keys(s).length > 0) {
+        localStorage.setItem(KEYS.SETTINGS, JSON.stringify({ ...DEFAULT_SETTINGS, ...s }));
+      }
+    }
+  } catch (e) {
+    console.warn('Cache sync error:', e);
+  }
+};
+
 // Initialize DB
 export const initDB = () => {
   if (!localStorage.getItem(KEYS.SETTINGS)) {
     localStorage.setItem(KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
   }
   if (!localStorage.getItem(KEYS.BOOKS)) {
-    localStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
+    localStorage.setItem(KEYS.BOOKS, JSON.stringify(INITIAL_BOOKS));
   }
   if (!localStorage.getItem(KEYS.MEMBERS)) {
-    localStorage.setItem(KEYS.MEMBERS, JSON.stringify([]));
+    localStorage.setItem(KEYS.MEMBERS, JSON.stringify(INITIAL_MEMBERS));
   }
   if (!localStorage.getItem(KEYS.TRANSACTIONS)) {
-    localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify([]));
+    localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(INITIAL_TRANSACTIONS));
   }
   if (!localStorage.getItem(KEYS.ATTENDANCE)) {
-    localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify([]));
+    localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify(INITIAL_ATTENDANCE));
   }
   if (!localStorage.getItem(KEYS.QUIZZES)) {
     localStorage.setItem(KEYS.QUIZZES, JSON.stringify(DEFAULT_QUIZZES));
   }
+
+  syncLocalToSqliteServer();
 };
 
-// --- SETTINGS ---
+// SETTINGS API
 export const getSettings = () => {
-  initDB();
-  return JSON.parse(localStorage.getItem(KEYS.SETTINGS)) || DEFAULT_SETTINGS;
+  try {
+    const data = localStorage.getItem(KEYS.SETTINGS);
+    return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : DEFAULT_SETTINGS;
+  } catch (e) {
+    return DEFAULT_SETTINGS;
+  }
 };
 
 export const saveSettings = (newSettings) => {
-  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(newSettings));
-  return newSettings;
-};
-
-// --- QUIZZES ---
-export const getQuizzes = () => {
-  initDB();
-  const stored = JSON.parse(localStorage.getItem(KEYS.QUIZZES));
-  return (stored && stored.length > 0) ? stored : DEFAULT_QUIZZES;
-};
-
-export const saveQuiz = (quizData) => {
-  const quizzes = getQuizzes();
-  const existingIdx = quizzes.findIndex(q => q.id === quizData.id);
+  const merged = { ...getSettings(), ...newSettings };
+  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(merged));
   
-  if (existingIdx >= 0) {
-    quizzes[existingIdx] = { ...quizzes[existingIdx], ...quizData };
-  } else {
-    const newQuiz = {
-      ...quizData,
-      id: quizData.id || `Q-${Date.now().toString().slice(-4)}`,
-      rewardPoints: Number(quizData.rewardPoints) || 15,
-      penaltyPoints: Number(quizData.penaltyPoints) || 20,
-    };
-    quizzes.unshift(newQuiz);
+  if (isSqliteConnected) {
+    fetch(`${activeServerUrl}/api/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(merged)
+    }).catch(console.warn);
   }
-  localStorage.setItem(KEYS.QUIZZES, JSON.stringify(quizzes));
-  return quizzes;
+  return merged;
 };
 
-export const deleteQuiz = (quizId) => {
-  const quizzes = getQuizzes().filter(q => q.id !== quizId);
-  localStorage.setItem(KEYS.QUIZZES, JSON.stringify(quizzes));
-  return quizzes;
-};
-
-// --- BOOKS ---
+// BOOKS API
 export const getBooks = () => {
-  initDB();
-  return JSON.parse(localStorage.getItem(KEYS.BOOKS)) || [];
+  try {
+    const data = localStorage.getItem(KEYS.BOOKS);
+    return data ? JSON.parse(data) : INITIAL_BOOKS;
+  } catch (e) {
+    return INITIAL_BOOKS;
+  }
 };
 
 export const saveBook = (bookData) => {
   const books = getBooks();
-  const existingIdx = books.findIndex(b => b.id === bookData.id);
-  const totalStock = Math.max(0, Number(bookData.stock) || 1);
-
-  if (existingIdx >= 0) {
-    const oldBook = books[existingIdx];
-    const currentlyLoaned = oldBook.stock - oldBook.available;
-    const newAvailable = Math.max(0, totalStock - currentlyLoaned);
-
-    books[existingIdx] = { 
-      ...oldBook, 
-      ...bookData,
-      stock: totalStock,
-      available: newAvailable,
-      ddc: bookData.ddc || '800'
-    };
+  const index = books.findIndex(b => b.id === bookData.id);
+  let updated;
+  if (index >= 0) {
+    updated = [...books];
+    updated[index] = { ...updated[index], ...bookData };
   } else {
-    const newBook = {
-      ...bookData,
-      id: bookData.id || `B-${Date.now().toString().slice(-4)}`,
-      stock: totalStock,
-      available: totalStock,
-      ddc: bookData.ddc || '800',
-      coverUrl: bookData.coverUrl || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80',
-    };
-    books.unshift(newBook);
+    updated = [bookData, ...books];
   }
-  localStorage.setItem(KEYS.BOOKS, JSON.stringify(books));
-  return books;
+  localStorage.setItem(KEYS.BOOKS, JSON.stringify(updated));
+
+  if (isSqliteConnected) {
+    fetch(`${activeServerUrl}/api/books`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bookData)
+    }).catch(console.warn);
+  }
+
+  return updated;
 };
 
 export const deleteBook = (bookId) => {
   const books = getBooks().filter(b => b.id !== bookId);
   localStorage.setItem(KEYS.BOOKS, JSON.stringify(books));
+
+  if (isSqliteConnected) {
+    fetch(`${activeServerUrl}/api/books/${bookId}`, { method: 'DELETE' }).catch(console.warn);
+  }
+
   return books;
 };
 
 export const clearSampleBooks = () => {
   localStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
+  return [];
 };
 
-export const importBooksCSV = (csvContent) => {
+// MEMBERS API
+export const getMembers = () => {
   try {
-    const lines = csvContent.split(/\r?\n/).filter(line => line.trim() !== '');
-    if (lines.length === 0) throw new Error('File CSV kosong.');
-
-    const headers = lines[0].split(/[,;]/).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
-    
-    const titleIdx = headers.findIndex(h => h.includes('judul') || h.includes('title'));
-    const authorIdx = headers.findIndex(h => h.includes('penulis') || h.includes('pengarang') || h.includes('author'));
-    const categoryIdx = headers.findIndex(h => h.includes('kategori') || h.includes('category'));
-    const ddcIdx = headers.findIndex(h => h.includes('ddc') || h.includes('klasifikasi') || h.includes('klas'));
-    const isbnIdx = headers.findIndex(h => h.includes('isbn') || h.includes('barcode'));
-    const shelfIdx = headers.findIndex(h => h.includes('rak') || h.includes('shelf') || h.includes('lokasi'));
-    const stockIdx = headers.findIndex(h => h.includes('stok') || h.includes('stock') || h.includes('jumlah'));
-
-    if (titleIdx === -1 || authorIdx === -1) {
-      throw new Error('Header CSV minimal harus memiliki kolom "Judul" dan "Penulis".');
-    }
-
-    const currentBooks = getBooks();
-    let importedCount = 0;
-
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(/[,;]/).map(c => c.trim().replace(/['"]/g, ''));
-      if (!cols[titleIdx] || !cols[authorIdx]) continue;
-
-      const title = cols[titleIdx];
-      const author = cols[authorIdx];
-      const category = categoryIdx !== -1 && cols[categoryIdx] ? cols[categoryIdx] : 'Umum';
-      const ddc = ddcIdx !== -1 && cols[ddcIdx] ? cols[ddcIdx] : '800';
-      const isbn = isbnIdx !== -1 && cols[isbnIdx] ? cols[isbnIdx] : `978-602-${Math.floor(100+Math.random()*900)}-${i}`;
-      const shelf = shelfIdx !== -1 && cols[shelfIdx] ? cols[shelfIdx] : 'Rak A1';
-      const stock = stockIdx !== -1 && !isNaN(cols[stockIdx]) ? Number(cols[stockIdx]) : 3;
-
-      const bookObj = {
-        id: `B-${Date.now().toString().slice(-4)}-${i}`,
-        title,
-        author,
-        publisher: 'Penerbit Sekolah',
-        year: 2024,
-        category,
-        ddc,
-        isbn,
-        shelf,
-        stock: stock,
-        available: stock,
-        coverUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80',
-        description: 'Buku literasi inventaris sekolah.',
-        ebookContent: 'Pratinjau konten digital buku...'
-      };
-
-      currentBooks.unshift(bookObj);
-      importedCount++;
-    }
-
-    localStorage.setItem(KEYS.BOOKS, JSON.stringify(currentBooks));
-    return importedCount;
-  } catch (err) {
-    throw new Error(`Gagal Impor Buku CSV: ${err.message}`);
+    const data = localStorage.getItem(KEYS.MEMBERS);
+    return data ? JSON.parse(data) : INITIAL_MEMBERS;
+  } catch (e) {
+    return INITIAL_MEMBERS;
   }
 };
 
-// --- MEMBERS ---
-export const getMembers = () => {
-  initDB();
-  return JSON.parse(localStorage.getItem(KEYS.MEMBERS)) || [];
-};
-
 export const getMemberByRfid = (rfidUid) => {
-  if (!rfidUid) return null;
   const members = getMembers();
-  const cleanUid = String(rfidUid).trim().toUpperCase();
-  return members.find(m => m.rfidUid && String(m.rfidUid).trim().toUpperCase() === cleanUid) || null;
+  return members.find(m => m.rfidUid === rfidUid);
 };
 
 export const saveMember = (memberData) => {
   const members = getMembers();
-  const cleanUid = String(memberData.rfidUid).trim().toUpperCase();
-  const existingIdx = members.findIndex(m => m.id === memberData.id || (m.rfidUid && String(m.rfidUid).trim().toUpperCase() === cleanUid));
-  
-  if (existingIdx >= 0) {
-    members[existingIdx] = { 
-      ...members[existingIdx], 
-      ...memberData,
-      rfidUid: cleanUid
-    };
+  const index = members.findIndex(m => m.id === memberData.id);
+  let updated;
+  if (index >= 0) {
+    updated = [...members];
+    updated[index] = { ...updated[index], ...memberData };
   } else {
-    const newMember = {
-      ...memberData,
-      id: memberData.id || `M-${Date.now().toString().slice(-4)}`,
-      rfidUid: cleanUid,
-      balance: Number(memberData.balance) || 10000,
-      points: Number(memberData.points) || 10,
-      badge: memberData.badge || 'Pembaca Baru 🌱',
-      avatar: memberData.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(memberData.name)}`,
-      registeredAt: new Date().toISOString().split('T')[0]
-    };
-    members.unshift(newMember);
+    updated = [memberData, ...members];
   }
-  localStorage.setItem(KEYS.MEMBERS, JSON.stringify(members));
+  localStorage.setItem(KEYS.MEMBERS, JSON.stringify(updated));
+
+  if (isSqliteConnected) {
+    fetch(`${activeServerUrl}/api/members`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(memberData)
+    }).catch(console.warn);
+  }
+
+  return updated;
+};
+
+export const updateMemberBalance = (memberId, newBalance) => {
+  const members = getMembers();
+  const index = members.findIndex(m => m.id === memberId);
+  if (index >= 0) {
+    members[index].balance = Number(newBalance) || 0;
+    saveMember(members[index]);
+  }
   return members;
 };
 
 export const deleteMember = (memberId) => {
   const members = getMembers().filter(m => m.id !== memberId);
   localStorage.setItem(KEYS.MEMBERS, JSON.stringify(members));
-  return members;
-};
 
-export const updateMemberBalance = (memberId, amountChange) => {
-  const members = getMembers();
-  const idx = members.findIndex(m => m.id === memberId);
-  if (idx >= 0) {
-    members[idx].balance = Math.max(0, (members[idx].balance || 0) + amountChange);
-    localStorage.setItem(KEYS.MEMBERS, JSON.stringify(members));
+  if (isSqliteConnected) {
+    fetch(`${activeServerUrl}/api/members/${memberId}`, { method: 'DELETE' }).catch(console.warn);
   }
+
   return members;
 };
 
-export const importMembersCSV = (csvContent) => {
+export const importMembersCSV = (csvText) => {
   try {
-    const lines = csvContent.split(/\r?\n/).filter(line => line.trim() !== '');
-    if (lines.length === 0) throw new Error('File CSV kosong.');
+    const lines = csvText.trim().split('\n');
+    let imported = 0;
 
-    const headers = lines[0].split(/[,;]/).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
-    
-    const nameIdx = headers.findIndex(h => h.includes('nama') || h.includes('name'));
-    const rfidIdx = headers.findIndex(h => h.includes('rfid') || h.includes('uid') || h.includes('card') || h.includes('kartu'));
-    const classIdx = headers.findIndex(h => h.includes('kelas') || h.includes('class') || h.includes('grade'));
-    const nisnIdx = headers.findIndex(h => h.includes('nisn') || h.includes('nip') || h.includes('id'));
-    const roleIdx = headers.findIndex(h => h.includes('peran') || h.includes('role') || h.includes('jabatan'));
-    const balanceIdx = headers.findIndex(h => h.includes('saldo') || h.includes('balance') || h.includes('wallet'));
-
-    if (nameIdx === -1 || rfidIdx === -1) {
-      throw new Error('Header CSV minimal harus memiliki kolom "Nama" dan "RFID" (atau UID).');
-    }
-
-    const currentMembers = getMembers();
-    let importedCount = 0;
-
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(/[,;]/).map(c => c.trim().replace(/['"]/g, ''));
-      if (!cols[nameIdx] || !cols[rfidIdx]) continue;
-
-      const name = cols[nameIdx];
-      const rfidUid = String(cols[rfidIdx]).trim().toUpperCase();
-      const classGrade = classIdx !== -1 && cols[classIdx] ? cols[classIdx] : 'Siswa';
-      const nisn = nisnIdx !== -1 && cols[nisnIdx] ? cols[nisnIdx] : Math.floor(1000000000 + Math.random() * 9000000000).toString();
-      const role = roleIdx !== -1 && cols[roleIdx] ? cols[roleIdx] : 'Siswa';
-      const balance = balanceIdx !== -1 && !isNaN(cols[balanceIdx]) ? Number(cols[balanceIdx]) : 10000;
-
-      const existingIdx = currentMembers.findIndex(m => m.rfidUid === rfidUid);
-      const memberObj = {
-        id: existingIdx >= 0 ? currentMembers[existingIdx].id : `M-${Date.now().toString().slice(-4)}-${i}`,
-        rfidUid,
-        name,
-        classGrade,
-        nisn,
-        role,
-        balance,
-        points: 10,
-        badge: 'Pembaca Aktif ⭐',
-        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`,
-        registeredAt: new Date().toISOString().split('T')[0]
-      };
-
-      if (existingIdx >= 0) {
-        currentMembers[existingIdx] = { ...currentMembers[existingIdx], ...memberObj };
-      } else {
-        currentMembers.unshift(memberObj);
+    lines.forEach(line => {
+      const parts = line.split(',').map(s => s.trim());
+      if (parts.length >= 2 && parts[0] && parts[0].toLowerCase() !== 'nama') {
+        const member = {
+          id: `M-${Math.floor(1000 + Math.random() * 9000)}`,
+          rfidUid: parts[1] || `RFID-${Math.floor(1000 + Math.random() * 9000)}`,
+          name: parts[0],
+          role: parts[2] || 'Siswa',
+          classGrade: parts[3] || 'Kelas 1A',
+          nisn: parts[4] || '',
+          email: parts[5] || '',
+          phone: parts[6] || '',
+          balance: Number(parts[7]) || 10000,
+          points: 50,
+          badge: 'Pembaca Baru 🌱',
+          avatar: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80',
+          registeredAt: new Date().toISOString().split('T')[0]
+        };
+        saveMember(member);
+        imported++;
       }
-      importedCount++;
-    }
+    });
 
-    localStorage.setItem(KEYS.MEMBERS, JSON.stringify(currentMembers));
-    return importedCount;
-  } catch (err) {
-    throw new Error(`Gagal Impor CSV: ${err.message}`);
+    return imported;
+  } catch (e) {
+    return 0;
   }
 };
 
-// --- TRANSACTIONS & LOANS ---
+// TRANSACTIONS API
 export const getTransactions = () => {
-  initDB();
-  const txs = JSON.parse(localStorage.getItem(KEYS.TRANSACTIONS)) || [];
-  const settings = getSettings();
-  const todayStr = new Date().toISOString().split('T')[0];
-  const today = new Date(todayStr);
-
-  return txs.map(tx => {
-    if (tx.status === 'Dipinjam' && tx.dueDate) {
-      const due = new Date(tx.dueDate);
-      if (today > due) {
-        const diffTime = Math.abs(today - due);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const fine = diffDays * (settings.finePerDay || 1000);
-        return { ...tx, status: 'Terlambat', fineAmount: fine, finePaid: false };
-      }
-    }
-    return tx;
-  });
+  try {
+    const data = localStorage.getItem(KEYS.TRANSACTIONS);
+    return data ? JSON.parse(data) : INITIAL_TRANSACTIONS;
+  } catch (e) {
+    return INITIAL_TRANSACTIONS;
+  }
 };
 
-export const createLoanTransaction = (member, book) => {
-  const settings = getSettings();
+export const issueBook = (memberRfid, bookId, notes = '') => {
+  const member = getMemberByRfid(memberRfid);
+  if (!member) return { success: false, message: 'Anggota RFID tidak ditemukan!' };
+
   const books = getBooks();
-  const txs = getTransactions();
-  
-  // Check book stock availability
-  const bookIdx = books.findIndex(b => b.id === book.id);
-  if (bookIdx < 0 || books[bookIdx].available <= 0) {
-    throw new Error(`Stok buku "${book.title}" sedang habis / seluruhnya sedang dipinjam.`);
+  const bookIndex = books.findIndex(b => b.id === bookId);
+  if (bookIndex < 0) return { success: false, message: 'Buku tidak ditemukan!' };
+
+  const book = books[bookIndex];
+  const isDigitalOnly = (book.pdfUrl || book.ebookContent) && Number(book.stock) === 0;
+
+  if (!isDigitalOnly && book.available <= 0) {
+    return { success: false, message: 'Stok fisik buku habis!' };
   }
 
-  // Get active loans for this student
-  const activeLoans = txs.filter(t => t.memberId === member.id && (t.status === 'Dipinjam' || t.status === 'Terlambat'));
+  const settings = getSettings();
+  const activeTxCount = getTransactions().filter(
+    t => t.memberId === member.id && (t.status === 'Dipinjam' || t.status === 'Terlambat')
+  ).length;
 
-  // RULE 1: Prevent duplicate loan of the EXACT SAME BOOK if not returned yet!
-  const existingBookLoan = activeLoans.find(
-    t => t.bookId === book.id || t.bookTitle.toLowerCase() === book.title.toLowerCase()
-  );
-  if (existingBookLoan) {
-    throw new Error(`Anda sedang meminjam buku "${book.title}". Harap kembalikan buku tersebut terlebih dahulu sebelum meminjamnya lagi!`);
+  if (activeTxCount >= settings.maxBooksPerStudent) {
+    return { success: false, message: `Maksimal peminjaman (${settings.maxBooksPerStudent} buku) telah tercapai!` };
   }
 
-  // RULE 2: Enforce max books loan limit per student
-  if (activeLoans.length >= (settings.maxBooksPerStudent || 3)) {
-    throw new Error(`Siswa telah mencapai batas maksimum peminjaman (${settings.maxBooksPerStudent} buku).`);
-  }
-
-  const issueDate = new Date();
+  const today = new Date();
   const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + (settings.maxLoanDays || 7));
+  dueDate.setDate(today.getDate() + settings.maxLoanDays);
 
   const newTx = {
     id: `TRX-${Date.now().toString().slice(-6)}`,
@@ -436,156 +407,201 @@ export const createLoanTransaction = (member, book) => {
     memberName: member.name,
     bookId: book.id,
     bookTitle: book.title,
-    issueDate: issueDate.toISOString().split('T')[0],
+    issueDate: today.toISOString().split('T')[0],
     dueDate: dueDate.toISOString().split('T')[0],
     returnDate: null,
     status: 'Dipinjam',
     fineAmount: 0,
     finePaid: true,
-    notes: 'Peminjaman Kios Mandiri RFID'
+    notes
   };
 
-  // Reduce book available count by 1
-  books[bookIdx].available = Math.max(0, books[bookIdx].available - 1);
-  localStorage.setItem(KEYS.BOOKS, JSON.stringify(books));
-
-  // Award reading points to member
-  const members = getMembers();
-  const mIdx = members.findIndex(m => m.id === member.id);
-  if (mIdx >= 0) {
-    members[mIdx].points = (members[mIdx].points || 0) + 10;
-    localStorage.setItem(KEYS.MEMBERS, JSON.stringify(members));
+  if (!isDigitalOnly) {
+    books[bookIndex].available -= 1;
+    saveBook(books[bookIndex]);
   }
 
-  txs.unshift(newTx);
-  localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
+  const txs = getTransactions();
+  const updatedTxs = [newTx, ...txs];
+  localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(updatedTxs));
 
-  return newTx;
+  if (isSqliteConnected) {
+    fetch(`${activeServerUrl}/api/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTx)
+    }).catch(console.warn);
+  }
+
+  return { success: true, transaction: newTx, member };
 };
 
-export const returnBookTransaction = (txId, payFineWithWallet = false) => {
+export const returnBook = (transactionId) => {
   const txs = getTransactions();
-  const idx = txs.findIndex(t => t.id === txId);
-  if (idx < 0) throw new Error('Transaksi peminjaman tidak ditemukan.');
+  const txIndex = txs.findIndex(t => t.id === transactionId);
+  if (txIndex < 0) return { success: false, message: 'Transaksi tidak ditemukan!' };
 
-  const tx = txs[idx];
-  const members = getMembers();
-  const mIdx = members.findIndex(m => m.id === tx.memberId);
-  
-  if (tx.fineAmount > 0 && !tx.finePaid) {
-    if (payFineWithWallet && mIdx >= 0) {
-      if (members[mIdx].balance < tx.fineAmount) {
-        throw new Error(`Saldo kartu RFID tidak mencukupi (Rp ${members[mIdx].balance.toLocaleString('id-ID')}). Butuh Rp ${tx.fineAmount.toLocaleString('id-ID')}`);
-      }
-      members[mIdx].balance -= tx.fineAmount;
-      localStorage.setItem(KEYS.MEMBERS, JSON.stringify(members));
-      tx.finePaid = true;
+  const tx = txs[txIndex];
+  const today = new Date().toISOString().split('T')[0];
+
+  const due = new Date(tx.dueDate);
+  const now = new Date(today);
+  let fineAmount = 0;
+  if (now > due) {
+    const diffTime = Math.abs(now - due);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const settings = getSettings();
+    fineAmount = diffDays * settings.finePerDay;
+  }
+
+  tx.returnDate = today;
+  tx.status = 'Dikembalikan';
+  tx.fineAmount = fineAmount;
+  tx.finePaid = fineAmount === 0;
+
+  txs[txIndex] = tx;
+  localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
+
+  const books = getBooks();
+  const bookIndex = books.findIndex(b => b.id === tx.bookId);
+  if (bookIndex >= 0) {
+    const book = books[bookIndex];
+    if (book.available < book.stock) {
+      book.available += 1;
+      saveBook(book);
     }
   }
 
-  tx.returnDate = new Date().toISOString().split('T')[0];
-  tx.status = 'Dikembalikan';
-  localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
-
-  // Restore book available count by +1 (capped at total stock)
-  const books = getBooks();
-  const bIdx = books.findIndex(b => b.id === tx.bookId);
-  if (bIdx >= 0) {
-    books[bIdx].available = Math.min(books[bIdx].stock, (books[bIdx].available || 0) + 1);
-    localStorage.setItem(KEYS.BOOKS, JSON.stringify(books));
+  const member = getMemberByRfid(tx.rfidUid);
+  if (member) {
+    member.points = (member.points || 0) + (fineAmount === 0 ? 20 : 5);
+    saveMember(member);
   }
 
-  return tx;
+  if (isSqliteConnected) {
+    fetch(`${activeServerUrl}/api/transactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tx)
+    }).catch(console.warn);
+  }
+
+  return { success: true, transaction: tx, member };
 };
 
-// --- ATTENDANCE ---
+export const createLoanTransaction = (memberRfid, bookId, notes = '') => issueBook(memberRfid, bookId, notes);
+export const returnBookTransaction = (transactionId) => returnBook(transactionId);
+
+// ATTENDANCE API
 export const getAttendance = () => {
-  initDB();
-  return JSON.parse(localStorage.getItem(KEYS.ATTENDANCE)) || [];
+  try {
+    const data = localStorage.getItem(KEYS.ATTENDANCE);
+    return data ? JSON.parse(data) : INITIAL_ATTENDANCE;
+  } catch (e) {
+    return INITIAL_ATTENDANCE;
+  }
 };
 
-export const recordAttendance = (member, purpose = 'Membaca & Presensi') => {
-  const attendance = getAttendance();
-  const settings = getSettings();
-  const now = new Date();
-  const dateStr = now.toISOString().split('T')[0];
+export const recordAttendance = (rfidUid, purpose = 'Membaca & Meminjam Buku') => {
+  const member = getMemberByRfid(rfidUid);
+  if (!member) return { success: false, message: 'Kartu RFID belum terdaftar.' };
 
-  // 1. Anti-spam 2-minute cooldown check (prevents rapid double tap)
-  const recent = attendance.find(
-    a => a.rfidUid === member.rfidUid && a.date === dateStr && (now - new Date(a.timestamp)) < 120000
-  );
-  if (recent) {
-    return recent;
-  }
-
-  // 2. Count how many attendance check-ins this student ALREADY DID TODAY
-  const todayCheckIns = attendance.filter(a => a.rfidUid === member.rfidUid && a.date === dateStr);
+  const today = new Date().toISOString().split('T')[0];
+  const atts = getAttendance();
 
   const newAtt = {
     id: `ATT-${Date.now().toString().slice(-6)}`,
     rfidUid: member.rfidUid,
     memberName: member.name,
-    classGrade: member.classGrade || 'Siswa',
-    purpose: purpose,
-    timestamp: now.toISOString(),
-    date: dateStr
+    classGrade: member.classGrade,
+    purpose,
+    timestamp: new Date().toISOString(),
+    date: today
   };
 
-  attendance.unshift(newAtt);
-  localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify(attendance));
+  const updatedAtts = [newAtt, ...atts];
+  localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify(updatedAtts));
 
-  // 3. Award +5 Points ONLY IF student has NOT exceeded the daily attendance point cap!
-  const maxDailyPointsAtt = settings.maxDailyAttendancePoints || 1; // Default: Max 1x per day!
-
-  if (todayCheckIns.length < maxDailyPointsAtt) {
-    const members = getMembers();
-    const mIdx = members.findIndex(m => m.id === member.id);
-    if (mIdx >= 0) {
-      members[mIdx].points = (members[mIdx].points || 0) + 5;
-      localStorage.setItem(KEYS.MEMBERS, JSON.stringify(members));
-    }
+  const settings = getSettings();
+  const todayUserAtts = atts.filter(a => a.rfidUid === rfidUid && a.date === today);
+  if (todayUserAtts.length < (settings.maxDailyAttendancePoints || 1)) {
+    member.points = (member.points || 0) + 5;
+    saveMember(member);
   }
 
-  return newAtt;
+  if (isSqliteConnected) {
+    fetch(`${activeServerUrl}/api/attendance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newAtt)
+    }).catch(console.warn);
+  }
+
+  return { success: true, attendance: newAtt, member };
 };
 
-// --- BACKUP, RESTORE & CLEAR ---
+// QUIZZES API
+export const getQuizzes = () => {
+  try {
+    const data = localStorage.getItem(KEYS.QUIZZES);
+    return data ? JSON.parse(data) : DEFAULT_QUIZZES;
+  } catch (e) {
+    return DEFAULT_QUIZZES;
+  }
+};
+
+export const saveQuiz = (quizData) => {
+  const quizzes = getQuizzes();
+  const index = quizzes.findIndex(q => q.id === quizData.id);
+  let updated;
+  if (index >= 0) {
+    updated = [...quizzes];
+    updated[index] = { ...updated[index], ...quizData };
+  } else {
+    updated = [quizData, ...quizzes];
+  }
+  localStorage.setItem(KEYS.QUIZZES, JSON.stringify(updated));
+  return updated;
+};
+
+export const deleteQuiz = (quizId) => {
+  const quizzes = getQuizzes().filter(q => q.id !== quizId);
+  localStorage.setItem(KEYS.QUIZZES, JSON.stringify(quizzes));
+  return quizzes;
+};
+
+// IMPORT & EXPORT
 export const exportData = () => {
-  const data = {
+  return JSON.stringify({
     settings: getSettings(),
     books: getBooks(),
     members: getMembers(),
     transactions: getTransactions(),
-    attendance: getAttendance(),
-    quizzes: getQuizzes(),
-    exportedAt: new Date().toISOString(),
-  };
-  return JSON.stringify(data, null, 2);
+    attendance: getAttendance()
+  }, null, 2);
 };
 
 export const importData = (jsonString) => {
   try {
     const data = JSON.parse(jsonString);
-    if (data.settings) localStorage.setItem(KEYS.SETTINGS, JSON.stringify(data.settings));
+    if (data.settings) saveSettings(data.settings);
     if (data.books) localStorage.setItem(KEYS.BOOKS, JSON.stringify(data.books));
     if (data.members) localStorage.setItem(KEYS.MEMBERS, JSON.stringify(data.members));
     if (data.transactions) localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(data.transactions));
     if (data.attendance) localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify(data.attendance));
-    if (data.quizzes) localStorage.setItem(KEYS.QUIZZES, JSON.stringify(data.quizzes));
+    
+    if (isSqliteConnected) {
+      fetch(`${activeServerUrl}/api/sync-bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).catch(console.warn);
+    }
+
     return true;
-  } catch (err) {
-    console.error('Import error:', err);
+  } catch (e) {
     return false;
   }
-};
-
-export const clearAllData = () => {
-  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
-  localStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
-  localStorage.setItem(KEYS.MEMBERS, JSON.stringify([]));
-  localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify([]));
-  localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify([]));
-  localStorage.setItem(KEYS.QUIZZES, JSON.stringify(DEFAULT_QUIZZES));
 };
 
 export const resetToDefault = () => {
@@ -594,5 +610,52 @@ export const resetToDefault = () => {
   localStorage.setItem(KEYS.MEMBERS, JSON.stringify(INITIAL_MEMBERS));
   localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(INITIAL_TRANSACTIONS));
   localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify(INITIAL_ATTENDANCE));
-  localStorage.setItem(KEYS.QUIZZES, JSON.stringify(DEFAULT_QUIZZES));
+  
+  if (isSqliteConnected) {
+    fetch(`${activeServerUrl}/api/sync-bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        books: INITIAL_BOOKS,
+        members: INITIAL_MEMBERS,
+        transactions: INITIAL_TRANSACTIONS,
+        attendance: INITIAL_ATTENDANCE,
+        settings: DEFAULT_SETTINGS
+      })
+    }).catch(console.warn);
+  }
+};
+
+export const importBooksCSV = (csvText) => {
+  try {
+    const lines = csvText.trim().split('\n');
+    let imported = 0;
+
+    lines.forEach(line => {
+      const parts = line.split(',').map(s => s.trim());
+      if (parts.length >= 2 && parts[0] && parts[0].toLowerCase() !== 'judul') {
+        const book = {
+          id: `B-${Math.floor(1000 + Math.random() * 9000)}`,
+          title: parts[0],
+          author: parts[1] || 'Anonim',
+          ddc: parts[2] || '800',
+          category: parts[3] || 'Novel / Fiksi',
+          publisher: parts[4] || 'Penerbit Sekolah',
+          year: Number(parts[5]) || 2024,
+          shelf: parts[6] || 'Rak A1',
+          stock: Number(parts[7]) || 5,
+          available: Number(parts[7]) || 5,
+          isbn: parts[8] || '',
+          coverUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80',
+          description: 'Imported via CSV Data'
+        };
+        saveBook(book);
+        imported++;
+      }
+    });
+
+    return imported;
+  } catch (e) {
+    return 0;
+  }
 };
