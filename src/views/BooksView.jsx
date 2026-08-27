@@ -21,7 +21,8 @@ import {
   FileText,
   ExternalLink,
   Eye,
-  Globe
+  Globe,
+  Smartphone
 } from 'lucide-react';
 import { saveBook, deleteBook, clearSampleBooks, importBooksCSV } from '../services/db';
 
@@ -41,9 +42,9 @@ export default function BooksView({ books, onRefreshData }) {
     ddc: '813',
     publisher: '',
     year: 2024,
-    shelf: 'Rak A1',
-    stock: 5,
-    available: 5,
+    shelf: 'Rak E-Book Digital',
+    stock: 0,
+    available: 0,
     coverUrl: '',
     description: '',
     ebookContent: '',
@@ -88,7 +89,6 @@ export default function BooksView({ books, onRefreshData }) {
     { code: '900', label: '900 - Sejarah, Geografi & Biografi Tokoh' }
   ];
 
-  // Smart PDF URL Formatter (Auto-converts Google Drive links to universal preview mode)
   const formatPdfUrlForEmbedding = (url) => {
     if (!url) return '';
     const cleanUrl = url.trim();
@@ -100,6 +100,15 @@ export default function BooksView({ books, onRefreshData }) {
     }
     return cleanUrl;
   };
+
+  // Inventory Statistics Calculations (Excluding Digital-Only Books from Physical Out-Of-Stock Warnings)
+  const totalTitles = books.length;
+  const totalPhysicalCopies = books.reduce((acc, b) => acc + (Number(b.stock) || 0), 0);
+  const totalAvailableCopies = books.reduce((acc, b) => acc + (Number(b.available) || 0), 0);
+  const totalLoanedCopies = totalPhysicalCopies - totalAvailableCopies;
+  
+  // Pure Physical Out Of Stock books (only physical books with stock 0 that have NO PDF)
+  const outOfStockPhysicalBooks = books.filter(b => b.available <= 0 && b.stock > 0 && !b.pdfUrl && !b.ebookContent);
 
   const handleGenerateCover = () => {
     const defaultCover = categoryCovers[formData.category] || categoryCovers['Umum'];
@@ -217,7 +226,6 @@ export default function BooksView({ books, onRefreshData }) {
       return;
     }
 
-    // Auto-format Google Drive links for universal embedding
     const formattedData = {
       ...formData,
       pdfUrl: formatPdfUrlForEmbedding(formData.pdfUrl)
@@ -282,23 +290,23 @@ export default function BooksView({ books, onRefreshData }) {
         <div className="glass-card" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>TOTAL EKSEMPLAR FISIK</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>
-            {books.reduce((acc, b) => acc + (Number(b.stock) || 0), 0)} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Buku</span>
+            {totalPhysicalCopies} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Buku</span>
           </div>
         </div>
 
         <div className="glass-card" style={{ padding: '20px' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>SEDANG DIPINJAM SISWA</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fbbf24', marginTop: '4px' }}>
-            {books.reduce((acc, b) => acc + (Number(b.stock) || 0), 0) - books.reduce((acc, b) => acc + (Number(b.available) || 0), 0)} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Buku</span>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>E-BOOK DIGITAL PDF</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#34d399', marginTop: '4px' }}>
+            {books.filter(b => b.pdfUrl || b.ebookContent).length} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>E-Book</span>
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '20px', border: outOfStockBooks.length > 0 ? '1px solid rgba(244, 63, 94, 0.5)' : '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: '0.8rem', color: outOfStockBooks.length > 0 ? '#fb7185' : 'var(--text-secondary)' }}>
-            STOK HABIS / PERLU RESTOK
+        <div className="glass-card" style={{ padding: '20px', border: outOfStockPhysicalBooks.length > 0 ? '1px solid rgba(244, 63, 94, 0.5)' : '1px solid var(--border-color)' }}>
+          <div style={{ fontSize: '0.8rem', color: outOfStockPhysicalBooks.length > 0 ? '#fb7185' : 'var(--text-secondary)' }}>
+            RESTOK BUKU FISIK
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: outOfStockBooks.length > 0 ? '#fb7185' : '#34d399', marginTop: '4px' }}>
-            {outOfStockBooks.length} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Judul</span>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: outOfStockPhysicalBooks.length > 0 ? '#fb7185' : '#34d399', marginTop: '4px' }}>
+            {outOfStockPhysicalBooks.length} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Judul</span>
           </div>
         </div>
       </div>
@@ -309,10 +317,10 @@ export default function BooksView({ books, onRefreshData }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
           <div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <BookOpen color="#3b82f6" /> Managemen Inventaris & E-Book PDF Sekolah
+              <BookOpen color="#3b82f6" /> Managemen Inventaris Buku Fisik & E-Book PDF Digital
             </h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
-              Input buku fisik, upload E-Book PDF online, scan ISBN barcode, dan kelola katalog perpustakaan.
+              Input buku fisik, upload PDF E-Book digital tanpa bentuk fisik, scan ISBN barcode, dan kelola rak.
             </p>
           </div>
 
@@ -353,9 +361,9 @@ export default function BooksView({ books, onRefreshData }) {
                 <th style={{ padding: '12px' }}>Sampul & Judul Buku</th>
                 <th style={{ padding: '12px' }}>Penulis & Penerbit</th>
                 <th style={{ padding: '12px', color: '#fbbf24' }}>Nomor DDC</th>
-                <th style={{ padding: '12px' }}>Kategori & Rak</th>
-                <th style={{ padding: '12px' }}>E-Book PDF</th>
-                <th style={{ padding: '12px' }}>Stok Tersedia</th>
+                <th style={{ padding: '12px' }}>Kategori & Format</th>
+                <th style={{ padding: '12px' }}>Akses E-Book PDF</th>
+                <th style={{ padding: '12px' }}>Stok / Ketersediaan</th>
                 <th style={{ padding: '12px', textAlign: 'right' }}>Aksi Admin</th>
               </tr>
             </thead>
@@ -363,82 +371,98 @@ export default function BooksView({ books, onRefreshData }) {
               {filteredBooks.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-                    Inventaris buku masih kosong. Klik <strong>"+ Tambah Buku Baru"</strong> untuk menginput buku atau PDF E-Book pertama Anda!
+                    Inventaris buku masih kosong. Klik <strong>"+ Tambah Buku Baru"</strong> untuk menginput buku pertama Anda!
                   </td>
                 </tr>
               ) : (
-                filteredBooks.map(b => (
-                  <tr key={b.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <img src={b.coverUrl} alt={b.title} style={{ width: '40px', height: '56px', objectFit: 'cover', borderRadius: '4px' }} />
-                      <div>
-                        <div style={{ fontSize: '0.95rem' }}>{b.title}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>ID: {b.id}</div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <div>{b.author}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{b.publisher} ({b.year})</div>
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <span className="badge badge-amber" style={{ fontSize: '0.82rem', fontWeight: 800, padding: '4px 10px' }}>
-                        <Bookmark size={12} /> DDC: {b.ddc || '800'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <span className="badge badge-purple" style={{ marginBottom: '4px', fontSize: '0.72rem' }}>
-                        {b.category}
-                      </span>
-                      <div style={{ fontSize: '0.75rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <MapPin size={12} /> {b.shelf}
-                      </div>
-                    </td>
-                    
-                    <td style={{ padding: '12px' }}>
-                      {b.pdfUrl || b.ebookContent ? (
-                        <button
-                          onClick={() => setActiveEbook(b)}
-                          className="btn btn-emerald"
-                          style={{ fontSize: '0.75rem', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                        >
-                          <FileText size={14} /> Baca PDF Online
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Fisik Sahaja</span>
-                      )}
-                    </td>
+                filteredBooks.map(b => {
+                  const isDigitalOnly = (b.pdfUrl || b.ebookContent) && Number(b.stock) === 0;
+                  const hasDigitalPdf = Boolean(b.pdfUrl || b.ebookContent);
 
-                    <td style={{ padding: '12px', fontWeight: 700 }}>
-                      {b.available <= 0 ? (
-                        <span className="badge badge-rose" style={{ fontSize: '0.78rem' }}>
-                          🔴 HABIS (0/{b.stock})
+                  return (
+                    <tr key={b.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <img src={b.coverUrl} alt={b.title} style={{ width: '40px', height: '56px', objectFit: 'cover', borderRadius: '4px' }} />
+                        <div>
+                          <div style={{ fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {b.title}
+                            {isDigitalOnly && (
+                              <span style={{ fontSize: '0.65rem', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', border: '1px solid #10b981', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                                📱 E-BOOK DIGITAL ONLY
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>ID: {b.id}</div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <div>{b.author}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{b.publisher} ({b.year})</div>
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <span className="badge badge-amber" style={{ fontSize: '0.82rem', fontWeight: 800, padding: '4px 10px' }}>
+                          <Bookmark size={12} /> DDC: {b.ddc || '800'}
                         </span>
-                      ) : (
-                        <span style={{ color: '#34d399' }}>
-                          {b.available} / {b.stock} Buku
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <span className="badge badge-purple" style={{ marginBottom: '4px', fontSize: '0.72rem' }}>
+                          {b.category}
                         </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                        <button 
-                          onClick={() => handleOpenModal(b)}
-                          className="btn btn-secondary"
-                          style={{ fontSize: '0.78rem', padding: '6px 10px' }}
-                        >
-                          <Edit size={14} /> Edit
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(b.id, b.title)}
-                          className="btn btn-rose"
-                          style={{ fontSize: '0.78rem', padding: '6px 10px' }}
-                        >
-                          <Trash2 size={14} /> Hapus
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                        <div style={{ fontSize: '0.75rem', color: isDigitalOnly ? '#34d399' : '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <MapPin size={12} /> {isDigitalOnly ? 'Rak E-Book Digital' : b.shelf}
+                        </div>
+                      </td>
+                      
+                      <td style={{ padding: '12px' }}>
+                        {hasDigitalPdf ? (
+                          <button
+                            onClick={() => setActiveEbook(b)}
+                            className="btn btn-emerald"
+                            style={{ fontSize: '0.75rem', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <FileText size={14} /> Baca PDF Online
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Fisik Sahaja</span>
+                        )}
+                      </td>
+
+                      <td style={{ padding: '12px', fontWeight: 700 }}>
+                        {isDigitalOnly ? (
+                          <span style={{ color: '#34d399', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Smartphone size={14} /> ♾️ Akses Digital 24/7
+                          </span>
+                        ) : b.available <= 0 ? (
+                          <span className="badge badge-rose" style={{ fontSize: '0.78rem' }}>
+                            🔴 STOK HABIS (0/{b.stock})
+                          </span>
+                        ) : (
+                          <span style={{ color: '#34d399' }}>
+                            {b.available} / {b.stock} Buku Fisik
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                          <button 
+                            onClick={() => handleOpenModal(b)}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                          >
+                            <Edit size={14} /> Edit
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(b.id, b.title)}
+                            className="btn btn-rose"
+                            style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                          >
+                            <Trash2 size={14} /> Hapus
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -511,7 +535,7 @@ export default function BooksView({ books, onRefreshData }) {
                     <FileText size={20} /> File E-Book Online Universal (PDF / Google Drive / Direct URL)
                   </label>
                   <p style={{ fontSize: '0.78rem', color: '#cbd5e1', margin: '0 0 12px 0' }}>
-                    Upload file PDF dari komputer/HP atau paste link <strong>Google Drive / PDF Online</strong>. Link Google Drive akan <strong>otomatis diformat agar bisa dibaca di seluruh HP Android, iPhone, Tablet, & Laptop!</strong>
+                    Jika buku ini <strong>HANYA BUKU PDF (Tanpa Buku Fisik)</strong>, cukup upload PDF/paste link Drive di sini lalu set Stok Fisik = 0 di bawah.
                   </p>
 
                   <div style={{ marginBottom: '10px' }}>
@@ -615,7 +639,7 @@ export default function BooksView({ books, onRefreshData }) {
                       className="form-input" 
                       value={formData.shelf}
                       onChange={e => setFormData({ ...formData, shelf: e.target.value })}
-                      placeholder="Contoh: Rak A1 - Novel"
+                      placeholder="Misal: Rak A1 atau Rak E-Book Digital"
                     />
                   </div>
                 </div>
@@ -632,17 +656,17 @@ export default function BooksView({ books, onRefreshData }) {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Total Stok Eksemplar</label>
+                    <label className="form-label">Total Stok Fisik (0 = PDF Only)</label>
                     <input 
                       type="number" 
                       className="form-input" 
                       value={formData.stock}
                       onChange={e => setFormData({ ...formData, stock: Number(e.target.value), available: Number(e.target.value) })}
-                      min="1"
+                      min="0"
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Stok Tersedia</label>
+                    <label className="form-label">Stok Fisik Tersedia</label>
                     <input 
                       type="number" 
                       className="form-input" 
@@ -754,7 +778,7 @@ export default function BooksView({ books, onRefreshData }) {
                   />
 
                   <div style={{ marginTop: '10px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                    💡 <em>HP Android / iOS Safari:</em> Jika pratinjau layar penuh belum terbuka di HP Anda, klik tombol <strong>"Buka PDF Layar Penuh"</strong> di atas!
+                    💡 <em>HP Android / iOS Safari:</em> Jika pratinjau belum muncul di HP Anda, klik tombol <strong>"Buka PDF Layar Penuh"</strong> di atas!
                   </div>
                 </div>
               ) : (

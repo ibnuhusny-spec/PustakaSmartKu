@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, BookOpen, Layers, MapPin, Eye, FileText, CheckCircle2, X, ExternalLink, Globe } from 'lucide-react';
+import { Search, BookOpen, Layers, MapPin, Eye, FileText, CheckCircle2, X, ExternalLink, Globe, Smartphone } from 'lucide-react';
 
 export default function CatalogView({ books }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,58 +77,78 @@ export default function CatalogView({ books }) {
 
       {/* Book Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
-        {filteredBooks.map(book => (
-          <div key={book.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
-            <div style={{ position: 'relative' }}>
-              <img 
-                src={book.coverUrl} 
-                alt={book.title}
-                style={{ width: '100%', height: '180px', objectFit: 'cover' }}
-              />
-              <span className="badge badge-purple" style={{ position: 'absolute', top: '10px', left: '10px', backdropFilter: 'blur(8px)' }}>
-                {book.category}
-              </span>
-            </div>
+        {filteredBooks.map(book => {
+          const isDigitalOnly = (book.pdfUrl || book.ebookContent) && Number(book.stock) === 0;
 
-            <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
-                  {book.title}
-                </h3>
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 10px 0' }}>
-                  Oleh: {book.author} ({book.year})
-                </p>
-
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <MapPin size={14} color="#f59e0b" /> {book.shelf || 'Rak A1'}
-                  </div>
-                  <div>ISBN: {book.isbn}</div>
-                  <div style={{ color: book.available > 0 ? '#34d399' : '#fb7185', fontWeight: 600 }}>
-                    Ketersediaan: {book.available} dari {book.stock} Eksemplar
-                  </div>
+          return (
+            <div key={book.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
+              <div style={{ position: 'relative' }}>
+                <img 
+                  src={book.coverUrl} 
+                  alt={book.title}
+                  style={{ width: '100%', height: '180px', objectFit: 'cover' }}
+                />
+                
+                <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="badge badge-purple" style={{ backdropFilter: 'blur(8px)' }}>
+                    {book.category}
+                  </span>
+                  {isDigitalOnly && (
+                    <span className="badge badge-emerald" style={{ backdropFilter: 'blur(8px)', fontWeight: 800 }}>
+                      📱 DIGITAL E-BOOK
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  onClick={() => setDetailBook(book)}
-                  className="btn btn-secondary"
-                  style={{ flex: 1, fontSize: '0.8rem', padding: '8px' }}
-                >
-                  <Eye size={14} /> Detail
-                </button>
-                <button 
-                  onClick={() => setActiveEbook(book)}
-                  className="btn btn-emerald"
-                  style={{ flex: 1, fontSize: '0.8rem', padding: '8px' }}
-                >
-                  <FileText size={14} /> E-Book
-                </button>
+              <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
+                    {book.title}
+                  </h3>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 10px 0' }}>
+                    Oleh: {book.author} ({book.year})
+                  </p>
+
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isDigitalOnly ? '#34d399' : '#f59e0b' }}>
+                      <MapPin size={14} /> {isDigitalOnly ? 'Rak E-Book Digital' : (book.shelf || 'Rak A1')}
+                    </div>
+                    {book.isbn && <div>ISBN: {book.isbn}</div>}
+                    
+                    {/* Dynamic Availability Display (Distinguishing Digital-Only vs Physical Books) */}
+                    {isDigitalOnly ? (
+                      <div style={{ color: '#34d399', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Smartphone size={14} /> 📱 E-Book Digital (Akses 24/7 Tanpa Batas)
+                      </div>
+                    ) : (
+                      <div style={{ color: book.available > 0 ? '#34d399' : '#fb7185', fontWeight: 600 }}>
+                        Ketersediaan: {book.available} dari {book.stock} Eksemplar Fisik
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    onClick={() => setDetailBook(book)}
+                    className="btn btn-secondary"
+                    style={{ flex: 1, fontSize: '0.8rem', padding: '8px' }}
+                  >
+                    <Eye size={14} /> Detail
+                  </button>
+                  <button 
+                    onClick={() => setActiveEbook(book)}
+                    className="btn btn-emerald"
+                    style={{ flex: 1, fontSize: '0.8rem', padding: '8px', fontWeight: isDigitalOnly ? 800 : 500 }}
+                  >
+                    <FileText size={14} /> {isDigitalOnly ? 'Baca PDF' : 'E-Book'}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* DETAIL MODAL */}
@@ -146,9 +166,16 @@ export default function CatalogView({ books }) {
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0 0 10px 0' }}>Penulis: {detailBook.author} | Penerbit: {detailBook.publisher}</p>
                 <div style={{ fontSize: '0.85rem', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div><strong>Kategori:</strong> {detailBook.category}</div>
+                  <div><strong>Format:</strong> {(detailBook.pdfUrl || detailBook.ebookContent) && Number(detailBook.stock) === 0 ? '📱 Digital E-Book Only' : '📚 Buku Fisik'}</div>
                   <div><strong>Lokasi Rak:</strong> {detailBook.shelf}</div>
-                  <div><strong>ISBN:</strong> {detailBook.isbn}</div>
-                  <div><strong>Stok:</strong> {detailBook.available} / {detailBook.stock} tersedia</div>
+                  {detailBook.isbn && <div><strong>ISBN:</strong> {detailBook.isbn}</div>}
+                  <div>
+                    <strong>Ketersediaan:</strong> {
+                      (detailBook.pdfUrl || detailBook.ebookContent) && Number(detailBook.stock) === 0 
+                        ? '📱 Akses Digital Online 24/7' 
+                        : `${detailBook.available} / ${detailBook.stock} eksemplar fisik`
+                    }
+                  </div>
                 </div>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '10px', borderRadius: 'var(--radius-sm)' }}>
                   {detailBook.description || 'Kisah lengkap mengenai topik buku yang informatif dan bermanfaat bagi siswa.'}
