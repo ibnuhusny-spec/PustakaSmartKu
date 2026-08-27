@@ -10,11 +10,8 @@ import AdminPinModal from './components/AdminPinModal';
 import KioskView from './views/KioskView';
 import CatalogView from './views/CatalogView';
 import AttendanceView from './views/AttendanceView';
-import TransactionsView from './views/TransactionsView';
-import MembersView from './views/MembersView';
-import BooksView from './views/BooksView';
 import LeaderboardView from './views/LeaderboardView';
-import SettingsView from './views/SettingsView';
+import AdminPortalView from './views/AdminPortalView';
 
 import {
   initDB,
@@ -45,7 +42,6 @@ export default function App() {
     return sessionStorage.getItem('pustakasmart_admin_authed') === 'true';
   });
   const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
-  const [targetProtectedTab, setTargetProtectedTab] = useState(null);
 
   // Database States
   const [settings, setSettings] = useState(getSettings());
@@ -63,15 +59,6 @@ export default function App() {
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [activeReceiptModal, setActiveReceiptModal] = useState({ isOpen: false, tx: null, member: null });
   const [activeCardPrinterModal, setActiveCardPrinterModal] = useState({ isOpen: false, member: null });
-
-  const protectedTabs = ['transactions', 'members', 'books', 'settings'];
-
-  const tabLabels = {
-    transactions: 'Peminjaman & Denda',
-    members: 'Anggota & Kartu RFID',
-    books: 'Manajemen Buku',
-    settings: 'Pengaturan Sekolah & Database'
-  };
 
   const refreshData = () => {
     const s = getSettings();
@@ -99,38 +86,34 @@ export default function App() {
     localStorage.setItem('pustakasmart_theme', theme);
   }, [theme]);
 
-  // Protected Tab Navigation Switcher
+  // Tab Navigation Switcher
   const handleTabChange = (newTab) => {
     stopSpeech();
-
-    // Check if clicking an Admin Secured Tab while unauthenticated
-    if (protectedTabs.includes(newTab) && !isAdminAuthed) {
-      setTargetProtectedTab(newTab);
-      setIsAdminPinModalOpen(true);
-      return;
-    }
-
     setActiveTab(newTab);
+  };
+
+  // Open Admin Portal (prompt PIN if not logged in)
+  const handleOpenAdminPortal = () => {
+    stopSpeech();
+    if (isAdminAuthed) {
+      setActiveTab('admin_portal');
+    } else {
+      setIsAdminPinModalOpen(true);
+    }
   };
 
   const handleAdminPinSuccess = () => {
     setIsAdminAuthed(true);
     sessionStorage.setItem('pustakasmart_admin_authed', 'true');
     setIsAdminPinModalOpen(false);
-
-    if (targetProtectedTab) {
-      setActiveTab(targetProtectedTab);
-      setTargetProtectedTab(null);
-    }
+    setActiveTab('admin_portal');
   };
 
   const handleLockAdminSession = () => {
     setIsAdminAuthed(false);
     sessionStorage.removeItem('pustakasmart_admin_authed');
-    if (protectedTabs.includes(activeTab)) {
-      setActiveTab('catalog');
-    }
-    alert('🔒 Sesi Admin berhasil dikunci! Aplikasi kini kembali ke Mode Publik Siswa.');
+    setActiveTab('catalog');
+    alert('🔒 Sesi Admin Perpustakaan berhasil dikunci! Aplikasi kini kembali ke Mode Publik Siswa.');
   };
 
   // Global RFID Scan Listener
@@ -167,7 +150,7 @@ export default function App() {
 
   const handleRegisterUnregisteredCard = (uid) => {
     setPrefilledUidToRegister(uid);
-    handleTabChange('members');
+    handleOpenAdminPortal();
   };
 
   if (showSplash) {
@@ -185,11 +168,7 @@ export default function App() {
         onOpenRfidSimulator={() => setIsSimulatorOpen(true)}
         settings={settings}
         isAdminAuthed={isAdminAuthed}
-        onLockAdminSession={handleLockAdminSession}
-        onOpenAdminPinModal={() => {
-          setTargetProtectedTab('settings');
-          setIsAdminPinModalOpen(true);
-        }}
+        onOpenAdminPortal={handleOpenAdminPortal}
       />
 
       <main style={{ paddingBottom: '40px' }}>
@@ -217,32 +196,6 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'transactions' && (
-          <TransactionsView 
-            transactions={transactions}
-            members={members}
-            onRefreshData={refreshData}
-            onOpenReceipt={handleOpenReceipt}
-          />
-        )}
-
-        {activeTab === 'members' && (
-          <MembersView 
-            members={members}
-            onRefreshData={refreshData}
-            onOpenCardPrinter={handleOpenCardPrinter}
-            prefilledUidToRegister={prefilledUidToRegister}
-            onClearPrefilledUid={() => setPrefilledUidToRegister(null)}
-          />
-        )}
-
-        {activeTab === 'books' && (
-          <BooksView 
-            books={books}
-            onRefreshData={refreshData}
-          />
-        )}
-
         {activeTab === 'leaderboard' && (
           <LeaderboardView 
             members={members}
@@ -250,10 +203,19 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'settings' && (
-          <SettingsView 
+        {activeTab === 'admin_portal' && (
+          <AdminPortalView 
             settings={settings}
+            books={books}
+            members={members}
+            transactions={transactions}
+            attendance={attendance}
             onRefreshData={refreshData}
+            onOpenReceipt={handleOpenReceipt}
+            onOpenCardPrinter={handleOpenCardPrinter}
+            prefilledUidToRegister={prefilledUidToRegister}
+            onClearPrefilledUid={() => setPrefilledUidToRegister(null)}
+            onLockAdminSession={handleLockAdminSession}
             onReplaySplash={() => setShowSplash(true)}
           />
         )}
@@ -265,7 +227,7 @@ export default function App() {
         onClose={() => setIsAdminPinModalOpen(false)}
         onSuccess={handleAdminPinSuccess}
         adminPin={settings?.adminPin || '1234'}
-        targetTabName={tabLabels[targetProtectedTab] || 'Admin'}
+        targetTabName="Portal Petugas Admin"
       />
 
       <RFIDSimulator 
