@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, KeyRound, ShieldCheck, X, Eye, EyeOff } from 'lucide-react';
 
-export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '1234', targetTabName = 'Pengaturan' }) {
+export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = 'PustakaSmart2026', targetTabName = 'Pengaturan' }) {
   const [pinInput, setPinInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -10,7 +10,7 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const correctPin = adminPin || '1234';
+    const correctPin = adminPin || 'PustakaSmart2026';
     
     if (pinInput.trim() === correctPin.trim()) {
       setErrorMessage('');
@@ -68,8 +68,8 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
                 }}
                 placeholder="Ketik PIN Admin..."
                 style={{
-                  fontSize: '1.1rem',
-                  letterSpacing: showPassword ? 'normal' : '4px',
+                  fontSize: '1.05rem',
+                  letterSpacing: showPassword ? 'normal' : '2px',
                   fontFamily: 'var(--font-mono)',
                   paddingRight: '42px'
                 }}
@@ -111,7 +111,7 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
           )}
 
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '20px', textAlign: 'center' }}>
-            💡 <em>PIN Bawaan Pabrik:</em> <strong>1234</strong> (Dapat diubah di tab Pengaturan).
+            💡 <em>PIN Bawaan Pabrik:</em> <strong>PustakaSmart2026</strong> (Dapat diubah di tab Pengaturan).
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>

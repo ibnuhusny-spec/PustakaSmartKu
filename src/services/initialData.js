@@ -17,7 +17,12 @@ export const DEFAULT_SETTINGS = {
   cardTemplate: "clean_corporate", // Default card template theme: clean_corporate, school_luxury, royal_gold
   idFieldLabel: "NISN / NIP", // Custom ID Label
   classFieldLabel: "Peran / Kelas", // Custom Class/Role Label
-  adminPin: "1234" // Default Secure Admin PIN Protection
+  adminPin: "PustakaSmart2026", // Strong Default Secure Admin PIN (Not 1234)
+  
+  // 30-Day Trial & Pro Licensing System
+  licenseType: "trial", // 'trial' or 'pro'
+  trialStartDate: new Date().toISOString().split('T')[0], // 30-day countdown start
+  licenseKey: "" // Permanent Pro Key
 };
 
 export const INITIAL_BOOKS = [

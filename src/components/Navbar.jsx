@@ -14,8 +14,11 @@ import {
   Lock,
   Unlock,
   ShieldCheck,
-  LayoutDashboard
+  LayoutDashboard,
+  Award,
+  Sparkles
 } from 'lucide-react';
+import { getTrialDaysRemaining } from '../services/licenseService';
 
 export default function Navbar({ 
   activeTab, 
@@ -25,15 +28,18 @@ export default function Navbar({
   onOpenRfidSimulator, 
   settings,
   isAdminAuthed,
-  onOpenAdminPortal
+  onOpenAdminPortal,
+  onOpenLicenseModal
 }) {
-  // Public tabs visible on the top navbar
   const publicTabs = [
     { id: 'kiosk', label: 'Mode Kios Mandiri', icon: Radio },
     { id: 'catalog', label: 'Katalog OPAC', icon: Search },
     { id: 'attendance', label: 'Presensi Kehadiran', icon: UserCheck },
     { id: 'leaderboard', label: 'Duta Baca', icon: Trophy },
   ];
+
+  const daysRemaining = getTrialDaysRemaining(settings?.trialStartDate);
+  const isPro = settings?.licenseType === 'pro';
 
   return (
     <header className="glass-card" style={{ 
@@ -71,9 +77,42 @@ export default function Navbar({
           )}
 
           <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
-              {settings?.schoolName || 'PustakaSmart RFID'}
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
+                {settings?.schoolName || 'PustakaSmart RFID'}
+              </h1>
+              
+              {/* LICENSE BADGE (TRIAL 30 DAYS / PRO FULL VERSION) */}
+              <button
+                onClick={onOpenLicenseModal}
+                className="btn"
+                style={{
+                  padding: '2px 8px',
+                  fontSize: '0.72rem',
+                  borderRadius: 'var(--radius-full)',
+                  background: isPro ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                  color: isPro ? '#34d399' : '#fbbf24',
+                  border: isPro ? '1px solid #10b981' : '1px solid #f59e0b',
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  cursor: 'pointer'
+                }}
+                title={isPro ? 'Lisensi Pro Aktif Selamanya' : `Versi Percobaan 30 Hari (${daysRemaining} Hari Tersisa). Klik untuk Aktivasi Kode Lisensi.`}
+              >
+                {isPro ? (
+                  <>
+                    <Award size={12} /> PRO LICENSE
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={12} /> Trial 30 Hari ({daysRemaining} Hari)
+                  </>
+                )}
+              </button>
+            </div>
+
             <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
               {settings?.libraryName || 'Perpustakaan Digital Sekolah'}
             </p>

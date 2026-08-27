@@ -1,16 +1,39 @@
 import React, { useState } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound } from 'lucide-react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2 } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault } from '../services/db';
+import { getTrialDaysRemaining, validateLicenseKey } from '../services/licenseService';
 
 export default function SettingsView({ settings, onRefreshData, onReplaySplash }) {
   const [formData, setFormData] = useState({ ...settings });
   const [importJsonText, setImportJsonText] = useState('');
+  const [licenseInput, setLicenseInput] = useState('');
+
+  const daysRemaining = getTrialDaysRemaining(formData.trialStartDate);
+  const isPro = formData.licenseType === 'pro';
 
   const handleSave = (e) => {
     e.preventDefault();
     saveSettings(formData);
     onRefreshData();
     alert('Pengaturan sekolah, PIN Admin, logo instansi, & sistem perpustakaan berhasil disimpan!');
+  };
+
+  const handleActivateLicense = (e) => {
+    e.preventDefault();
+    if (validateLicenseKey(licenseInput)) {
+      const updated = {
+        ...formData,
+        licenseType: 'pro',
+        licenseKey: licenseInput.trim().toUpperCase()
+      };
+      setFormData(updated);
+      saveSettings(updated);
+      onRefreshData();
+      setLicenseInput('');
+      alert('🎉 SELAMAT! Aplikasi Berhasil Diaktivasi Menjadi PustakaSmart RFID Pro Full Version!');
+    } else {
+      alert('❌ Kode Lisensi tidak valid. Pastikan mengetik Kode Lisensi Resmi dengan benar.');
+    }
   };
 
   // Compress and save dedicated School Logo image (Logo Instansi Sekolah)
@@ -78,18 +101,6 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     reader.readAsText(file);
   };
 
-  const handleImport = () => {
-    if (!importJsonText.trim()) return;
-    const success = importData(importJsonText);
-    if (success) {
-      onRefreshData();
-      alert('🎉 BERHASIL! Data database berhasil dipulihkan!');
-      setImportJsonText('');
-    } else {
-      alert('❌ Gagal mengimpor data. Format JSON tidak valid.');
-    }
-  };
-
   const handleReset = () => {
     if (window.confirm('PERINGATAN: Apakah Anda yakin ingin mereset seluruh data kembali ke setelan pabrik (Default)?')) {
       resetToDefault();
@@ -101,6 +112,41 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '24px 16px' }}>
       
+      {/* 30-DAY TRIAL & PRO LICENSE ACTIVATION CARD */}
+      <div className="glass-card" style={{ padding: '28px', marginBottom: '28px', border: isPro ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(245, 158, 11, 0.4)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: isPro ? '#34d399' : '#fbbf24' }}>
+              <Award size={24} /> Status Lisensi Aplikasi: {isPro ? 'FULL PRO VERSION (Aktif Selamanya)' : 'VERSI PERCOBAAN 30 HARI (TRIAL)'}
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+              {isPro ? (
+                <span>Aplikasi ini telah terdaftar penuh dengan Lisensi Resmi: <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>{formData.licenseKey || 'PUSTAKA-PRO-2026'}</strong></span>
+              ) : (
+                <span>Masa percobaan tersisa <strong style={{ color: '#fbbf24' }}>{daysRemaining} Hari Lagi</strong> (Sejak {formData.trialStartDate}). Masukkan Kode Lisensi Pro untuk aktivasi seumur hidup.</span>
+              )}
+            </p>
+          </div>
+
+          {!isPro && (
+            <form onSubmit={handleActivateLicense} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <input 
+                type="text" 
+                className="form-input"
+                value={licenseInput}
+                onChange={e => setLicenseInput(e.target.value)}
+                placeholder="Paste Kode Lisensi Pro..."
+                style={{ width: '220px', fontSize: '0.82rem', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}
+                required
+              />
+              <button type="submit" className="btn btn-emerald" style={{ fontSize: '0.82rem' }}>
+                <KeyRound size={14} /> Aktivasi Pro
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+
       <form onSubmit={handleSave}>
         <div className="glass-card" style={{ padding: '28px', marginBottom: '28px' }}>
           
@@ -136,18 +182,18 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
               PIN ini digunakan untuk memproteksi tab Admin (Buku & Stok, Anggota, Transaksi, Pengaturan) saat link web dibagikan ke siswa/umum.
             </p>
 
-            <div style={{ maxWidth: '320px' }}>
+            <div style={{ maxWidth: '360px' }}>
               <input 
                 type="text" 
                 className="form-input" 
-                value={formData.adminPin || '1234'}
+                value={formData.adminPin || 'PustakaSmart2026'}
                 onChange={e => setFormData({ ...formData, adminPin: e.target.value })}
-                placeholder="Masukkan PIN Admin Baru (Misal 1234)..."
-                style={{ fontSize: '1.1rem', fontWeight: 800, letterSpacing: '2px', fontFamily: 'var(--font-mono)', color: '#fb7185', background: '#1e293b' }}
+                placeholder="Masukkan PIN Admin Baru..."
+                style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '1px', fontFamily: 'var(--font-mono)', color: '#fb7185', background: '#1e293b' }}
                 required
               />
               <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>
-                💡 <em>PIN Bawaan Pabrik:</em> <strong>1234</strong>. Ubah PIN ini untuk keamanan maksimal!
+                💡 <em>PIN Bawaan Pabrik:</em> <strong>PustakaSmart2026</strong>. Ubah PIN ini untuk keamanan maksimal!
               </div>
             </div>
           </div>

@@ -6,6 +6,7 @@ import AttendanceBanner from './components/AttendanceBanner';
 import ReceiptModal from './components/ReceiptModal';
 import CardPrinterModal from './components/CardPrinterModal';
 import AdminPinModal from './components/AdminPinModal';
+import LicenseModal from './components/LicenseModal';
 
 import KioskView from './views/KioskView';
 import CatalogView from './views/CatalogView';
@@ -27,6 +28,7 @@ import {
 
 import { initRfidKeyboardListener } from './services/rfidService';
 import { speakText, stopSpeech } from './services/audioService';
+import { getTrialDaysRemaining } from './services/licenseService';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -42,6 +44,7 @@ export default function App() {
     return sessionStorage.getItem('pustakasmart_admin_authed') === 'true';
   });
   const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
+  const [isLicenseModalOpen, setIsLicenseModalOpen] = useState(false);
 
   // Database States
   const [settings, setSettings] = useState(getSettings());
@@ -64,6 +67,10 @@ export default function App() {
     const s = getSettings();
     if (!s.logoUrl) {
       s.logoUrl = '/perpustakaansmart.png';
+      saveSettings(s);
+    }
+    if (!s.adminPin || s.adminPin === '1234') {
+      s.adminPin = 'PustakaSmart2026';
       saveSettings(s);
     }
     setSettings(s);
@@ -116,6 +123,17 @@ export default function App() {
     alert('🔒 Sesi Admin Perpustakaan berhasil dikunci! Aplikasi kini kembali ke Mode Publik Siswa.');
   };
 
+  const handleActivateLicenseSuccess = (key) => {
+    const updated = {
+      ...settings,
+      licenseType: 'pro',
+      licenseKey: key
+    };
+    setSettings(updated);
+    saveSettings(updated);
+    setIsLicenseModalOpen(false);
+  };
+
   // Global RFID Scan Listener
   useEffect(() => {
     const handleRfidScan = (e) => {
@@ -153,6 +171,8 @@ export default function App() {
     handleOpenAdminPortal();
   };
 
+  const daysRemaining = getTrialDaysRemaining(settings?.trialStartDate);
+
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} settings={settings} />;
   }
@@ -169,6 +189,7 @@ export default function App() {
         settings={settings}
         isAdminAuthed={isAdminAuthed}
         onOpenAdminPortal={handleOpenAdminPortal}
+        onOpenLicenseModal={() => setIsLicenseModalOpen(true)}
       />
 
       <main style={{ paddingBottom: '40px' }}>
@@ -226,8 +247,16 @@ export default function App() {
         isOpen={isAdminPinModalOpen}
         onClose={() => setIsAdminPinModalOpen(false)}
         onSuccess={handleAdminPinSuccess}
-        adminPin={settings?.adminPin || '1234'}
+        adminPin={settings?.adminPin || 'PustakaSmart2026'}
         targetTabName="Portal Petugas Admin"
+      />
+
+      <LicenseModal 
+        isOpen={isLicenseModalOpen}
+        onClose={() => setIsLicenseModalOpen(false)}
+        onActivateSuccess={handleActivateLicenseSuccess}
+        currentLicenseType={settings?.licenseType || 'trial'}
+        daysRemaining={daysRemaining}
       />
 
       <RFIDSimulator 
