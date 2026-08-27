@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Award, KeyRound, CheckCircle2, ShieldAlert, X, Sparkles, Building2, Copy, Check, Lock, Wrench } from 'lucide-react';
+import { Award, KeyRound, CheckCircle2, ShieldAlert, X, Sparkles, Building2, Copy, Check, Lock, Wrench, ShieldCheck } from 'lucide-react';
 import { 
   generateSchoolRegistrationId, 
   generateProLicenseKeyForSchool, 
@@ -18,8 +18,12 @@ export default function LicenseModal({
   const [errorMessage, setErrorMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
 
-  // Vendor Generator Tool State
-  const [showVendorGenerator, setShowVendorGenerator] = useState(false);
+  // Vendor Generator Security State
+  const [showVendorPasscodeForm, setShowVendorPasscodeForm] = useState(false);
+  const [vendorPasscodeInput, setVendorPasscodeInput] = useState('');
+  const [isVendorUnlocked, setIsVendorUnlocked] = useState(false);
+  const [vendorPasscodeError, setVendorPasscodeError] = useState('');
+
   const [vendorSchoolIdInput, setVendorSchoolIdInput] = useState('');
   const [generatedVendorKey, setGeneratedVendorKey] = useState('');
 
@@ -42,6 +46,17 @@ export default function LicenseModal({
       alert(`🎉 SELAMAT! Lisensi Resmi PustakaSmart RFID Pro Aktif Selamanya Khusus Untuk "${schoolName}"!`);
     } else {
       setErrorMessage(`❌ Kode Lisensi tidak cocok untuk "${schoolName}"! Kode lisensi terikat khusus per nama sekolah dan tidak dapat dibagikan.`);
+    }
+  };
+
+  const handleUnlockVendorTool = (e) => {
+    e.preventDefault();
+    // Secret Passcode for Vendor Key Generator Access
+    if (vendorPasscodeInput.trim() === 'VENDOR2026' || vendorPasscodeInput.trim() === 'PustakaSmart2026') {
+      setIsVendorUnlocked(true);
+      setVendorPasscodeError('');
+    } else {
+      setVendorPasscodeError('❌ Passcode Vendor Salah! Akses khusus Pemilik/Pengembang Software.');
     }
   };
 
@@ -195,46 +210,78 @@ export default function LicenseModal({
 
         </form>
 
-        {/* SECRET VENDOR KEY GENERATOR ACCORDION */}
+        {/* SECURE PASSCODE-PROTECTED VENDOR KEY GENERATOR */}
         <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
           <button
             type="button"
-            onClick={() => setShowVendorGenerator(!showVendorGenerator)}
+            onClick={() => setShowVendorPasscodeForm(!showVendorPasscodeForm)}
             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
           >
-            <Wrench size={12} /> {showVendorGenerator ? 'Sembunyikan Generator Key Vendor' : '🛠️ Generator Key Khusus Pengembang/Vendor'}
+            <Lock size={12} /> {showVendorPasscodeForm ? 'Tutup Area Vendor' : '🛠️ Area Khusus Pemilik / Vendor Software'}
           </button>
 
-          {showVendorGenerator && (
+          {showVendorPasscodeForm && (
             <div style={{
               marginTop: '12px',
-              background: 'rgba(30, 41, 59, 0.8)',
+              background: 'rgba(30, 41, 59, 0.9)',
               padding: '14px',
               borderRadius: '8px',
               border: '1px dashed #3b82f6',
               textAlign: 'left'
             }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#60a5fa', marginBottom: '8px' }}>
-                🔑 Generator Kunci Lisensi Unik Vendor
-              </div>
-              <form onSubmit={handleGenerateVendorKey} style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={vendorSchoolIdInput}
-                  onChange={e => setVendorSchoolIdInput(e.target.value)}
-                  placeholder="Paste ID Registrasi Sekolah (Misal: ID-SDIT-...)..."
-                  style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}
-                  required
-                />
-                <button type="submit" className="btn btn-primary" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                  Generate Key
-                </button>
-              </form>
+              {!isVendorUnlocked ? (
+                <form onSubmit={handleUnlockVendorTool}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#fb7185', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Lock size={14} /> Masukkan Passcode Rahasia Vendor
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input 
+                      type="password" 
+                      className="form-input" 
+                      value={vendorPasscodeInput}
+                      onChange={e => {
+                        setVendorPasscodeInput(e.target.value);
+                        if (vendorPasscodeError) setVendorPasscodeError('');
+                      }}
+                      placeholder="Passcode Vendor (Default: VENDOR2026)..."
+                      style={{ fontSize: '0.8rem' }}
+                      required
+                    />
+                    <button type="submit" className="btn btn-rose" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                      Buka Keygen
+                    </button>
+                  </div>
+                  {vendorPasscodeError && (
+                    <div style={{ color: '#fb7185', fontSize: '0.75rem', marginTop: '6px', fontWeight: 700 }}>
+                      {vendorPasscodeError}
+                    </div>
+                  )}
+                </form>
+              ) : (
+                <div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#34d399', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck size={16} /> Key Generator Pemilik Software (Unlocked)
+                  </div>
+                  <form onSubmit={handleGenerateVendorKey} style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={vendorSchoolIdInput}
+                      onChange={e => setVendorSchoolIdInput(e.target.value)}
+                      placeholder="Paste ID Registrasi Sekolah Pembeli (ID-SDIT...)..."
+                      style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}
+                      required
+                    />
+                    <button type="submit" className="btn btn-emerald" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                      Generate Key
+                    </button>
+                  </form>
 
-              {generatedVendorKey && (
-                <div style={{ background: '#0f172a', padding: '8px', borderRadius: '4px', border: '1px solid #10b981', color: '#34d399', fontSize: '0.82rem', fontFamily: 'var(--font-mono)', fontWeight: 800, wordBreak: 'break-all' }}>
-                  {generatedVendorKey}
+                  {generatedVendorKey && (
+                    <div style={{ background: '#0f172a', padding: '8px', borderRadius: '4px', border: '1px solid #10b981', color: '#34d399', fontSize: '0.82rem', fontFamily: 'var(--font-mono)', fontWeight: 800, wordBreak: 'break-all' }}>
+                      {generatedVendorKey}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
