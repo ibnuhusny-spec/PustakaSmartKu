@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Award, KeyRound, CheckCircle2, ShieldAlert, X, Sparkles, Building2, Copy, Check, Lock, Wrench, ShieldCheck } from 'lucide-react';
+import { Award, KeyRound, CheckCircle2, ShieldAlert, X, Sparkles, Building2, Copy, Check, Lock, Wrench, ShieldCheck, HelpCircle } from 'lucide-react';
 import { 
   generateSchoolRegistrationId, 
   generateProLicenseKeyForSchool, 
@@ -26,6 +26,7 @@ export default function LicenseModal({
 
   const [vendorSchoolIdInput, setVendorSchoolIdInput] = useState('');
   const [generatedVendorKey, setGeneratedVendorKey] = useState('');
+  const [isVendorKeyCopied, setIsVendorKeyCopied] = useState(false);
 
   if (!isOpen) return null;
 
@@ -35,6 +36,13 @@ export default function LicenseModal({
     navigator.clipboard.writeText(regId);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleCopyVendorKey = () => {
+    if (!generatedVendorKey) return;
+    navigator.clipboard.writeText(generatedVendorKey);
+    setIsVendorKeyCopied(true);
+    setTimeout(() => setIsVendorKeyCopied(false), 2000);
   };
 
   const handleSubmit = (e) => {
@@ -51,7 +59,6 @@ export default function LicenseModal({
 
   const handleUnlockVendorTool = (e) => {
     e.preventDefault();
-    // Secret Passcode for Vendor Key Generator Access
     if (vendorPasscodeInput.trim() === 'VENDOR2026' || vendorPasscodeInput.trim() === 'PustakaSmart2026') {
       setIsVendorUnlocked(true);
       setVendorPasscodeError('');
@@ -69,7 +76,7 @@ export default function LicenseModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', padding: '24px' }}>
+      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '540px', padding: '24px' }}>
         
         <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -96,6 +103,7 @@ export default function LicenseModal({
           </button>
         </div>
 
+        {/* 📥 BAGIAN 1: KHUSUS SEKOLAH / PEMBELI (INPUT KODE LISENSI) */}
         <form onSubmit={handleSubmit} style={{ marginTop: '16px' }}>
           
           {currentLicenseType === 'trial' ? (
@@ -110,7 +118,7 @@ export default function LicenseModal({
                 <Sparkles size={16} /> Status: Versi Percobaan 30 Hari (Trial)
               </div>
               <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '2px' }}>
-                Sisa Masa Percobaan: <strong>{daysRemaining} Hari Lagi</strong>. Masukkan Kode Lisensi Pro khusus sekolah Anda.
+                Sisa Masa Percobaan: <strong>{daysRemaining} Hari Lagi</strong>.
               </div>
             </div>
           ) : (
@@ -138,8 +146,8 @@ export default function LicenseModal({
             border: '1px solid rgba(59, 130, 246, 0.4)',
             marginBottom: '16px'
           }}>
-            <div style={{ fontSize: '0.78rem', color: '#60a5fa', fontWeight: 700, marginBottom: '4px' }}>
-              🏫 ID REGISTRASI SEKOLAH ANDA:
+            <div style={{ fontSize: '0.78rem', color: '#60a5fa', fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              🏫 STEP 1: ID REGISTRASI UNIK SEKOLAH ANDA (KIRIMKAN KE VENDOR):
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#1e293b', padding: '8px 12px', borderRadius: '6px' }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#34d399', fontSize: '1rem', letterSpacing: '1px' }}>
@@ -155,14 +163,11 @@ export default function LicenseModal({
                 <span>{isCopied ? 'Tersalin' : 'Salin ID'}</span>
               </button>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px' }}>
-              💡 Kirimkan ID Registrasi Sekolah di atas ke Pengembang/Vendor untuk menerima Kode Lisensi Pro khusus sekolah Anda.
-            </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label" style={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-              Kode Aktivasi Lisensi Pro (Khusus {schoolName})
+            <label className="form-label" style={{ fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              📥 STEP 2: PASTE KODE LISENSI PRO DARI VENDOR DI SINI
             </label>
             <input 
               type="text" 
@@ -172,7 +177,7 @@ export default function LicenseModal({
                 setKeyInput(e.target.value);
                 if (errorMessage) setErrorMessage('');
               }}
-              placeholder="Paste Kode Lisensi Pro Sekolah Anda (Contoh: PRO-SDIT-...)..."
+              placeholder="Tempelkan Kode Lisensi Pro di sini (Contoh: PRO-SDIT-...)..."
               style={{
                 fontSize: '0.92rem',
                 fontWeight: 800,
@@ -210,29 +215,29 @@ export default function LicenseModal({
 
         </form>
 
-        {/* SECURE PASSCODE-PROTECTED VENDOR KEY GENERATOR */}
+        {/* 🛠️ BAGIAN 2: KHUSUS ANDA / PEMILIK SOFTWARE (TOOL PEMBUAT KODE) */}
         <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
           <button
             type="button"
             onClick={() => setShowVendorPasscodeForm(!showVendorPasscodeForm)}
             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
           >
-            <Lock size={12} /> {showVendorPasscodeForm ? 'Tutup Area Vendor' : '🛠️ Area Khusus Pemilik / Vendor Software'}
+            <Lock size={12} /> {showVendorPasscodeForm ? 'Tutup Area Pengembang' : '👑 Generator Kunci Khusus Anda (Pemilik Software)'}
           </button>
 
           {showVendorPasscodeForm && (
             <div style={{
               marginTop: '12px',
-              background: 'rgba(30, 41, 59, 0.9)',
-              padding: '14px',
+              background: 'rgba(30, 41, 59, 0.95)',
+              padding: '16px',
               borderRadius: '8px',
               border: '1px dashed #3b82f6',
               textAlign: 'left'
             }}>
               {!isVendorUnlocked ? (
                 <form onSubmit={handleUnlockVendorTool}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#fb7185', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Lock size={14} /> Masukkan Passcode Rahasia Vendor
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#fb7185', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Lock size={14} /> Masukkan Passcode Vendor Anda (Hanya Untuk Anda Sebagai Pemilik Software)
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <input 
@@ -248,7 +253,7 @@ export default function LicenseModal({
                       required
                     />
                     <button type="submit" className="btn btn-rose" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                      Buka Keygen
+                      Buka Tool Generator
                     </button>
                   </div>
                   {vendorPasscodeError && (
@@ -259,27 +264,44 @@ export default function LicenseModal({
                 </form>
               ) : (
                 <div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#34d399', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ShieldCheck size={16} /> Key Generator Pemilik Software (Unlocked)
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#34d399', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck size={16} /> TOOL MEMBUAT KODE LISENSI BERSAMA (PEMILIK SOFTWARE)
                   </div>
-                  <form onSubmit={handleGenerateVendorKey} style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                  <p style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: '0 0 8px 0' }}>
+                    Paste <strong>ID Registrasi Sekolah Pembeli</strong> (ID di STEP 1 milik laptop pembeli) di bawah ini untuk membikin Kode Lisensi Pro mereka:
+                  </p>
+
+                  <form onSubmit={handleGenerateVendorKey} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
                     <input 
                       type="text" 
                       className="form-input" 
                       value={vendorSchoolIdInput}
                       onChange={e => setVendorSchoolIdInput(e.target.value)}
-                      placeholder="Paste ID Registrasi Sekolah Pembeli (ID-SDIT...)..."
-                      style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)' }}
+                      placeholder="Paste ID Pembeli (Misal: ID-SDIT-XQ70BR)..."
+                      style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)' }}
                       required
                     />
-                    <button type="submit" className="btn btn-emerald" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                      Generate Key
+                    <button type="submit" className="btn btn-emerald" style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+                      Bikin Kode Lisensi
                     </button>
                   </form>
 
                   {generatedVendorKey && (
-                    <div style={{ background: '#0f172a', padding: '8px', borderRadius: '4px', border: '1px solid #10b981', color: '#34d399', fontSize: '0.82rem', fontFamily: 'var(--font-mono)', fontWeight: 800, wordBreak: 'break-all' }}>
-                      {generatedVendorKey}
+                    <div style={{ background: '#0f172a', padding: '10px', borderRadius: '6px', border: '1px solid #10b981' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginBottom: '4px' }}>KODE LISENSI PRO HASIL BUATAN ANDA (BERIKAN KE PEMBELI):</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <span style={{ color: '#34d399', fontSize: '0.88rem', fontFamily: 'var(--font-mono)', fontWeight: 800, wordBreak: 'break-all' }}>
+                          {generatedVendorKey}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleCopyVendorKey}
+                          className="btn btn-emerald"
+                          style={{ fontSize: '0.72rem', padding: '4px 8px' }}
+                        >
+                          {isVendorKeyCopied ? 'Tersalin!' : 'Copy Kode'}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
