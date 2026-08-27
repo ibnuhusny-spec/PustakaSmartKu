@@ -10,19 +10,32 @@ import {
   Sun, 
   Moon,
   Search,
-  FileText
+  FileText,
+  Lock,
+  Unlock,
+  ShieldCheck
 } from 'lucide-react';
 
-export default function Navbar({ activeTab, setActiveTab, theme, setTheme, onOpenRfidSimulator, settings }) {
+export default function Navbar({ 
+  activeTab, 
+  setActiveTab, 
+  theme, 
+  setTheme, 
+  onOpenRfidSimulator, 
+  settings,
+  isAdminAuthed,
+  onLockAdminSession,
+  onOpenAdminPinModal
+}) {
   const tabs = [
-    { id: 'kiosk', label: 'Mode Kios Mandiri', icon: Radio },
-    { id: 'catalog', label: 'Katalog OPAC', icon: Search },
-    { id: 'attendance', label: 'Presensi Kehadiran', icon: UserCheck },
-    { id: 'transactions', label: 'Peminjaman & Denda', icon: RotateCcw },
-    { id: 'members', label: 'Anggota & Kartu RFID', icon: Users },
-    { id: 'books', label: 'Manajemen Buku', icon: BookOpen },
-    { id: 'leaderboard', label: 'Duta Baca', icon: Trophy },
-    { id: 'settings', label: 'Pengaturan', icon: Settings },
+    { id: 'kiosk', label: 'Mode Kios Mandiri', icon: Radio, isProtected: false },
+    { id: 'catalog', label: 'Katalog OPAC', icon: Search, isProtected: false },
+    { id: 'attendance', label: 'Presensi Kehadiran', icon: UserCheck, isProtected: false },
+    { id: 'leaderboard', label: 'Duta Baca', icon: Trophy, isProtected: false },
+    { id: 'transactions', label: 'Peminjaman & Denda', icon: RotateCcw, isProtected: true },
+    { id: 'members', label: 'Anggota & Kartu RFID', icon: Users, isProtected: true },
+    { id: 'books', label: 'Manajemen Buku', icon: BookOpen, isProtected: true },
+    { id: 'settings', label: 'Pengaturan', icon: Settings, isProtected: true },
   ];
 
   return (
@@ -75,6 +88,8 @@ export default function Navbar({ activeTab, setActiveTab, theme, setTheme, onOpe
           {tabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
+            const showLockIcon = tab.isProtected && !isAdminAuthed;
+
             return (
               <button
                 key={tab.id}
@@ -83,34 +98,60 @@ export default function Navbar({ activeTab, setActiveTab, theme, setTheme, onOpe
                 style={{ 
                   padding: '8px 14px', 
                   fontSize: '0.82rem',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
                 <Icon size={16} />
                 <span>{tab.label}</span>
+                {showLockIcon && <Lock size={12} color="#fb7185" style={{ marginLeft: '2px' }} />}
               </button>
             );
           })}
         </nav>
 
-        {/* Action Quick Utilities (Simulator & Theme Toggle) */}
+        {/* Action Quick Utilities (Admin Security Lock, Simulator & Theme Toggle) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          
+          {/* ADMIN LOCK / UNLOCK STATUS BUTTON */}
+          {isAdminAuthed ? (
+            <button 
+              onClick={onLockAdminSession}
+              className="btn btn-rose"
+              style={{ fontSize: '0.78rem', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              title="Kunci Akses Admin (Kembali ke Mode Publik Siswa)"
+            >
+              <Unlock size={14} /> 🔓 Admin Aktif (Kunci)
+            </button>
+          ) : (
+            <button 
+              onClick={onOpenAdminPinModal}
+              className="btn btn-secondary"
+              style={{ fontSize: '0.78rem', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: '6px', border: '1px solid rgba(244, 63, 94, 0.4)' }}
+              title="Masukkan PIN Admin untuk Membuka Fitur Petugas"
+            >
+              <Lock size={14} color="#fb7185" /> <span style={{ color: '#fb7185' }}>Mode Siswa (Login Admin)</span>
+            </button>
+          )}
+
           <button 
             onClick={onOpenRfidSimulator}
             className="btn btn-emerald"
-            style={{ fontSize: '0.82rem', padding: '8px 14px' }}
+            style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+            title="Simulator Scanner Hardware RFID"
           >
-            <Radio size={16} />
-            <span>Tap RFID Simulator</span>
+            <Radio size={14} /> Simulator RFID
           </button>
 
           <button 
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="btn btn-secondary"
-            style={{ padding: '8px', borderRadius: '50%' }}
-            title="Ganti Tema Gelap / Terang"
+            style={{ padding: '8px', borderRadius: 'var(--radius-full)' }}
+            title="Beralih Mode Gelap/Terang"
           >
-            {theme === 'dark' ? <Sun size={18} color="#fbbf24" /> : <Moon size={18} color="#8b5cf6" />}
+            {theme === 'dark' ? <Sun size={16} color="#fbbf24" /> : <Moon size={16} color="#60a5fa" />}
           </button>
         </div>
 

@@ -16,7 +16,8 @@ export const DEFAULT_SETTINGS = {
   logoUrl: "/perpustakaansmart.png", // App Logo
   cardTemplate: "clean_corporate", // Default card template theme: clean_corporate, school_luxury, royal_gold
   idFieldLabel: "NISN / NIP", // Custom ID Label
-  classFieldLabel: "Peran / Kelas" // Custom Class/Role Label
+  classFieldLabel: "Peran / Kelas", // Custom Class/Role Label
+  adminPin: "1234" // Default Secure Admin PIN Protection
 };
 
 export const INITIAL_BOOKS = [

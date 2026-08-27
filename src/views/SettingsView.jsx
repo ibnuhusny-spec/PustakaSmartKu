@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText } from 'lucide-react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault } from '../services/db';
 
 export default function SettingsView({ settings, onRefreshData, onReplaySplash }) {
@@ -10,7 +10,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     e.preventDefault();
     saveSettings(formData);
     onRefreshData();
-    alert('Pengaturan sekolah, logo instansi, & sistem perpustakaan berhasil disimpan!');
+    alert('Pengaturan sekolah, PIN Admin, logo instansi, & sistem perpustakaan berhasil disimpan!');
   };
 
   // Compress and save dedicated School Logo image (Logo Instansi Sekolah)
@@ -106,7 +106,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Settings color="#3b82f6" /> Pengaturan Identitas Sekolah, Logo, & Sistem Perpustakaan
+              <Settings color="#3b82f6" /> Pengaturan Identitas Sekolah, Logo, & Keamanan Admin
             </h2>
 
             {onReplaySplash && (
@@ -119,6 +119,37 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                 <Sparkles size={16} /> ✨ Putar Ulang Splash Screen
               </button>
             )}
+          </div>
+
+          {/* ADMIN SECURITY PIN / PASSWORD SECTION */}
+          <div style={{
+            background: 'rgba(244, 63, 94, 0.12)',
+            padding: '20px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid rgba(244, 63, 94, 0.4)',
+            marginBottom: '20px'
+          }}>
+            <label className="form-label" style={{ color: '#fb7185', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', margin: '0 0 6px 0' }}>
+              <Lock size={20} /> Pengamanan PIN / Password Admin Perpustakaan *
+            </label>
+            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: '0 0 14px 0' }}>
+              PIN ini digunakan untuk memproteksi tab Admin (Buku & Stok, Anggota, Transaksi, Pengaturan) saat link web dibagikan ke siswa/umum.
+            </p>
+
+            <div style={{ maxWidth: '320px' }}>
+              <input 
+                type="text" 
+                className="form-input" 
+                value={formData.adminPin || '1234'}
+                onChange={e => setFormData({ ...formData, adminPin: e.target.value })}
+                placeholder="Masukkan PIN Admin Baru (Misal 1234)..."
+                style={{ fontSize: '1.1rem', fontWeight: 800, letterSpacing: '2px', fontFamily: 'var(--font-mono)', color: '#fb7185', background: '#1e293b' }}
+                required
+              />
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>
+                💡 <em>PIN Bawaan Pabrik:</em> <strong>1234</strong>. Ubah PIN ini untuk keamanan maksimal!
+              </div>
+            </div>
           </div>
 
           {/* DEDICATED SCHOOL LOGO UPLOAD SECTION */}
@@ -138,7 +169,6 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
               
-              {/* Logo Preview Frame */}
               <div style={{ 
                 width: '85px', 
                 height: '85px', 

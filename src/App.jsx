@@ -5,6 +5,7 @@ import RFIDSimulator from './components/RFIDSimulator';
 import AttendanceBanner from './components/AttendanceBanner';
 import ReceiptModal from './components/ReceiptModal';
 import CardPrinterModal from './components/CardPrinterModal';
+import AdminPinModal from './components/AdminPinModal';
 
 import KioskView from './views/KioskView';
 import CatalogView from './views/CatalogView';
@@ -32,12 +33,19 @@ import { speakText, stopSpeech } from './services/audioService';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
-  const [activeTab, setActiveTab] = useState('kiosk');
+  const [activeTab, setActiveTab] = useState('catalog');
   
   // Theme state initialized from LocalStorage to persist across page refresh
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('pustakasmart_theme') || 'dark';
   });
+
+  // Admin Authentication State
+  const [isAdminAuthed, setIsAdminAuthed] = useState(() => {
+    return sessionStorage.getItem('pustakasmart_admin_authed') === 'true';
+  });
+  const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
+  const [targetProtectedTab, setTargetProtectedTab] = useState(null);
 
   // Database States
   const [settings, setSettings] = useState(getSettings());
@@ -56,9 +64,17 @@ export default function App() {
   const [activeReceiptModal, setActiveReceiptModal] = useState({ isOpen: false, tx: null, member: null });
   const [activeCardPrinterModal, setActiveCardPrinterModal] = useState({ isOpen: false, member: null });
 
+  const protectedTabs = ['transactions', 'members', 'books', 'settings'];
+
+  const tabLabels = {
+    transactions: 'Peminjaman & Denda',
+    members: 'Anggota & Kartu RFID',
+    books: 'Manajemen Buku',
+    settings: 'Pengaturan Sekolah & Database'
+  };
+
   const refreshData = () => {
     const s = getSettings();
-    // Set default logo to /perpustakaansmart.png if none specified
     if (!s.logoUrl) {
       s.logoUrl = '/perpustakaansmart.png';
       saveSettings(s);
@@ -83,10 +99,38 @@ export default function App() {
     localStorage.setItem('pustakasmart_theme', theme);
   }, [theme]);
 
-  // Stop speech when switching tabs
+  // Protected Tab Navigation Switcher
   const handleTabChange = (newTab) => {
     stopSpeech();
+
+    // Check if clicking an Admin Secured Tab while unauthenticated
+    if (protectedTabs.includes(newTab) && !isAdminAuthed) {
+      setTargetProtectedTab(newTab);
+      setIsAdminPinModalOpen(true);
+      return;
+    }
+
     setActiveTab(newTab);
+  };
+
+  const handleAdminPinSuccess = () => {
+    setIsAdminAuthed(true);
+    sessionStorage.setItem('pustakasmart_admin_authed', 'true');
+    setIsAdminPinModalOpen(false);
+
+    if (targetProtectedTab) {
+      setActiveTab(targetProtectedTab);
+      setTargetProtectedTab(null);
+    }
+  };
+
+  const handleLockAdminSession = () => {
+    setIsAdminAuthed(false);
+    sessionStorage.removeItem('pustakasmart_admin_authed');
+    if (protectedTabs.includes(activeTab)) {
+      setActiveTab('catalog');
+    }
+    alert('🔒 Sesi Admin berhasil dikunci! Aplikasi kini kembali ke Mode Publik Siswa.');
   };
 
   // Global RFID Scan Listener
@@ -98,21 +142,20 @@ export default function App() {
       // Auto Presensi Attendance if enabled & member exists
       const member = getMemberByRfid(scanData.rfidUid);
       if (member && settings.autoAttendanceOnTap && activeTab !== 'kiosk') {
-        const att = recordAttendance(member, 'Presensi Otomatis RFID');
-        refreshData();
-        setActiveAttendanceToast(att);
-        speakText(`Selamat datang, ${member.name}!`, settings.enableVoice);
+        const result = recordAttendance(scanData.rfidUid, 'Presensi Tap Mandiri');
+        if (result.success) {
+          setActiveAttendanceToast(result.attendance);
+          if (settings.enableVoice) {
+            speakText(`Selamat datang, ${member.name}. Selamat membaca di perpustakaan.`);
+          }
+          refreshData();
+        }
       }
     };
 
-    window.addEventListener('rfid-scanned', handleRfidScan);
-    return () => window.removeEventListener('rfid-scanned', handleRfidScan);
+    window.addEventListener('rfid-scan', handleRfidScan);
+    return () => window.removeEventListener('rfid-scan', handleRfidScan);
   }, [settings, activeTab]);
-
-  const handleRegisterUnregisteredCard = (uid) => {
-    setPrefilledUidToRegister(uid);
-    setActiveTab('members');
-  };
 
   const handleOpenReceipt = (tx, member) => {
     setActiveReceiptModal({ isOpen: true, tx, member });
@@ -122,30 +165,34 @@ export default function App() {
     setActiveCardPrinterModal({ isOpen: true, member });
   };
 
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      
-      {/* Animated Luxury Splash Screen */}
-      {showSplash && (
-        <SplashScreen 
-          onFinish={() => setShowSplash(false)}
-          schoolName={settings.schoolName}
-          libraryName={settings.libraryName}
-        />
-      )}
+  const handleRegisterUnregisteredCard = (uid) => {
+    setPrefilledUidToRegister(uid);
+    handleTabChange('members');
+  };
 
-      {/* Top Navbar */}
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} settings={settings} />;
+  }
+
+  return (
+    <div className="app-layout">
+      
       <Navbar 
-        activeTab={activeTab}
+        activeTab={activeTab} 
         setActiveTab={handleTabChange}
         theme={theme}
         setTheme={setTheme}
         onOpenRfidSimulator={() => setIsSimulatorOpen(true)}
         settings={settings}
+        isAdminAuthed={isAdminAuthed}
+        onLockAdminSession={handleLockAdminSession}
+        onOpenAdminPinModal={() => {
+          setTargetProtectedTab('settings');
+          setIsAdminPinModalOpen(true);
+        }}
       />
 
-      {/* Main App Content View */}
-      <main style={{ flex: 1, paddingBottom: '40px' }}>
+      <main style={{ paddingBottom: '40px' }}>
         {activeTab === 'kiosk' && (
           <KioskView 
             rfidScanEvent={rfidScanEvent}
@@ -213,6 +260,14 @@ export default function App() {
       </main>
 
       {/* Modals & Floating Banners */}
+      <AdminPinModal 
+        isOpen={isAdminPinModalOpen}
+        onClose={() => setIsAdminPinModalOpen(false)}
+        onSuccess={handleAdminPinSuccess}
+        adminPin={settings?.adminPin || '1234'}
+        targetTabName={tabLabels[targetProtectedTab] || 'Admin'}
+      />
+
       <RFIDSimulator 
         isOpen={isSimulatorOpen}
         onClose={() => setIsSimulatorOpen(false)}
