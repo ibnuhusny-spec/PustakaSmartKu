@@ -20,7 +20,8 @@ import {
   Bookmark,
   FileText,
   ExternalLink,
-  Eye
+  Eye,
+  Globe
 } from 'lucide-react';
 import { saveBook, deleteBook, clearSampleBooks, importBooksCSV } from '../services/db';
 
@@ -46,7 +47,7 @@ export default function BooksView({ books, onRefreshData }) {
     coverUrl: '',
     description: '',
     ebookContent: '',
-    pdfUrl: '' // PDF File Data URI or Online Link
+    pdfUrl: ''
   });
 
   const categoryCovers = {
@@ -59,14 +60,13 @@ export default function BooksView({ books, onRefreshData }) {
     'Umum': 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=400&q=80',
   };
 
-  // Smart DDC Map
   const ddcCategoryMap = {
-    'Novel / Fiksi': '813',       // 800 Sastra / Fiksi
-    'Sejarah / Sastra': '959',    // 900 Sejarah
-    'Sains & Teknologi': '530',   // 500 Sains Murni
-    'Komputer & IT': '005',       // 000 Komputer & Pemrograman
-    'Pengembangan Diri': '158',   // 100 Psikologi & Pengemabangan Diri
-    'Agama & Keimanan': '297',    // 200 Agama Islam
+    'Novel / Fiksi': '813',
+    'Sejarah / Sastra': '959',
+    'Sains & Teknologi': '530',
+    'Komputer & IT': '005',
+    'Pengembangan Diri': '158',
+    'Agama & Keimanan': '297',
     'Umum': '000'
   };
 
@@ -88,19 +88,24 @@ export default function BooksView({ books, onRefreshData }) {
     { code: '900', label: '900 - Sejarah, Geografi & Biografi Tokoh' }
   ];
 
-  // Inventory Statistics Calculations
-  const totalTitles = books.length;
-  const totalCopies = books.reduce((acc, b) => acc + (Number(b.stock) || 0), 0);
-  const totalAvailableCopies = books.reduce((acc, b) => acc + (Number(b.available) || 0), 0);
-  const totalLoanedCopies = totalCopies - totalAvailableCopies;
-  const outOfStockBooks = books.filter(b => b.available <= 0);
+  // Smart PDF URL Formatter (Auto-converts Google Drive links to universal preview mode)
+  const formatPdfUrlForEmbedding = (url) => {
+    if (!url) return '';
+    const cleanUrl = url.trim();
+    if (cleanUrl.includes('drive.google.com') && cleanUrl.includes('/file/d/')) {
+      const match = cleanUrl.match(/\/file\/d\/([^\/]+)/);
+      if (match && match[1]) {
+        return `https://drive.google.com/file/d/${match[1]}/preview`;
+      }
+    }
+    return cleanUrl;
+  };
 
   const handleGenerateCover = () => {
     const defaultCover = categoryCovers[formData.category] || categoryCovers['Umum'];
     setFormData(prev => ({ ...prev, coverUrl: defaultCover }));
   };
 
-  // Smart Auto-DDC Suggestion Generator based on Title & Category
   const handleAutoRecommendDDC = () => {
     const titleLower = formData.title.toLowerCase();
     
@@ -120,7 +125,6 @@ export default function BooksView({ books, onRefreshData }) {
     }
   };
 
-  // Local Image Upload Handler
   const handleLocalImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -160,7 +164,6 @@ export default function BooksView({ books, onRefreshData }) {
     reader.readAsDataURL(file);
   };
 
-  // Local PDF Upload Handler (Converts PDF to Data URI / File URL)
   const handlePdfUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -214,7 +217,13 @@ export default function BooksView({ books, onRefreshData }) {
       return;
     }
 
-    saveBook(formData);
+    // Auto-format Google Drive links for universal embedding
+    const formattedData = {
+      ...formData,
+      pdfUrl: formatPdfUrlForEmbedding(formData.pdfUrl)
+    };
+
+    saveBook(formattedData);
     onRefreshData();
     setIsModalOpen(false);
   };
@@ -266,21 +275,21 @@ export default function BooksView({ books, onRefreshData }) {
         <div className="glass-card" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>TOTAL JUDUL BUKU</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#3b82f6', marginTop: '4px' }}>
-            {totalTitles} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Judul</span>
+            {books.length} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Judul</span>
           </div>
         </div>
 
         <div className="glass-card" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>TOTAL EKSEMPLAR FISIK</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>
-            {totalCopies} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Buku</span>
+            {books.reduce((acc, b) => acc + (Number(b.stock) || 0), 0)} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Buku</span>
           </div>
         </div>
 
         <div className="glass-card" style={{ padding: '20px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>SEDANG DIPINJAM SISWA</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fbbf24', marginTop: '4px' }}>
-            {totalLoanedCopies} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Buku</span>
+            {books.reduce((acc, b) => acc + (Number(b.stock) || 0), 0) - books.reduce((acc, b) => acc + (Number(b.available) || 0), 0)} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Buku</span>
           </div>
         </div>
 
@@ -293,29 +302,6 @@ export default function BooksView({ books, onRefreshData }) {
           </div>
         </div>
       </div>
-
-      {/* Warning Banner if Out of Stock Books exist */}
-      {outOfStockBooks.length > 0 && (
-        <div style={{
-          background: 'rgba(244, 63, 94, 0.15)',
-          border: '1px solid rgba(244, 63, 94, 0.4)',
-          borderRadius: 'var(--radius-md)',
-          padding: '14px 20px',
-          marginBottom: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          color: '#fb7185'
-        }}>
-          <AlertTriangle size={24} />
-          <div>
-            <strong style={{ fontSize: '0.95rem' }}>Peringatan Inventaris: Terdapat {outOfStockBooks.length} judul buku yang stoknya HABIS!</strong>
-            <div style={{ fontSize: '0.82rem', marginTop: '2px', opacity: 0.9 }}>
-              Buku yang stoknya habis dipinjam seluruhnya: {outOfStockBooks.map(b => `"${b.title}"`).join(', ')}. Silakan tambah stok atau tunggu siswa mengembalikan buku.
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="glass-card" style={{ padding: '24px' }}>
         
@@ -335,7 +321,7 @@ export default function BooksView({ books, onRefreshData }) {
               <FileSpreadsheet size={16} /> Import Data Buku (CSV/Excel)
             </button>
             <button onClick={() => handleOpenModal()} className="btn btn-primary">
-              <Plus size={16} /> Tambah Buku / E-Book Baru
+              <Plus size={16} /> Tambah Buku / PDF E-Book Baru
             </button>
           </div>
         </div>
@@ -366,9 +352,9 @@ export default function BooksView({ books, onRefreshData }) {
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
                 <th style={{ padding: '12px' }}>Sampul & Judul Buku</th>
                 <th style={{ padding: '12px' }}>Penulis & Penerbit</th>
-                <th style={{ padding: '12px', color: '#fbbf24' }}>Nomor Klasifikasi DDC</th>
+                <th style={{ padding: '12px', color: '#fbbf24' }}>Nomor DDC</th>
                 <th style={{ padding: '12px' }}>Kategori & Rak</th>
-                <th style={{ padding: '12px' }}>E-Book Digital / PDF</th>
+                <th style={{ padding: '12px' }}>E-Book PDF</th>
                 <th style={{ padding: '12px' }}>Stok Tersedia</th>
                 <th style={{ padding: '12px', textAlign: 'right' }}>Aksi Admin</th>
               </tr>
@@ -408,7 +394,6 @@ export default function BooksView({ books, onRefreshData }) {
                       </div>
                     </td>
                     
-                    {/* E-Book PDF Status Badge & Quick Reader */}
                     <td style={{ padding: '12px' }}>
                       {b.pdfUrl || b.ebookContent ? (
                         <button
@@ -416,7 +401,7 @@ export default function BooksView({ books, onRefreshData }) {
                           className="btn btn-emerald"
                           style={{ fontSize: '0.75rem', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                         >
-                          <FileText size={14} /> Baca E-Book PDF
+                          <FileText size={14} /> Baca PDF Online
                         </button>
                       ) : (
                         <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Fisik Sahaja</span>
@@ -523,13 +508,12 @@ export default function BooksView({ books, onRefreshData }) {
                   marginBottom: '16px'
                 }}>
                   <label className="form-label" style={{ color: '#34d399', fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 6px 0' }}>
-                    <FileText size={20} /> File E-Book Online (PDF / Google Drive / URL Link)
+                    <FileText size={20} /> File E-Book Online Universal (PDF / Google Drive / Direct URL)
                   </label>
                   <p style={{ fontSize: '0.78rem', color: '#cbd5e1', margin: '0 0 12px 0' }}>
-                    Upload file PDF dari laptop/HP Anda atau masukkan link Google Drive / PDF online agar siswa dapat <strong>membaca buku secara digital!</strong>
+                    Upload file PDF dari komputer/HP atau paste link <strong>Google Drive / PDF Online</strong>. Link Google Drive akan <strong>otomatis diformat agar bisa dibaca di seluruh HP Android, iPhone, Tablet, & Laptop!</strong>
                   </p>
 
-                  {/* File Upload PDF Button */}
                   <div style={{ marginBottom: '10px' }}>
                     <label 
                       className="btn btn-emerald"
@@ -552,14 +536,14 @@ export default function BooksView({ books, onRefreshData }) {
                       className="form-input"
                       value={formData.pdfUrl || ''}
                       onChange={e => setFormData({ ...formData, pdfUrl: e.target.value })}
-                      placeholder="Atau paste link URL File PDF / Google Drive PDF..."
+                      placeholder="Atau paste Link Google Drive / Direct Link PDF (misal https://drive.google.com/file/d/...)..."
                       style={{ fontSize: '0.82rem' }}
                     />
                   </div>
 
                   {formData.pdfUrl && (
                     <div style={{ marginTop: '8px', fontSize: '0.78rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <CheckCircle2 size={14} /> File/URL PDF E-Book Siap Dibaca Digital!
+                      <CheckCircle2 size={14} /> File/URL PDF E-Book Siap Dibaca di Semua Device!
                     </div>
                   )}
                 </div>
@@ -730,10 +714,10 @@ export default function BooksView({ books, onRefreshData }) {
         </div>
       )}
 
-      {/* E-BOOK DIGITAL READER MODAL WITH EMBEDDED PDF VIEWER */}
+      {/* UNIVERSAL E-BOOK DIGITAL READER MODAL (SUPPORTING ALL DEVICES) */}
       {activeEbook && (
         <div className="modal-overlay" onClick={() => setActiveEbook(null)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', width: '90%' }}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '880px', width: '92%' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <FileText color="#10b981" size={22} />
@@ -744,29 +728,34 @@ export default function BooksView({ books, onRefreshData }) {
             
             <div className="modal-body" style={{ padding: '16px' }}>
               
-              {/* If PDF URL exists, render embed PDF viewer iframe or direct PDF link */}
               {activeEbook.pdfUrl ? (
                 <div>
-                  <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 700 }}>
-                      📄 File PDF E-Book Online Siap Dibaca
+                  <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Globe size={16} /> File PDF E-Book Universal Online
                     </span>
+                    
                     <a 
                       href={activeEbook.pdfUrl} 
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="btn btn-emerald"
-                      style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+                      style={{ fontSize: '0.8rem', padding: '6px 14px' }}
                     >
-                      <ExternalLink size={14} /> Buka PDF Layar Penuh / Download
+                      <ExternalLink size={14} /> Buka PDF Layar Penuh / Tab Baru
                     </a>
                   </div>
 
                   <iframe 
-                    src={activeEbook.pdfUrl} 
+                    src={formatPdfUrlForEmbedding(activeEbook.pdfUrl)} 
                     title={activeEbook.title}
-                    style={{ width: '100%', height: '520px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff' }}
+                    allow="autoplay"
+                    style={{ width: '100%', height: '540px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff' }}
                   />
+
+                  <div style={{ marginTop: '10px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                    💡 <em>HP Android / iOS Safari:</em> Jika pratinjau layar penuh belum terbuka di HP Anda, klik tombol <strong>"Buka PDF Layar Penuh"</strong> di atas!
+                  </div>
                 </div>
               ) : (
                 <div style={{

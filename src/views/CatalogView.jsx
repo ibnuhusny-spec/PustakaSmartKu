@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, BookOpen, Layers, MapPin, Eye, FileText, CheckCircle2, X, ExternalLink } from 'lucide-react';
+import { Search, BookOpen, Layers, MapPin, Eye, FileText, CheckCircle2, X, ExternalLink, Globe } from 'lucide-react';
 
 export default function CatalogView({ books }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -8,6 +8,19 @@ export default function CatalogView({ books }) {
   const [detailBook, setDetailBook] = useState(null);
 
   const categories = ['Semua', 'Novel / Fiksi', 'Sejarah / Sastra', 'Sains & Teknologi', 'Komputer & IT', 'Pengembangan Diri', 'Agama & Keimanan'];
+
+  // Smart PDF URL Formatter (Auto-converts Google Drive links to universal preview mode)
+  const formatPdfUrlForEmbedding = (url) => {
+    if (!url) return '';
+    const cleanUrl = url.trim();
+    if (cleanUrl.includes('drive.google.com') && cleanUrl.includes('/file/d/')) {
+      const match = cleanUrl.match(/\/file\/d\/([^\/]+)/);
+      if (match && match[1]) {
+        return `https://drive.google.com/file/d/${match[1]}/preview`;
+      }
+    }
+    return cleanUrl;
+  };
 
   const filteredBooks = books.filter(book => {
     const matchesSearch = 
@@ -146,41 +159,47 @@ export default function CatalogView({ books }) {
         </div>
       )}
 
-      {/* DIGITAL E-BOOK READER PREVIEW MODAL */}
+      {/* UNIVERSAL E-BOOK DIGITAL READER PREVIEW MODAL */}
       {activeEbook && (
         <div className="modal-overlay" onClick={() => setActiveEbook(null)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', width: '90%' }}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '880px', width: '92%' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <FileText color="#10b981" size={20} />
+                <FileText color="#10b981" size={22} />
                 <h3 style={{ margin: 0, fontSize: '1.1rem' }}>E-Book Digital Reader: {activeEbook.title}</h3>
               </div>
-              <button onClick={() => setActiveEbook(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}><X size={18}/></button>
+              <button onClick={() => setActiveEbook(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}><X size={20}/></button>
             </div>
             
             <div className="modal-body" style={{ padding: '16px' }}>
               {activeEbook.pdfUrl ? (
                 <div>
-                  <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 700 }}>
-                      📄 File PDF E-Book Online Siap Dibaca
+                  <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Globe size={16} /> File PDF E-Book Universal Online
                     </span>
+                    
                     <a 
                       href={activeEbook.pdfUrl} 
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="btn btn-emerald"
-                      style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+                      style={{ fontSize: '0.8rem', padding: '6px 14px' }}
                     >
-                      <ExternalLink size={14} /> Buka PDF Layar Penuh / Download
+                      <ExternalLink size={14} /> Buka PDF Layar Penuh / Tab Baru
                     </a>
                   </div>
 
                   <iframe 
-                    src={activeEbook.pdfUrl} 
+                    src={formatPdfUrlForEmbedding(activeEbook.pdfUrl)} 
                     title={activeEbook.title}
-                    style={{ width: '100%', height: '520px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff' }}
+                    allow="autoplay"
+                    style={{ width: '100%', height: '540px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff' }}
                   />
+
+                  <div style={{ marginTop: '10px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                    💡 <em>HP Android / iOS Safari:</em> Jika pratinjau belum muncul di HP Anda, klik tombol <strong>"Buka PDF Layar Penuh"</strong> di atas!
+                  </div>
                 </div>
               ) : (
                 <div style={{
