@@ -54,7 +54,7 @@ export default function LeaderboardView({ members, onRefreshData }) {
         setQuizState('playing');
         setSelectedOpt(null);
         playSoundEffect('scan');
-        speakText(`Silakan menjawab kuis, ${member.name}!`);
+        speakText(`Silakan menjawab kuis!`);
       } else {
         playSoundEffect('error');
         alert(`Kartu RFID (UID: ${rfidUid}) belum terdaftar di database siswa.`);
@@ -74,7 +74,7 @@ export default function LeaderboardView({ members, onRefreshData }) {
     setSelectedOpt(optionIdx);
 
     if (optionIdx === currentQuiz.correctIdx) {
-      // Correct answer! Award +15 points
+      // Correct answer! Award +15 points & play ONLY "TING!" sound chime
       const updatedPoints = (activePlayer.points || 0) + (currentQuiz.rewardPoints || 15);
       const updatedMember = { ...activePlayer, points: updatedPoints };
       
@@ -84,9 +84,8 @@ export default function LeaderboardView({ members, onRefreshData }) {
       setQuizState('correct');
       playSoundEffect('ting');
       confetti({ particleCount: 70, spread: 80 });
-      speakText(`Jawaban Anda Benar! Selamat, ${activePlayer.name} mendapatkan bonus ${currentQuiz.rewardPoints || 15} poin!`);
     } else {
-      // Wrong answer! Deduct -20 points (penalty)
+      // Wrong answer! Deduct -20 points & play ONLY wrong sound tone
       const updatedPoints = Math.max(0, (activePlayer.points || 0) - (currentQuiz.penaltyPoints || 20));
       const updatedMember = { ...activePlayer, points: updatedPoints };
 
@@ -95,7 +94,6 @@ export default function LeaderboardView({ members, onRefreshData }) {
 
       setQuizState('wrong');
       playSoundEffect('quiz_wrong');
-      speakText(`Jawaban belum tepat, ${activePlayer.name}. Tetap semangat membaca!`);
     }
   };
 

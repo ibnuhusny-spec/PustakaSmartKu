@@ -184,11 +184,7 @@ const speakWebSpeechFallback = (cleanText) => {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
   try {
-    window.speechSynthesis.cancel();
-
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-    }
+    stopSpeech();
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'id-ID';
@@ -210,43 +206,54 @@ const speakWebSpeechFallback = (cleanText) => {
   }
 };
 
-// Text-To-Speech Authentic Indonesian Female Voice Engine (Greetings & Quiz Voice Only)
+// Text-To-Speech Authentic Indonesian Female Voice Engine (Single Stream Only)
 export const speakText = (text, enabled = true) => {
   if (!enabled || !text || !text.trim()) return;
 
-  // STRICT REQUIREMENT: Only play TTS sound for Welcome Greetings and Quiz Game!
+  // STRICT REQUIREMENT: Only play TTS sound for Welcome Greetings and Quiz Start Greeting!
   const lower = text.toLowerCase();
   const isAllowedVoice = lower.includes('selamat datang') || 
                          lower.includes('selamat membaca') || 
-                         lower.includes('silakan menjawab') || 
-                         lower.includes('jawaban') ||
-                         lower.includes('kuis');
+                         lower.includes('silakan menjawab');
 
   if (!isAllowedVoice) {
     return;
   }
 
+  // Synchronously stop any previous speech to avoid double overlapping sound
+  stopSpeech();
+
+  const cleanText = sanitizeIndonesianSpeechText(text);
+
   try {
-    stopSpeech();
-
-    const cleanText = sanitizeIndonesianSpeechText(text);
-
-    // High-Quality Natural Indonesian Female Voice Engine
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText.substring(0, 180))}&tl=id&client=tw-ob`;
     const audio = new Audio(ttsUrl);
     audio.volume = 1.0;
     currentAudio = audio;
 
+    let hasFallenBack = false;
+
+    audio.onended = () => {
+      currentAudio = null;
+    };
+
+    audio.onerror = () => {
+      if (!hasFallenBack) {
+        hasFallenBack = true;
+        speakWebSpeechFallback(cleanText);
+      }
+    };
+
     const playPromise = audio.play();
     if (playPromise !== undefined) {
-      playPromise.then(() => {
-        // Playing authentic Indonesian female voice!
-      }).catch(err => {
-        // Offline or blocked network: Use Web Speech API with female pitch tuning
-        speakWebSpeechFallback(cleanText);
+      playPromise.catch(err => {
+        if (!hasFallenBack) {
+          hasFallenBack = true;
+          speakWebSpeechFallback(cleanText);
+        }
       });
     }
   } catch (err) {
-    speakWebSpeechFallback(text);
+    speakWebSpeechFallback(cleanText);
   }
 };
