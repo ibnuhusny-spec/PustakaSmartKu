@@ -10,7 +10,10 @@ import {
   Sparkles,
   Search,
   PlusCircle,
-  X
+  X,
+  ShieldCheck,
+  Award,
+  Calendar
 } from 'lucide-react';
 import { getMemberByRfid, createLoanTransaction, returnBookTransaction, recordAttendance } from '../services/db';
 import { speakText, playSoundEffect } from '../services/audioService';
@@ -45,36 +48,43 @@ export default function KioskView({
           text: `Kartu RFID Fisik Terdeteksi (UID: ${rfidUid}), namun belum terdaftar di database perpustakaan!`,
           uid: rfidUid
         });
-        speakText(`Kartu RFID dengan nomor ${rfidUid} belum terdaftar. Silakan daftarkan di menu anggota.`, settings.enableVoice);
         return;
       }
 
       // Member found on live tap!
       setSelectedMember(member);
-      playSoundEffect('success');
 
-      // Record Attendance
-      recordAttendance(member, 'Presensi Mandiri Kios RFID');
-      onRefreshData();
-      
-      setMessage({ 
-        type: 'success', 
-        text: `Selamat Datang, ${member.name}! Presensi kehadiran Anda telah dicatat.` 
-      });
-      speakText(`Selamat datang di perpustakaan, ${member.name}!`, settings.enableVoice);
-      
-      confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
-      setActiveStep('balance');
+      // Check active step: DO NOT play "Selamat Datang" voice during Borrow or Return!
+      if (activeStep === 'borrow' || activeStep === 'return') {
+        playSoundEffect('scan');
+        setMessage({ 
+          type: 'success', 
+          text: `Kartu RFID Terverifikasi: ${member.name} (${member.classGrade}). Saldo RFID: Rp ${member.balance.toLocaleString('id-ID')} | Poin: ${member.points} pts.` 
+        });
+      } else {
+        // Attendance / Presensi Mode: Record Attendance & play Selamat Datang Voice
+        playSoundEffect('success');
+        recordAttendance(member, 'Presensi Mandiri Kios RFID');
+        onRefreshData();
+        
+        setMessage({ 
+          type: 'success', 
+          text: `Selamat Datang, ${member.name}! Presensi kehadiran Anda telah dicatat.` 
+        });
+        speakText(`Selamat datang di perpustakaan, ${member.name}!`, settings.enableVoice);
+        
+        confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
+        setActiveStep('balance');
+      }
     };
 
     window.addEventListener('rfid-scanned', handleLiveRfidScan);
     return () => window.removeEventListener('rfid-scanned', handleLiveRfidScan);
-  }, [settings, onRefreshData]);
+  }, [settings, onRefreshData, activeStep]);
 
   const handleBorrow = (book) => {
     if (!selectedMember) {
-      setMessage({ type: 'amber', text: 'Silakan Tap Kartu RFID Anda terlebih dahulu!' });
-      speakText('Silakan tempelkan kartu RFID Anda terlebih dahulu.', settings.enableVoice);
+      setMessage({ type: 'amber', text: 'Silakan Tempelkan Kartu RFID Anda terlebih dahulu!' });
       return;
     }
 
@@ -84,15 +94,12 @@ export default function KioskView({
       playSoundEffect('success');
       confetti({ particleCount: 50, spread: 70 });
 
-      setMessage({ type: 'success', text: `Peminjaman buku "${book.title}" berhasil!` });
-      speakText(`Peminjaman buku ${book.title} berhasil. Harap kembalikan dalam ${settings.maxLoanDays} hari.`, settings.enableVoice);
-
+      setMessage({ type: 'success', text: `Peminjaman buku "${book.title}" untuk ${selectedMember.name} berhasil!` });
       onOpenReceipt(tx, selectedMember);
       setActiveStep('menu');
     } catch (err) {
       playSoundEffect('error');
       setMessage({ type: 'error', text: err.message });
-      speakText(err.message, settings.enableVoice);
     }
   };
 
@@ -105,10 +112,8 @@ export default function KioskView({
 
       if (updatedTx.fineAmount > 0) {
         setMessage({ type: 'success', text: `Buku dikembalikan. Denda Rp ${updatedTx.fineAmount.toLocaleString('id-ID')} telah ${payWithWallet ? 'DIBAYAR LUNAS via Saldo RFID' : 'dicatat'}.` });
-        speakText(`Pengembalian buku berhasil. Denda telah dibayar dengan saldo kartu. Terima kasih!`, settings.enableVoice);
       } else {
         setMessage({ type: 'success', text: `Pengembalian buku "${tx.bookTitle}" tepat waktu berhasil!` });
-        speakText(`Pengembalian buku tepat waktu berhasil. Terima kasih telah membaca!`, settings.enableVoice);
       }
 
       onOpenReceipt(updatedTx, selectedMember);
@@ -116,7 +121,6 @@ export default function KioskView({
     } catch (err) {
       playSoundEffect('error');
       setMessage({ type: 'error', text: err.message });
-      speakText(err.message, settings.enableVoice);
     }
   };
 
@@ -162,43 +166,48 @@ export default function KioskView({
           Mode Kios Mandiri Siswa & RFID Tap
         </h2>
         <p style={{ fontSize: '1rem', color: '#cbd5e1', maxWidth: '650px', margin: '0 auto' }}>
-          Tempelkan Kartu RFID Fisik pada alat USB reader atau klik <strong>"Tap RFID Simulator"</strong> untuk presensi & transaksi otomatis.
+          Tempelkan Kartu RFID Fisik pada alat USB reader untuk presensi & transaksi otomatis.
         </p>
 
         {/* Selected Active Member Card Banner */}
         {selectedMember && (
           <div style={{
             marginTop: '20px',
-            background: 'rgba(59, 130, 246, 0.15)',
-            border: '1px solid rgba(59, 130, 246, 0.4)',
+            background: 'rgba(59, 130, 246, 0.18)',
+            border: '1.5px solid rgba(59, 130, 246, 0.5)',
             borderRadius: 'var(--radius-md)',
-            padding: '14px 20px',
-            display: 'inline-flex',
+            padding: '16px 20px',
+            display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
             gap: '16px',
             textAlign: 'left'
           }}>
-            <img 
-              src={selectedMember.avatar}
-              alt={selectedMember.name}
-              style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#1e293b' }}
-            />
-            <div>
-              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#60a5fa' }}>
-                {selectedMember.name} ({selectedMember.classGrade})
-              </div>
-              <div style={{ fontSize: '0.82rem', color: '#cbd5e1' }}>
-                Saldo RFID: <strong style={{ color: '#34d399' }}>Rp {selectedMember.balance.toLocaleString('id-ID')}</strong> • 
-                Poin: <strong>{selectedMember.points} pts</strong> • 
-                Buku Dipinjam: <strong>{activeLoans.length}</strong>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <img 
+                src={selectedMember.avatar}
+                alt={selectedMember.name}
+                style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#1e293b', border: '2px solid #60a5fa' }}
+              />
+              <div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {selectedMember.name} <span style={{ fontSize: '0.8rem', background: '#2563eb', color: '#fff', padding: '2px 8px', borderRadius: '12px' }}>{selectedMember.classGrade}</span>
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: '2px' }}>
+                  NISN/ID: <strong>{selectedMember.nisn || selectedMember.id}</strong> • 
+                  Saldo RFID: <strong style={{ color: '#34d399' }}>Rp {selectedMember.balance.toLocaleString('id-ID')}</strong> • 
+                  Poin: <strong style={{ color: '#fbbf24' }}>{selectedMember.points} pts</strong> ({selectedMember.badge || 'Pembaca Baru 🌱'})
+                </div>
               </div>
             </div>
+
             <button 
               onClick={() => setSelectedMember(null)}
               className="btn btn-secondary"
-              style={{ fontSize: '0.78rem', padding: '6px 10px', marginLeft: '12px' }}
+              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
             >
-              Reset Kartu
+              Ganti / Reset Kartu
             </button>
           </div>
         )}
@@ -284,7 +293,7 @@ export default function KioskView({
           </div>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 6px 0' }}>2. Pinjam Buku Cepat</h3>
           <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Pilih buku kesukaanmu lalu tap konfirmasi pinjam (3 detik).
+            Tap kartu RFID Anda & pilih buku kesukaanmu untuk dipinjam.
           </p>
         </div>
 
@@ -332,8 +341,69 @@ export default function KioskView({
       {activeStep === 'borrow' && (
         <div className="glass-card" style={{ padding: '24px' }}>
           <h3 style={{ fontSize: '1.2rem', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BookOpen size={20} color="#3b82f6" /> Pilih Buku yang Ingin Dipinjam:
+            <BookOpen size={20} color="#3b82f6" /> Peminjaman Buku Sekolah
           </h3>
+
+          {!selectedMember ? (
+            <div style={{
+              background: 'rgba(59, 130, 246, 0.12)',
+              border: '1px dashed rgba(59, 130, 246, 0.5)',
+              borderRadius: 'var(--radius-md)',
+              padding: '24px',
+              textAlign: 'center',
+              marginBottom: '20px'
+            }}>
+              <Radio size={36} color="#3b82f6" style={{ marginBottom: '10px' }} />
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem' }}>Silakan Tempelkan Kartu RFID Anda di Mesin Reader</h4>
+              <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                Identitas anggota, foto, kelas, saldo, dan daftar buku yang sedang dipinjam akan otomatis ditampilkan di layar.
+              </p>
+            </div>
+          ) : (
+            /* Student Identity & Currently Borrowed Books Panel */
+            <div style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-md)',
+              padding: '16px',
+              marginBottom: '24px'
+            }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '10px', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ShieldCheck size={18} /> IDENTITAS ANGGOTA & PINJAMAN AKTIF ({selectedMember.name})
+              </div>
+
+              {activeLoans.length === 0 ? (
+                <div style={{ fontSize: '0.85rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={16} /> Anggota belum memiliki pinjaman aktif (Bisa meminjam hingga {settings.maxBooksPerStudent || 3} buku).
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', fontSize: '0.82rem', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                        <th style={{ padding: '6px' }}>Judul Buku Dipinjam</th>
+                        <th style={{ padding: '6px' }}>Tanggal Pinjam</th>
+                        <th style={{ padding: '6px' }}>Jatuh Tempo</th>
+                        <th style={{ padding: '6px' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeLoans.map(l => (
+                        <tr key={l.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                          <td style={{ padding: '6px', fontWeight: 700 }}>{l.bookTitle}</td>
+                          <td style={{ padding: '6px' }}>{l.issueDate}</td>
+                          <td style={{ padding: '6px', color: '#fb7185', fontWeight: 700 }}>{l.dueDate}</td>
+                          <td style={{ padding: '6px' }}>
+                            <span className={`badge ${l.status === 'Terlambat' ? 'badge-rose' : 'badge-blue'}`}>{l.status}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
 
           <div style={{ marginBottom: '20px' }}>
             <div style={{ position: 'relative' }}>
@@ -417,20 +487,35 @@ export default function KioskView({
       {activeStep === 'return' && (
         <div className="glass-card" style={{ padding: '24px' }}>
           <h3 style={{ fontSize: '1.2rem', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <RotateCcw size={20} color="#f59e0b" /> Pengembalian Buku & Pelunasan Denda:
+            <RotateCcw size={20} color="#f59e0b" /> Pengembalian Buku & Identitas Anggota
           </h3>
 
           {!selectedMember ? (
-            <p style={{ color: 'var(--text-secondary)' }}>
-              Silakan Tap Kartu RFID Anda di atas terlebih dahulu untuk melihat buku yang perlu dikembalikan.
-            </p>
+            <div style={{
+              background: 'rgba(245, 158, 11, 0.12)',
+              border: '1px dashed rgba(245, 158, 11, 0.5)',
+              borderRadius: 'var(--radius-md)',
+              padding: '24px',
+              textAlign: 'center',
+              marginBottom: '20px'
+            }}>
+              <Radio size={36} color="#f59e0b" style={{ marginBottom: '10px' }} />
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem' }}>Silakan Tempelkan Kartu RFID Anda di Mesin Reader</h4>
+              <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                Identitas anggota dan daftar buku yang harus dikembalikan akan otomatis ditampilkan tanpa ucapan suara.
+              </p>
+            </div>
           ) : activeLoans.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)' }}>
               <CheckCircle2 size={40} color="#10b981" style={{ marginBottom: '10px' }} />
-              <h4>Tidak ada pinjaman buku aktif untuk {selectedMember.name}.</h4>
+              <h4>Tidak ada buku yang sedang dipinjam oleh {selectedMember.name}.</h4>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ShieldCheck size={18} /> DAFTAR BUKU YANG HARUS DIKEMBALIKAN OLEH {selectedMember.name.toUpperCase()} ({selectedMember.classGrade}):
+              </div>
+
               {activeLoans.map(tx => (
                 <div 
                   key={tx.id}
@@ -478,7 +563,7 @@ export default function KioskView({
                         className="btn btn-primary"
                         style={{ fontSize: '0.85rem' }}
                       >
-                        <RotateCcw size={16} /> Kembalikan Buku
+                        <RotateCcw size={16} /> Kembalikan Buku Ini
                       </button>
                     )}
                   </div>

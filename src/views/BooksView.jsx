@@ -706,7 +706,7 @@ export default function BooksView({ books, onRefreshData }) {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Total Stok Fisik (0 = PDF Only)</label>
+                    <label className="form-label">Total Stok Fisik (Isi 0 jika E-Book PDF Digital)</label>
                     <input 
                       type="number" 
                       className="form-input" 
