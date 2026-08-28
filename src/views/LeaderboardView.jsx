@@ -54,7 +54,7 @@ export default function LeaderboardView({ members, onRefreshData }) {
         setQuizState('playing');
         setSelectedOpt(null);
         playSoundEffect('scan');
-        speakText(`Silakan menjawab kuis!`);
+        speakText(`Silakan menjawab kuis, ${member.name}!`);
       } else {
         playSoundEffect('error');
         alert(`Kartu RFID (UID: ${rfidUid}) belum terdaftar di database siswa.`);

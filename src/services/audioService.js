@@ -22,23 +22,21 @@ const getIndonesianFemaleVoice = () => {
   const voices = window.speechSynthesis.getVoices();
   if (!voices || voices.length === 0) return null;
 
-  // 1. Priority match for Indonesian Female Voice (Gadis / Google Bahasa Indonesia / Female id-ID)
+  // STRICT RULE: Only match voices that are explicitly Indonesian (id-ID / Indonesia / Gadis)
   let bestVoice = voices.find(v => {
     const name = (v.name || '').toLowerCase();
     const lang = (v.lang || '').toLowerCase();
-    const isIndo = lang.includes('id') || name.includes('indonesi');
+    const isIndo = lang.startsWith('id') || name.includes('indonesia') || name.includes('gadis');
     const isFemale = name.includes('gadis') || name.includes('female') || name.includes('wanita') || name.includes('google') || name.includes('natural');
     return isIndo && isFemale;
   });
 
-  // 2. Any id-ID locale voice
   if (!bestVoice) {
-    bestVoice = voices.find(v => (v.lang || '').toLowerCase().includes('id'));
-  }
-
-  // 3. Fallback to any voice with 'indonesia' in name
-  if (!bestVoice) {
-    bestVoice = voices.find(v => (v.name || '').toLowerCase().includes('indonesi'));
+    bestVoice = voices.find(v => {
+      const name = (v.name || '').toLowerCase();
+      const lang = (v.lang || '').toLowerCase();
+      return lang.startsWith('id') || name.includes('indonesia');
+    });
   }
 
   if (bestVoice) {
@@ -179,22 +177,25 @@ export const stopSpeech = () => {
   }
 };
 
-// Fallback to local Web Speech API with Female Voice Preference & Pitch Tuning
+// Fallback to local Web Speech API - STRICTLY INDONESIAN VOICE ONLY
 const speakWebSpeechFallback = (cleanText) => {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+  const femaleVoice = getIndonesianFemaleVoice();
+  // CRITICAL SECURITY FIX: If no Indonesian voice is installed on Windows OS, NEVER fallback to English male voice (Microsoft David)
+  if (!femaleVoice) {
+    console.warn('No Indonesian voice installed on OS; skipping WebSpeech fallback to prevent foreign male voice reading Indonesian.');
+    return;
+  }
 
   try {
     stopSpeech();
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'id-ID';
-    utterance.rate = 0.92;
+    utterance.rate = 0.95;
     utterance.pitch = 1.25; // Tuned pitch for clear, pleasant Indonesian Female Voice
-
-    const femaleVoice = getIndonesianFemaleVoice();
-    if (femaleVoice) {
-      utterance.voice = femaleVoice;
-    }
+    utterance.voice = femaleVoice;
 
     setTimeout(() => {
       try {
@@ -206,7 +207,7 @@ const speakWebSpeechFallback = (cleanText) => {
   }
 };
 
-// Text-To-Speech Authentic Indonesian Female Voice Engine (Single Stream Only)
+// Text-To-Speech Authentic Indonesian Female Voice Engine (Google Neural Female Stream First)
 export const speakText = (text, enabled = true) => {
   if (!enabled || !text || !text.trim()) return;
 
