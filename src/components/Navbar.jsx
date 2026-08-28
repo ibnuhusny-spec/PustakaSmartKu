@@ -86,12 +86,10 @@ export default function Navbar({
               fontSize: '1.25rem', 
               fontWeight: 800, 
               margin: 0, 
-              background: 'linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              color: 'var(--text-primary)',
               letterSpacing: '-0.5px'
             }}>
-              PustakaSmart <span style={{ color: '#10b981', WebkitTextFillColor: '#10b981' }}>RFID</span>
+              PustakaSmart <span style={{ color: '#10b981' }}>RFID</span>
             </h1>
             <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>{settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI"}</span>
@@ -100,7 +98,7 @@ export default function Navbar({
         </div>
 
         {/* Center Tabs Navigation Bar */}
-        <nav style={{ display: 'flex', gap: '6px', background: 'rgba(15, 23, 42, 0.6)', padding: '4px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
+        <nav style={{ display: 'flex', gap: '6px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
           {publicTabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -113,9 +111,9 @@ export default function Navbar({
                   padding: '8px 16px',
                   borderRadius: '6px',
                   border: 'none',
-                  background: isActive ? 'var(--primary-color)' : 'transparent',
-                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                  fontWeight: isActive ? 700 : 500,
+                  background: isActive ? 'var(--accent-primary)' : 'transparent',
+                  color: isActive ? '#ffffff' : 'var(--text-primary)',
+                  fontWeight: isActive ? 700 : 600,
                   fontSize: '0.85rem',
                   cursor: 'pointer',
                   display: 'flex',
@@ -124,7 +122,7 @@ export default function Navbar({
                   transition: 'all 0.2s ease'
                 }}
               >
-                <Icon size={16} color={isActive ? '#ffffff' : '#94a3b8'} />
+                <Icon size={16} color={isActive ? '#ffffff' : (theme === 'light' ? '#334155' : '#94a3b8')} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -140,18 +138,19 @@ export default function Navbar({
               border: 'none',
               background: activeTab === 'admin_portal' 
                 ? 'linear-gradient(135deg, #10b981, #059669)' 
-                : 'rgba(16, 185, 129, 0.15)',
-              color: activeTab === 'admin_portal' ? '#ffffff' : '#34d399',
+                : (theme === 'light' ? '#d1fae5' : 'rgba(16, 185, 129, 0.15)'),
+              color: activeTab === 'admin_portal' ? '#ffffff' : (theme === 'light' ? '#047857' : '#34d399'),
               fontWeight: 700,
               fontSize: '0.85rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
+              border: theme === 'light' && activeTab !== 'admin_portal' ? '1px solid #a7f3d0' : 'none',
               boxShadow: activeTab === 'admin_portal' ? '0 4px 14px rgba(16, 185, 129, 0.4)' : 'none'
             }}
           >
-            <ShieldCheck size={16} color={activeTab === 'admin_portal' ? '#ffffff' : '#34d399'} />
+            <ShieldCheck size={16} color={activeTab === 'admin_portal' ? '#ffffff' : (theme === 'light' ? '#047857' : '#34d399')} />
             <span>🔐 Portal Admin</span>
           </button>
         </nav>

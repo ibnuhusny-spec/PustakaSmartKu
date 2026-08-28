@@ -170,6 +170,7 @@ export default function App() {
   useEffect(() => {
     const handleRfidScan = (e) => {
       const scanData = e.detail;
+      if (!scanData || !scanData.rfidUid) return;
       setRfidScanEvent(scanData);
 
       const member = getMemberByRfid(scanData.rfidUid);
@@ -178,15 +179,23 @@ export default function App() {
         if (result.success) {
           setActiveAttendanceToast(result.attendance);
           if (settings.enableVoice) {
-            speakText(`Selamat datang, ${member.name}. Selamat membaca di perpustakaan.`);
+            if (result.isFirstToday) {
+              speakText(`Selamat datang, ${member.name}. Kehadiran tercatat, bonus poin literasi plus 5.`);
+            } else {
+              speakText(`Selamat datang kembali, ${member.name}. Kehadiran hari ini sudah tercatat.`);
+            }
           }
           refreshData();
         }
       }
     };
 
+    window.addEventListener('rfid-scanned', handleRfidScan);
     window.addEventListener('rfid-scan', handleRfidScan);
-    return () => window.removeEventListener('rfid-scan', handleRfidScan);
+    return () => {
+      window.removeEventListener('rfid-scanned', handleRfidScan);
+      window.removeEventListener('rfid-scan', handleRfidScan);
+    };
   }, [settings, activeTab]);
 
   const handleOpenReceipt = (tx, member) => {

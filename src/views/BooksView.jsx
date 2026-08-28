@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   BookOpen, 
   Plus, 
@@ -25,13 +25,17 @@ import {
   Smartphone
 } from 'lucide-react';
 import { saveBook, deleteBook, clearSampleBooks, importBooksCSV } from '../services/db';
+import DdcPickerModal from '../components/DdcPickerModal';
+import { recommendDdcFromTitle } from '../services/ddcData';
 
 export default function BooksView({ books, onRefreshData }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isDdcPickerOpen, setIsDdcPickerOpen] = useState(false);
   const [activeEbook, setActiveEbook] = useState(null);
   const [csvText, setCsvText] = useState('');
+  const titleInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     id: '',
@@ -116,22 +120,13 @@ export default function BooksView({ books, onRefreshData }) {
   };
 
   const handleAutoRecommendDDC = () => {
-    const titleLower = formData.title.toLowerCase();
-    
-    if (titleLower.includes('islam') || titleLower.includes('quran') || titleLower.includes('hadits') || titleLower.includes('fiqih') || titleLower.includes('doa') || titleLower.includes('shalat') || titleLower.includes('rasul') || titleLower.includes('nabi')) {
-      setFormData(prev => ({ ...prev, ddc: '297', category: 'Agama & Keimanan' }));
-    } else if (titleLower.includes('komputer') || titleLower.includes('web') || titleLower.includes('react') || titleLower.includes('javascript') || titleLower.includes('python') || titleLower.includes('program') || titleLower.includes('coding') || titleLower.includes('it') || titleLower.includes('software')) {
-      setFormData(prev => ({ ...prev, ddc: '005', category: 'Komputer & IT' }));
-    } else if (titleLower.includes('fisika') || titleLower.includes('kimia') || titleLower.includes('biologi') || titleLower.includes('matematika') || titleLower.includes('sains') || titleLower.includes('ipa') || titleLower.includes('hitung')) {
-      setFormData(prev => ({ ...prev, ddc: '530', category: 'Sains & Teknologi' }));
-    } else if (titleLower.includes('sejarah') || titleLower.includes('bangsa') || titleLower.includes('pahlawan') || titleLower.includes('perang') || titleLower.includes('indonesia') || titleLower.includes('kemerdekaan')) {
-      setFormData(prev => ({ ...prev, ddc: '959', category: 'Sejarah / Sastra' }));
-    } else if (titleLower.includes('psikologi') || titleLower.includes('sukses') || titleLower.includes('pikiran') || titleLower.includes('bahagia') || titleLower.includes('stoisisme') || titleLower.includes('teras') || titleLower.includes('diri')) {
-      setFormData(prev => ({ ...prev, ddc: '158', category: 'Pengembangan Diri' }));
-    } else {
-      const suggestedDdc = ddcCategoryMap[formData.category] || '800';
-      setFormData(prev => ({ ...prev, ddc: suggestedDdc }));
+    if (!formData.title || !formData.title.trim()) {
+      alert('Silakan ketik Judul Buku terlebih dahulu agar sistem dapat mengunci rekomendasi DDC secara otomatis!');
+      return;
     }
+    const rec = recommendDdcFromTitle(formData.title, formData.category);
+    setFormData(prev => ({ ...prev, ddc: rec.code, category: rec.category }));
+    alert(`💡 Rekomendasi DDC Terperinci Berhasil: DDC ${rec.code} (${rec.category}) berdasarkan judul "${formData.title}"`);
   };
 
   const handleLocalImageUpload = (e) => {
@@ -190,6 +185,11 @@ export default function BooksView({ books, onRefreshData }) {
   };
 
   const handleOpenModal = (book = null) => {
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+    window.focus();
+
     if (book) {
       setFormData({ 
         ...book,
@@ -204,19 +204,24 @@ export default function BooksView({ books, onRefreshData }) {
         author: '',
         isbn: '',
         category: defaultCategory,
-        ddc: ddcCategoryMap[defaultCategory],
+        ddc: ddcCategoryMap[defaultCategory] || '813',
         publisher: '',
         year: new Date().getFullYear(),
         shelf: 'Rak A1',
         stock: 5,
         available: 5,
-        coverUrl: categoryCovers[defaultCategory],
+        coverUrl: categoryCovers[defaultCategory] || '',
         description: '',
         ebookContent: '',
         pdfUrl: ''
       });
     }
     setIsModalOpen(true);
+    setTimeout(() => {
+      if (titleInputRef.current) {
+        titleInputRef.current.focus();
+      }
+    }, 50);
   };
 
   const handleSave = (e) => {
@@ -324,13 +329,19 @@ export default function BooksView({ books, onRefreshData }) {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
             <button onClick={() => setIsImportModalOpen(true)} className="btn btn-emerald">
               <FileSpreadsheet size={16} /> Import Data Buku (CSV/Excel)
             </button>
             <button onClick={() => handleOpenModal()} className="btn btn-primary">
               <Plus size={16} /> Tambah Buku / PDF E-Book Baru
             </button>
+
+            {books.length > 0 && (
+              <button onClick={handleClearAllSampleBooks} className="btn btn-rose" title="Kosongkan seluruh data contoh buku">
+                <Trash2 size={16} /> Bersihkan Semua Buku
+              </button>
+            )}
           </div>
         </div>
 
@@ -473,7 +484,12 @@ export default function BooksView({ books, onRefreshData }) {
       {/* MODAL TAMBAH / EDIT BUKU & E-BOOK PDF */}
       {isModalOpen && (
         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '680px' }}>
+          <div 
+            className="modal-container" 
+            onClick={e => e.stopPropagation()} 
+            onMouseDown={e => e.stopPropagation()}
+            style={{ maxWidth: '680px' }}
+          >
             <div className="modal-header">
               <h3 style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <BookOpen color="#3b82f6" /> {formData.id ? 'Edit Data Buku & PDF E-Book' : 'Tambah Buku / PDF E-Book Baru'}
@@ -489,12 +505,14 @@ export default function BooksView({ books, onRefreshData }) {
                 <div className="form-group">
                   <label className="form-label">Judul Buku *</label>
                   <input 
+                    ref={titleInputRef}
                     type="text" 
                     className="form-input" 
                     value={formData.title}
                     onChange={e => setFormData({ ...formData, title: e.target.value })}
                     placeholder="Contoh: Laskar Pelangi / Fisika Modern Class XII"
                     required
+                    autoFocus
                   />
                 </div>
 
@@ -540,18 +558,20 @@ export default function BooksView({ books, onRefreshData }) {
 
                   <div style={{ marginBottom: '10px' }}>
                     <label 
+                      htmlFor="book-pdf-file-input"
                       className="btn btn-emerald"
                       style={{ cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}
                     >
                       <FolderOpen size={16} />
                       <span>Upload File PDF (.pdf) dari Komputer/HP Anda...</span>
-                      <input 
-                        type="file" 
-                        accept="application/pdf"
-                        onChange={handlePdfUpload}
-                        style={{ display: 'none' }}
-                      />
                     </label>
+                    <input 
+                      id="book-pdf-file-input"
+                      type="file" 
+                      accept="application/pdf"
+                      onChange={handlePdfUpload}
+                      style={{ display: 'none' }}
+                    />
                   </div>
 
                   <div className="form-group" style={{ margin: 0 }}>
@@ -574,37 +594,52 @@ export default function BooksView({ books, onRefreshData }) {
 
                 {/* DDC CLASSIFICATION FIELD */}
                 <div className="form-group" style={{ background: 'rgba(245, 158, 11, 0.12)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(245, 158, 11, 0.4)', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                     <label className="form-label" style={{ color: '#fbbf24', margin: 0, fontWeight: 800, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Tag size={18} /> Nomor Klasifikasi Buku (DDC / Dewey Decimal) *
                     </label>
                     
-                    <button
-                      type="button"
-                      onClick={handleAutoRecommendDDC}
-                      className="btn btn-emerald"
-                      style={{ fontSize: '0.78rem', padding: '6px 12px' }}
-                    >
-                      <Sparkles size={14} /> ✨ Rekomendasi Otomatis DDC
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setIsDdcPickerOpen(true)}
+                        className="btn btn-primary"
+                        style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+                      >
+                        <Search size={14} /> 🔍 Cari DDC Detail (000-900)
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={handleAutoRecommendDDC}
+                        className="btn btn-emerald"
+                        style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+                      >
+                        <Sparkles size={14} /> ✨ Rekomendasi Otomatis
+                      </button>
+                    </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
                     <input 
                       type="text" 
                       className="form-input" 
                       value={formData.ddc}
                       onChange={e => setFormData({ ...formData, ddc: e.target.value })}
-                      placeholder="Contoh: 813"
-                      style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', width: '160px', color: '#fbbf24', background: '#1e293b' }}
+                      placeholder="Contoh: 297.1"
+                      style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', width: '140px', color: '#fbbf24', background: 'var(--bg-secondary)' }}
                       required
                     />
 
                     <select
                       className="form-select"
-                      value=""
-                      onChange={e => { if (e.target.value) setFormData({ ...formData, ddc: e.target.value }); }}
-                      style={{ flex: 1, fontSize: '0.85rem' }}
+                      value={formData.ddc || ''}
+                      onChange={e => { 
+                        if (e.target.value) {
+                          setFormData(prev => ({ ...prev, ddc: e.target.value }));
+                        } 
+                      }}
+                      style={{ flex: 1, fontSize: '0.85rem', minWidth: '220px' }}
                     >
                       <option value="">-- Panduan Pilih Cepat Nomor DDC Standar --</option>
                       {ddcQuickList.map(item => (
@@ -683,18 +718,20 @@ export default function BooksView({ books, onRefreshData }) {
                   
                   <div style={{ marginBottom: '8px' }}>
                     <label 
+                      htmlFor="book-cover-file-input"
                       className="btn btn-secondary"
                       style={{ cursor: 'pointer', fontSize: '0.82rem', width: '100%', justifyContent: 'flex-start' }}
                     >
                       <FolderOpen size={16} color="#10b981" />
                       <span>Upload Foto Sampul dari Komputer / HP Anda...</span>
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={handleLocalImageUpload}
-                        style={{ display: 'none' }}
-                      />
                     </label>
+                    <input 
+                      id="book-cover-file-input"
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleLocalImageUpload}
+                      style={{ display: 'none' }}
+                    />
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -741,7 +778,7 @@ export default function BooksView({ books, onRefreshData }) {
       {/* UNIVERSAL E-BOOK DIGITAL READER MODAL (SUPPORTING ALL DEVICES) */}
       {activeEbook && (
         <div className="modal-overlay" onClick={() => setActiveEbook(null)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '880px', width: '92%' }}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} style={{ maxWidth: '880px', width: '92%' }}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <FileText color="#10b981" size={22} />
@@ -814,7 +851,7 @@ export default function BooksView({ books, onRefreshData }) {
       {/* MODAL IMPORT BUKU DARI CSV/EXCEL */}
       {isImportModalOpen && (
         <div className="modal-overlay" onClick={() => setIsImportModalOpen(false)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '650px' }}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} style={{ maxWidth: '650px' }}>
             <div className="modal-header">
               <h3 style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FileSpreadsheet color="#10b981" /> Impor Data Buku Massal (CSV / Excel)
@@ -853,6 +890,16 @@ export default function BooksView({ books, onRefreshData }) {
           </div>
         </div>
       )}
+
+      {/* DDC DETAILED PICKER MODAL */}
+      <DdcPickerModal
+        isOpen={isDdcPickerOpen}
+        onClose={() => setIsDdcPickerOpen(false)}
+        onSelectDdc={(item) => {
+          setFormData(prev => ({ ...prev, ddc: item.code, category: item.category }));
+        }}
+        currentCode={formData.ddc}
+      />
 
     </div>
   );

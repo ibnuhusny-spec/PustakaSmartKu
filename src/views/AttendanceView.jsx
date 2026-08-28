@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { UserCheck, Download, Search, Calendar, Users, Award, Clock, RefreshCw, PlusCircle, X, UserPlus, User, Edit3 } from 'lucide-react';
-import { recordAttendance, getMembers } from '../services/db';
+import { UserCheck, Download, Search, Calendar, Users, Award, Clock, RefreshCw, PlusCircle, X, UserPlus, User, Edit3, Trash2, AlertTriangle } from 'lucide-react';
+import { recordAttendance, getMembers, getLocalDateString, deleteAttendanceRecord, clearAllAttendanceLogs } from '../services/db';
 import { speakText, playSoundEffect } from '../services/audioService';
 
 export default function AttendanceView({ attendance, onRefreshData }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
 
   // Manual Attendance Modal State
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [visitorType, setVisitorType] = useState('member'); // 'member' or 'guest'
   
+  // Delete Confirmation Modal State
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, attId: null, memberName: '', isAll: false });
+
   // Member Form State
   const [selectedMemberId, setSelectedMemberId] = useState('');
   
@@ -22,13 +25,46 @@ export default function AttendanceView({ attendance, onRefreshData }) {
   const [selectedPurposeOption, setSelectedPurposeOption] = useState('Membaca & Kunjungan Umum');
   const [customPurposeText, setCustomPurposeText] = useState('');
 
+  const onRequestDeleteSingle = (att) => {
+    setDeleteConfirm({
+      isOpen: true,
+      attId: att.id,
+      memberName: att.memberName,
+      isAll: false
+    });
+  };
+
+  const onRequestClearAll = () => {
+    setDeleteConfirm({
+      isOpen: true,
+      attId: null,
+      memberName: 'SELURUH RIWAYAT PRESENSI',
+      isAll: true
+    });
+  };
+
+  const handleExecuteDelete = () => {
+    if (deleteConfirm.isAll) {
+      clearAllAttendanceLogs();
+    } else if (deleteConfirm.attId) {
+      deleteAttendanceRecord(deleteConfirm.attId);
+    }
+    if (onRefreshData) onRefreshData();
+    setDeleteConfirm({ isOpen: false, attId: null, memberName: '', isAll: false });
+  };
+
   const members = getMembers();
 
-  const filteredAttendance = attendance.filter(att => {
-    const matchesSearch = att.memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          att.classGrade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          att.rfidUid.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDate = !selectedDate || att.date === selectedDate;
+  const filteredAttendance = (attendance || []).filter(att => {
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = (att.memberName || '').toLowerCase().includes(searchLower) ||
+                          (att.classGrade || '').toLowerCase().includes(searchLower) ||
+                          (att.rfidUid || '').toLowerCase().includes(searchLower);
+    
+    // Robust date match checking att.date as well as timestamp in local timezone
+    const attLocalDate = att.timestamp ? getLocalDateString(new Date(att.timestamp)) : att.date;
+    const matchesDate = !selectedDate || att.date === selectedDate || attLocalDate === selectedDate;
+    
     return matchesSearch && matchesDate;
   });
 
@@ -180,6 +216,17 @@ export default function AttendanceView({ attendance, onRefreshData }) {
             <button onClick={exportCSV} className="btn btn-emerald" style={{ fontSize: '0.85rem' }}>
               <Download size={16} /> Export Excel / CSV
             </button>
+
+            {(attendance && attendance.length > 0) && (
+              <button 
+                onClick={onRequestClearAll}
+                className="btn btn-rose"
+                style={{ fontSize: '0.85rem' }}
+                title="Kosongkan seluruh riwayat presensi kunjungan"
+              >
+                <Trash2 size={16} /> Bersihkan Semua Presensi
+              </button>
+            )}
           </div>
         </div>
 
@@ -205,26 +252,33 @@ export default function AttendanceView({ attendance, onRefreshData }) {
                 <th style={{ padding: '12px' }}>Kartu RFID UID</th>
                 <th style={{ padding: '12px' }}>Tanggal & Waktu Tap</th>
                 <th style={{ padding: '12px' }}>Tujuan Kunjungan</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filteredAttendance.length === 0 ? (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)' }}>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)' }}>
                     Belum ada catatan presensi pada filter ini.
                   </td>
                 </tr>
               ) : (
-                filteredAttendance.map(att => (
-                  <tr key={att.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <img 
-                        src={`https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(att.memberName)}`}
-                        alt={att.memberName}
-                        style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#1e293b' }}
-                      />
-                      {att.memberName}
-                    </td>
+                filteredAttendance.map(att => {
+                  const memberObj = members.find(m => (m.rfidUid && m.rfidUid === att.rfidUid) || m.name === att.memberName);
+                  const displayAvatar = (memberObj && memberObj.avatar && !memberObj.avatar.includes('bottts'))
+                    ? memberObj.avatar
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(att.memberName || 'Siswa')}&background=0D9488&color=fff&bold=true&size=128`;
+
+                  return (
+                    <tr key={att.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img 
+                          src={displayAvatar}
+                          alt={att.memberName}
+                          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', background: '#1e293b', border: '1px solid var(--border-color)' }}
+                        />
+                        {att.memberName}
+                      </td>
                     <td style={{ padding: '12px' }}>{att.classGrade}</td>
                     <td style={{ padding: '12px', fontFamily: 'var(--font-mono)', color: att.rfidUid === 'TAMU-GUEST' ? '#f59e0b' : '#34d399', fontWeight: 600 }}>
                       {att.rfidUid}
@@ -240,8 +294,19 @@ export default function AttendanceView({ attendance, onRefreshData }) {
                         {att.purpose}
                       </span>
                     </td>
+                    <td style={{ padding: '12px', textAlign: 'right' }}>
+                      <button 
+                        onClick={() => onRequestDeleteSingle(att)}
+                        className="btn btn-rose"
+                        style={{ fontSize: '0.78rem', padding: '6px 8px' }}
+                        title="Hapus Catatan Presensi Ini"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -376,6 +441,55 @@ export default function AttendanceView({ attendance, onRefreshData }) {
                 <button type="button" className="btn btn-primary" onClick={handleSaveManualAttendance}>Simpan Presensi</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION REACT MODAL */}
+      {deleteConfirm.isOpen && (
+        <div className="modal-overlay" onClick={() => setDeleteConfirm({ isOpen: false, attId: null, memberName: '', isAll: false })}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', textAlign: 'center', padding: '28px 24px' }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.15)',
+              color: '#ef4444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px auto',
+              border: '1px solid rgba(239, 68, 68, 0.3)'
+            }}>
+              <AlertTriangle size={32} />
+            </div>
+
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-primary)' }}>
+              Konfirmasi Hapus Presensi
+            </h3>
+
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.5 }}>
+              Apakah Anda yakin ingin menghapus <strong>"{deleteConfirm.memberName}"</strong> dari riwayat presensi kunjungan? Tindakan ini tidak dapat dibatalkan.
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button 
+                type="button"
+                className="btn btn-secondary"
+                style={{ minWidth: '100px' }}
+                onClick={() => setDeleteConfirm({ isOpen: false, attId: null, memberName: '', isAll: false })}
+              >
+                Batal
+              </button>
+              <button 
+                type="button"
+                className="btn btn-rose"
+                style={{ minWidth: '120px' }}
+                onClick={handleExecuteDelete}
+              >
+                Ya, Hapus Presensi
+              </button>
+            </div>
           </div>
         </div>
       )}

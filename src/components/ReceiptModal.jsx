@@ -1,5 +1,6 @@
 import React from 'react';
 import { Printer, X, CheckCircle2, CreditCard, BookOpen } from 'lucide-react';
+import defaultLogo from '../assets/logo.png';
 
 export default function ReceiptModal({ isOpen, onClose, transaction, member, settings }) {
   if (!isOpen || !transaction) return null;
@@ -8,7 +9,9 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
     window.print();
   };
 
-  const activeSchoolLogo = settings?.schoolLogoUrl || settings?.logoUrl || '/perpustakaansmart.png';
+  const activeSchoolLogo = (settings?.schoolLogoUrl && settings.schoolLogoUrl.trim()) 
+    ? settings.schoolLogoUrl 
+    : ((settings?.logoUrl && settings.logoUrl.trim() && settings.logoUrl.startsWith('data:')) ? settings.logoUrl : defaultLogo);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -41,7 +44,7 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
                   src={activeSchoolLogo} 
                   alt="Logo Sekolah" 
                   style={{ width: '50px', height: '50px', objectFit: 'contain', marginBottom: '6px' }} 
-                  onError={e => { e.target.style.display = 'none'; }}
+                  onError={e => { e.target.src = defaultLogo; }}
                 />
               )}
               <h2 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, fontFamily: 'var(--font-main)', color: '#0f172a' }}>
@@ -57,79 +60,56 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
 
             {/* Transaction Info */}
             <div style={{ marginBottom: '12px', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div><strong>No. Nota:</strong> {transaction.id}</div>
-              <div><strong>Tanggal:</strong> {new Date().toLocaleString('id-ID')}</div>
-              <div><strong>Kartu RFID:</strong> {transaction.rfidUid}</div>
-              <div><strong>Siswa/Guru:</strong> {transaction.memberName} ({member?.classGrade || 'Siswa'})</div>
+              <div><strong>No. Nota:</strong> {transaction.id || '-'}</div>
+              <div><strong>Tgl Transaksi:</strong> {transaction.issueDate}</div>
+              <div><strong>Peminjam:</strong> {transaction.memberName} ({member?.classGrade || 'Siswa'})</div>
+              <div><strong>RFID UID:</strong> {transaction.rfidUid}</div>
             </div>
 
-            <div style={{ borderBottom: '1px dashed #cbd5e1', margin: '12px 0' }}></div>
-
-            {/* Book Item Details */}
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '4px' }}>DETAIL BUKU:</div>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
-                {transaction.bookTitle}
+            {/* Book Info Box */}
+            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '14px' }}>
+              <div style={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}>
+                📖 {transaction.bookTitle}
               </div>
-              <div style={{ fontSize: '0.78rem', color: '#475569' }}>
-                ID Buku: {transaction.bookId}
-              </div>
-            </div>
-
-            {/* Status & Dates */}
-            <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', marginBottom: '16px', border: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span>Status:</span>
-                <strong style={{ color: transaction.status === 'Dikembalikan' ? '#16a34a' : '#2563eb' }}>
-                  {transaction.status}
-                </strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span>Tgl Pinjam:</span>
-                <span>{transaction.issueDate}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Batas Kembali:</span>
-                <span style={{ color: '#dc2626', fontWeight: 600 }}>{transaction.dueDate}</span>
+              <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Batas Pinjam: {transaction.dueDate}</span>
+                <span style={{ fontWeight: 700, color: transaction.status === 'Terlambat' ? '#ef4444' : '#10b981' }}>
+                  [{transaction.status}]
+                </span>
               </div>
             </div>
 
-            {/* Fine Section if applicable */}
+            {/* Fine Section */}
             {transaction.fineAmount > 0 && (
-              <div style={{ background: '#fef2f2', padding: '10px', borderRadius: '6px', marginBottom: '16px', border: '1px solid #fecaca' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#991b1b', fontWeight: 700 }}>
-                  <span>Denda Terlambat:</span>
+              <div style={{ background: '#fef2f2', padding: '10px 12px', borderRadius: '6px', border: '1px solid #fecaca', marginBottom: '14px', color: '#991b1b' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
+                  <span>Denda Keterlambatan:</span>
                   <span>Rp {transaction.fineAmount.toLocaleString('id-ID')}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#b91c1c', marginTop: '4px' }}>
-                  <span>Metode Bayar:</span>
-                  <span>{transaction.finePaid ? 'Lunas via Saldo RFID' : 'Belum Lunas'}</span>
+                <div style={{ fontSize: '0.72rem', marginTop: '2px', color: '#b91c1c' }}>
+                  Status Pelunasan: {transaction.finePaid ? 'LUNAS (E-Wallet RFID)' : 'BELUM LUNAS'}
                 </div>
               </div>
             )}
 
-            {/* Member Wallet Balance info */}
-            {member && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#475569', borderTop: '1px dashed #cbd5e1', paddingTop: '8px' }}>
-                <span>Sisa Saldo RFID:</span>
-                <strong style={{ color: '#0f172a' }}>Rp {member.balance.toLocaleString('id-ID')}</strong>
+            {/* Footer Notice */}
+            <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748b', marginTop: '16px', borderTop: '1px dashed #cbd5e1', paddingTop: '10px' }}>
+              <div>Terima kasih telah membaca di perpustakaan.</div>
+              <div>Jaga buku ini dengan baik & kembalikan tepat waktu.</div>
+              <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '6px' }}>
+                Powered by PustakaSmart RFID School System
               </div>
-            )}
-
-            {/* Footer note */}
-            <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.72rem', color: '#64748b' }}>
-              *** Terima Kasih Telah Membaca ***<br/>
-              Harap kembalikan buku tepat waktu.
             </div>
+
           </div>
         </div>
 
-        <div className="modal-footer no-print">
-          <button className="btn btn-secondary" onClick={onClose}>
+        <div className="modal-footer no-print" style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+          <button onClick={onClose} className="btn btn-secondary">
             Tutup
           </button>
-          <button className="btn btn-primary" onClick={handlePrint}>
-            <Printer size={16} /> Cetak Struk (Thermal / A4)
+          <button onClick={handlePrint} className="btn btn-emerald">
+            <Printer size={16} /> Cetak Struk Peminjaman
           </button>
         </div>
 

@@ -35,19 +35,97 @@
 }
 
 [data-theme="light"] {
-  --bg-primary: #f3f4f6;
+  /* Semi-Jadul / Classic Clean Desktop Software Theme (High Contrast & Sharp Typography) */
+  --bg-primary: #e2e8f0;
   --bg-secondary: #ffffff;
-  --bg-card: rgba(255, 255, 255, 0.85);
-  --bg-card-hover: rgba(243, 244, 246, 0.95);
-  --border-color: rgba(0, 0, 0, 0.08);
-  --border-color-glow: rgba(37, 99, 235, 0.4);
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --border-color: #cbd5e1;
+  --border-color-glow: #2563eb;
 
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-muted: #9ca3af;
+  --text-primary: #0f172a;    /* High contrast dark navy */
+  --text-secondary: #334155;  /* Deep readable slate */
+  --text-muted: #64748b;      /* Sharp muted text */
 
-  --shadow-lg: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
-  --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 14px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 0 15px rgba(37, 99, 235, 0.15);
+}
+
+/* Light mode specific element overrides for ultra-crisp high-contrast semi-classic look */
+[data-theme="light"] body {
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.06) 0px, transparent 50%);
+}
+
+[data-theme="light"] .glass-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+[data-theme="light"] .glass-card:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .form-label {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+[data-theme="light"] .form-input, 
+[data-theme="light"] .form-select, 
+[data-theme="light"] .form-textarea {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #94a3b8;
+}
+
+[data-theme="light"] .form-input::placeholder,
+[data-theme="light"] .form-textarea::placeholder {
+  color: #64748b;
+}
+
+[data-theme="light"] .form-input:focus, 
+[data-theme="light"] .form-select:focus, 
+[data-theme="light"] .form-textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+[data-theme="light"] .btn-secondary {
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+/* Light mode high-contrast badges */
+[data-theme="light"] .badge-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+[data-theme="light"] .badge-emerald { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+[data-theme="light"] .badge-amber { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+[data-theme="light"] .badge-rose { background: #ffe4e6; color: #991b1b; border: 1px solid #fca5a5; }
+[data-theme="light"] .badge-purple { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+
+[data-theme="light"] table th {
+  color: #1e293b !important;
+  font-weight: 700;
+}
+
+[data-theme="light"] table td {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .modal-container {
+  background: #ffffff;
+  border: 1px solid #94a3b8;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
 
 * {
@@ -230,9 +308,13 @@ body {
   justify-content: center;
   padding: 20px;
   animation: fadeIn 0.2s ease-out;
+  pointer-events: auto;
 }
 
 .modal-container {
+  position: relative;
+  z-index: 1000;
+  pointer-events: auto;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);

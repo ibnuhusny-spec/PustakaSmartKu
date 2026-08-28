@@ -22,6 +22,8 @@ import MembersView from './MembersView';
 import TransactionsView from './TransactionsView';
 import SettingsView from './SettingsView';
 
+import { getLocalDateString } from '../services/db';
+
 export default function AdminPortalView({ 
   settings, 
   books, 
@@ -44,7 +46,12 @@ export default function AdminPortalView({
   const totalMembers = members.length;
   const activeLoans = transactions.filter(t => t.status === 'Dipinjam' || t.status === 'Terlambat').length;
   const overdueLoans = transactions.filter(t => t.status === 'Terlambat').length;
-  const todayAttendance = attendance.filter(a => a.date === new Date().toISOString().split('T')[0]).length;
+  
+  const todayStr = getLocalDateString();
+  const todayAttendance = (attendance || []).filter(a => {
+    const aLocalDate = a.timestamp ? getLocalDateString(new Date(a.timestamp)) : a.date;
+    return a.date === todayStr || aLocalDate === todayStr;
+  }).length;
 
   return (
     <div style={{ display: 'flex', minHeight: 'calc(100vh - 100px)', gap: '20px', padding: '0 16px' }}>

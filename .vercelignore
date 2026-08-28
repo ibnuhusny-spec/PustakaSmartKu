@@ -1,0 +1,6 @@
+dist_desktop/
+scratch/
+node_modules/
+.git/
+.vscode/
+*.exe

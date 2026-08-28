@@ -311,16 +311,25 @@ export default function LicenseModal({
                     Paste <strong>ID Registrasi Sekolah Pembeli</strong> (ID di STEP 1 milik laptop pembeli) di bawah ini untuk membikin Kode Lisensi Pro mereka:
                   </p>
 
-                  <form onSubmit={handleGenerateVendorKey} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                  <form onSubmit={handleGenerateVendorKey} style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
                     <input 
                       type="text" 
                       className="form-input" 
                       value={vendorSchoolIdInput}
                       onChange={e => setVendorSchoolIdInput(e.target.value)}
-                      placeholder="Paste ID Pembeli (Misal: ID-SDIT-XQ70BR)..."
-                      style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)' }}
+                      placeholder="Paste ID Pembeli (Misal: ID-SDIT-MWOMII)..."
+                      style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)', flex: '1 1 200px' }}
                       required
                     />
+                    <button 
+                      type="button" 
+                      onClick={() => setVendorSchoolIdInput(regId)} 
+                      className="btn btn-secondary" 
+                      style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                      title="Isi otomatis dengan ID Registrasi Laptop ini"
+                    >
+                      🎯 Pakai ID Laptop Ini
+                    </button>
                     <button type="submit" className="btn btn-emerald" style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
                       Bikin Kode Lisensi
                     </button>

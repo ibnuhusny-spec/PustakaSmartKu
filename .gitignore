@@ -23,3 +23,5 @@ dist_desktop
 *.njsproj
 *.sln
 *.sw?
+
+.vercel

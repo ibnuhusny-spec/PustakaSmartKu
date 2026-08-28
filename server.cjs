@@ -279,6 +279,15 @@ app.delete('/api/books/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/books', async (req, res) => {
+  try {
+    await dbRun('DELETE FROM books');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 4. Members APIs
 app.get('/api/members', async (req, res) => {
   try {
@@ -316,6 +325,15 @@ app.delete('/api/members/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/members', async (req, res) => {
+  try {
+    await dbRun('DELETE FROM members');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 5. Transactions APIs
 app.get('/api/transactions', async (req, res) => {
   try {
@@ -339,6 +357,24 @@ app.post('/api/transactions', async (req, res) => {
       Number(t.fineAmount) || 0, t.finePaid ? 1 : 0, t.notes || ''
     ]);
     res.json({ success: true, transaction: t });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/transactions/:id', async (req, res) => {
+  try {
+    await dbRun('DELETE FROM transactions WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/transactions', async (req, res) => {
+  try {
+    await dbRun('DELETE FROM transactions');
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -377,6 +413,7 @@ app.post('/api/sync-bulk', async (req, res) => {
     const { books, members, transactions, attendance, settings } = req.body;
 
     if (books && Array.isArray(books)) {
+      await dbRun('DELETE FROM books');
       for (const b of books) {
         await dbRun(`
           INSERT OR REPLACE INTO books (
@@ -391,6 +428,7 @@ app.post('/api/sync-bulk', async (req, res) => {
     }
 
     if (members && Array.isArray(members)) {
+      await dbRun('DELETE FROM members');
       for (const m of members) {
         await dbRun(`
           INSERT OR REPLACE INTO members (
@@ -405,6 +443,7 @@ app.post('/api/sync-bulk', async (req, res) => {
     }
 
     if (transactions && Array.isArray(transactions)) {
+      await dbRun('DELETE FROM transactions');
       for (const t of transactions) {
         await dbRun(`
           INSERT OR REPLACE INTO transactions (
@@ -419,6 +458,7 @@ app.post('/api/sync-bulk', async (req, res) => {
     }
 
     if (attendance && Array.isArray(attendance)) {
+      await dbRun('DELETE FROM attendance');
       for (const a of attendance) {
         await dbRun(`
           INSERT OR REPLACE INTO attendance (

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Printer, X, CreditCard, Cpu, Sparkles, ShieldCheck, Download, MapPin, UserCheck, Layout, Award } from 'lucide-react';
+import defaultLogo from '../assets/logo.png';
 
 export default function CardPrinterModal({ isOpen, onClose, member, settings }) {
   const cardRef = useRef(null);
@@ -43,7 +44,9 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
     // Scale factor ratio (2.4x scaling from 1011x638 base)
     const s = 2.4;
 
-    const schoolLogoUrl = settings?.schoolLogoUrl || settings?.logoUrl || '/perpustakaansmart.png';
+    const schoolLogoUrl = (settings?.schoolLogoUrl && settings.schoolLogoUrl.trim()) 
+      ? settings.schoolLogoUrl 
+      : ((settings?.logoUrl && settings.logoUrl.trim() && settings.logoUrl.startsWith('data:')) ? settings.logoUrl : defaultLogo);
     const schoolBgUrl = '/sekolah.jpeg';
 
     const loadImage = (src) => new Promise((resolve) => {

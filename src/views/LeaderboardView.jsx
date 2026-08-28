@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Award, Sparkles, Star, CheckCircle2, HelpCircle, Radio, AlertCircle, RefreshCw, PlusCircle, Trash2, Edit, X, BookOpen } from 'lucide-react';
-import { saveMember, getMemberByRfid, getQuizzes, saveQuiz, deleteQuiz } from '../services/db';
+import { Trophy, Award, Sparkles, Star, CheckCircle2, HelpCircle, Radio, AlertCircle, RefreshCw, PlusCircle, Trash2, Edit, X, BookOpen, RotateCcw, AlertTriangle } from 'lucide-react';
+import { saveMember, getMemberByRfid, getQuizzes, saveQuiz, deleteQuiz, resetAllMemberPoints } from '../services/db';
 import { speakText, playSoundEffect } from '../services/audioService';
 import confetti from 'canvas-confetti';
 
@@ -12,6 +12,7 @@ export default function LeaderboardView({ members, onRefreshData }) {
   const [activePlayer, setActivePlayer] = useState(null);
   const [quizState, setQuizState] = useState('idle'); // idle, playing, correct, wrong
   const [selectedOpt, setSelectedOpt] = useState(null);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   // Admin Quiz Manager Modal States
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
@@ -179,7 +180,7 @@ export default function LeaderboardView({ members, onRefreshData }) {
       
       {/* Hero Podium Section */}
       <div className="glass-card" style={{
-        background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.95), rgba(15, 23, 42, 0.95))',
+        background: 'linear-gradient(135deg, #1e1b4b, #0f172a)',
         border: '1px solid rgba(245, 158, 11, 0.4)',
         padding: '32px 24px',
         textAlign: 'center',
@@ -200,89 +201,113 @@ export default function LeaderboardView({ members, onRefreshData }) {
           <Trophy size={36} />
         </div>
 
-        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 6px 0', background: 'linear-gradient(90deg, #fbbf24, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 6px 0', color: '#fbbf24' }}>
           Papan Peringkat Duta Baca Sekolah
         </h2>
-        <p style={{ color: '#cbd5e1', maxWidth: '600px', margin: '0 auto 24px auto', fontSize: '0.92rem' }}>
+        <p style={{ color: '#e2e8f0', maxWidth: '600px', margin: '0 auto 24px auto', fontSize: '0.92rem' }}>
           Penghargaan untuk siswa paling rajin membaca buku, presensi di perpustakaan, & pemenang kuis literasi!
         </p>
 
-        {/* TOP 3 PODIUM */}
+        {/* TOP 3 PODIUM (Hanya menampilkan foto siswa jika poin > 0) */}
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '20px', flexWrap: 'wrap' }}>
           
           {/* Rank 2 (Silver) */}
-          {sortedMembers[1] && (
-            <div style={{ textAlign: 'center', width: '160px' }}>
-              <img src={sortedMembers[1].avatar} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', border: '3px solid #94a3b8', background: '#1e293b' }} />
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', marginTop: '6px', color: '#f1f5f9' }}>{sortedMembers[1].name}</div>
-              <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{sortedMembers[1].classGrade}</div>
-              <div style={{
-                background: 'linear-gradient(180deg, #94a3b8, #64748b)',
-                height: '100px',
-                borderRadius: '12px 12px 0 0',
-                marginTop: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontWeight: 800,
-                fontSize: '1.4rem'
-              }}>
-                🥈 2nd
-              </div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fbbf24', marginTop: '4px' }}>{sortedMembers[1].points} Pts</div>
+          <div style={{ textAlign: 'center', width: '160px' }}>
+            {(sortedMembers[1] && (sortedMembers[1].points || 0) > 0) ? (
+              <>
+                <img src={sortedMembers[1].avatar} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', border: '3px solid #94a3b8', background: '#1e293b', objectFit: 'cover' }} />
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', marginTop: '6px', color: '#f1f5f9' }}>{sortedMembers[1].name}</div>
+                <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{sortedMembers[1].classGrade}</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fbbf24', marginTop: '2px' }}>{sortedMembers[1].points} Pts</div>
+              </>
+            ) : (
+              <>
+                <div style={{ width: '56px', height: '56px', borderRadius: '50%', border: '2px dashed #64748b', background: 'rgba(148, 163, 184, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', color: '#94a3b8', fontSize: '1.2rem' }}>🥈</div>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', marginTop: '6px', color: '#94a3b8' }}>Kandidat 2nd</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Belum ada poin</div>
+              </>
+            )}
+            <div style={{
+              background: 'linear-gradient(180deg, #94a3b8, #64748b)',
+              height: '90px',
+              borderRadius: '12px 12px 0 0',
+              marginTop: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: '1.3rem'
+            }}>
+              🥈 2nd
             </div>
-          )}
+          </div>
 
           {/* Rank 1 (Gold) */}
-          {sortedMembers[0] && (
-            <div style={{ textAlign: 'center', width: '180px' }}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '-6px' }}>👑</div>
-              <img src={sortedMembers[0].avatar} alt="" style={{ width: '70px', height: '70px', borderRadius: '50%', border: '3px solid #fbbf24', background: '#1e293b' }} />
-              <div style={{ fontWeight: 800, fontSize: '1.05rem', marginTop: '6px', color: '#fbbf24' }}>{sortedMembers[0].name}</div>
-              <div style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>{sortedMembers[0].classGrade}</div>
-              <div style={{
-                background: 'linear-gradient(180deg, #f59e0b, #d97706)',
-                height: '130px',
-                borderRadius: '12px 12px 0 0',
-                marginTop: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontWeight: 800,
-                fontSize: '1.6rem',
-                boxShadow: '0 0 25px rgba(245, 158, 11, 0.4)'
-              }}>
-                🥇 1st
-              </div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fbbf24', marginTop: '4px' }}>{sortedMembers[0].points} Pts</div>
+          <div style={{ textAlign: 'center', width: '180px' }}>
+            <div style={{ fontSize: '1.5rem', marginBottom: '-6px' }}>👑</div>
+            {(sortedMembers[0] && (sortedMembers[0].points || 0) > 0) ? (
+              <>
+                <img src={sortedMembers[0].avatar} alt="" style={{ width: '70px', height: '70px', borderRadius: '50%', border: '3px solid #fbbf24', background: '#1e293b', objectFit: 'cover' }} />
+                <div style={{ fontWeight: 800, fontSize: '1.05rem', marginTop: '6px', color: '#fbbf24' }}>{sortedMembers[0].name}</div>
+                <div style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>{sortedMembers[0].classGrade}</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fbbf24', marginTop: '2px' }}>{sortedMembers[0].points} Pts</div>
+              </>
+            ) : (
+              <>
+                <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '2px dashed #fbbf24', background: 'rgba(251, 191, 36, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', color: '#fbbf24', fontSize: '1.5rem' }}>🥇</div>
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', marginTop: '6px', color: '#fbbf24' }}>Juara Utama 1st</div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Menantikan Pemenang</div>
+              </>
+            )}
+            <div style={{
+              background: 'linear-gradient(180deg, #f59e0b, #d97706)',
+              height: '120px',
+              borderRadius: '12px 12px 0 0',
+              marginTop: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: '1.5rem',
+              boxShadow: '0 0 25px rgba(245, 158, 11, 0.4)'
+            }}>
+              🥇 1st
             </div>
-          )}
+          </div>
 
           {/* Rank 3 (Bronze) */}
-          {sortedMembers[2] && (
-            <div style={{ textAlign: 'center', width: '160px' }}>
-              <img src={sortedMembers[2].avatar} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', border: '3px solid #b45309', background: '#1e293b' }} />
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', marginTop: '6px', color: '#f1f5f9' }}>{sortedMembers[2].name}</div>
-              <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{sortedMembers[2].classGrade}</div>
-              <div style={{
-                background: 'linear-gradient(180deg, #d97706, #78350f)',
-                height: '80px',
-                borderRadius: '12px 12px 0 0',
-                marginTop: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontWeight: 800,
-                fontSize: '1.3rem'
-              }}>
-                🥉 3rd
-              </div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fbbf24', marginTop: '4px' }}>{sortedMembers[2].points} Pts</div>
+          <div style={{ textAlign: 'center', width: '160px' }}>
+            {(sortedMembers[2] && (sortedMembers[2].points || 0) > 0) ? (
+              <>
+                <img src={sortedMembers[2].avatar} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', border: '3px solid #b45309', background: '#1e293b', objectFit: 'cover' }} />
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', marginTop: '6px', color: '#f1f5f9' }}>{sortedMembers[2].name}</div>
+                <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{sortedMembers[2].classGrade}</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fbbf24', marginTop: '2px' }}>{sortedMembers[2].points} Pts</div>
+              </>
+            ) : (
+              <>
+                <div style={{ width: '56px', height: '56px', borderRadius: '50%', border: '2px dashed #b45309', background: 'rgba(217, 119, 6, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', color: '#d97706', fontSize: '1.2rem' }}>🥉</div>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', marginTop: '6px', color: '#d97706' }}>Kandidat 3rd</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Belum ada poin</div>
+              </>
+            )}
+            <div style={{
+              background: 'linear-gradient(180deg, #d97706, #78350f)',
+              height: '75px',
+              borderRadius: '12px 12px 0 0',
+              marginTop: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: '1.2rem'
+            }}>
+              🥉 3rd
             </div>
-          )}
+          </div>
 
         </div>
 
@@ -334,8 +359,8 @@ export default function LeaderboardView({ members, onRefreshData }) {
         {/* STEP 1: PLAYER IDENTIFICATION VIA RFID TAP */}
         {!activePlayer ? (
           <div style={{
-            background: 'rgba(15, 23, 42, 0.6)',
-            border: '2px dashed rgba(16, 185, 129, 0.5)',
+            background: 'var(--bg-card-hover)',
+            border: '2px dashed var(--accent-emerald)',
             borderRadius: 'var(--radius-md)',
             padding: '24px',
             textAlign: 'center',
@@ -354,10 +379,10 @@ export default function LeaderboardView({ members, onRefreshData }) {
             }}>
               <Radio size={28} />
             </div>
-            <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 6px 0', color: '#34d399' }}>
+            <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 6px 0', color: '#10b981' }}>
               Langkah 1: Tempelkan Kartu RFID Anda Terlebih Dahulu!
             </h4>
-            <p style={{ fontSize: '0.88rem', color: '#cbd5e1', margin: 0 }}>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
               Tempelkan kartu RFID pada reader untuk mendaftar sebagai pemain. Benar dapat <strong>+{currentQuiz.rewardPoints || 15} Poin</strong>, namun jika salah berkurang <strong>-{currentQuiz.penaltyPoints || 20} Poin</strong>!
             </p>
           </div>
@@ -459,7 +484,19 @@ export default function LeaderboardView({ members, onRefreshData }) {
 
       {/* Full Leaderboard Ranking Table */}
       <div className="glass-card" style={{ padding: '24px' }}>
-        <h3 style={{ fontSize: '1.1rem', margin: '0 0 16px 0' }}>Peringkat Seluruh Anggota Duta Baca:</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Peringkat Seluruh Anggota Duta Baca:</h3>
+          {members && members.length > 0 && (
+            <button 
+              onClick={() => setResetConfirmOpen(true)}
+              className="btn btn-rose" 
+              style={{ fontSize: '0.8rem' }}
+              title="Reset seluruh poin murid ke 0 untuk memulai musim kompetisi membaca baru"
+            >
+              <RotateCcw size={14} /> Reset Poin Duta Baca Ke 0
+            </button>
+          )}
+        </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
             <thead>
@@ -662,6 +699,59 @@ export default function LeaderboardView({ members, onRefreshData }) {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setIsManageModalOpen(false)}>Tutup</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RESET POINTS CONFIRMATION REACT MODAL */}
+      {resetConfirmOpen && (
+        <div className="modal-overlay" onClick={() => setResetConfirmOpen(false)}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', textAlign: 'center', padding: '28px 24px' }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.15)',
+              color: '#ef4444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px auto',
+              border: '1px solid rgba(239, 68, 68, 0.3)'
+            }}>
+              <AlertTriangle size={32} />
+            </div>
+
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-primary)' }}>
+              Reset Seluruh Poin Duta Baca?
+            </h3>
+
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.5 }}>
+              Apakah Anda yakin ingin mengembalikan <strong>seluruh poin siswa ke 0 pts</strong> untuk memulai kompetisi Duta Baca musim baru?
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button 
+                type="button"
+                className="btn btn-secondary"
+                style={{ minWidth: '100px' }}
+                onClick={() => setResetConfirmOpen(false)}
+              >
+                Batal
+              </button>
+              <button 
+                type="button"
+                className="btn btn-rose"
+                style={{ minWidth: '130px' }}
+                onClick={() => {
+                  resetAllMemberPoints();
+                  if (onRefreshData) onRefreshData();
+                  setResetConfirmOpen(false);
+                }}
+              >
+                Ya, Reset Ke 0 Pts
+              </button>
             </div>
           </div>
         </div>

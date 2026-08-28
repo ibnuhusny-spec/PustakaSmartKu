@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, 
   UserPlus, 
@@ -16,9 +16,10 @@ import {
   Sparkles,
   FolderOpen,
   Image as ImageIcon,
-  CheckCircle2
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
-import { saveMember, deleteMember, updateMemberBalance, importMembersCSV } from '../services/db';
+import { saveMember, deleteMember, clearSampleMembers, updateMemberBalance, importMembersCSV } from '../services/db';
 
 export default function MembersView({ 
   members, 
@@ -32,6 +33,21 @@ export default function MembersView({
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [csvText, setCsvText] = useState('');
+  const [successToast, setSuccessToast] = useState(null);
+  const [errorToast, setErrorToast] = useState(null);
+  const [globalToast, setGlobalToast] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, memberId: null, memberName: '', isAll: false });
+  const nameInputRef = useRef(null);
+  const rfidInputRef = useRef(null);
+
+  const handleClearAllMembers = () => {
+    setDeleteConfirm({
+      isOpen: true,
+      memberId: null,
+      memberName: 'SEMUA DATA ANGGOTA',
+      isAll: true
+    });
+  };
 
   const [topUpData, setTopUpData] = useState({ memberId: '', name: '', amount: 10000 });
   const [formData, setFormData] = useState({
@@ -98,19 +114,49 @@ export default function MembersView({
     setFormData(prev => ({ ...prev, avatar: robotAvatar }));
   };
 
+  useEffect(() => {
+    const handleGlobalRfidScanInMembers = (e) => {
+      if (e.detail && e.detail.rfidUid) {
+        const scannedUid = e.detail.rfidUid.toUpperCase();
+        setFormData(prev => ({
+          ...prev,
+          rfidUid: scannedUid,
+          id: prev.id || `M-${Math.floor(10000 + Math.random() * 90000)}`
+        }));
+        setIsImportModalOpen(false);
+        setIsTopUpOpen(false);
+        setIsModalOpen(true);
+      }
+    };
+
+    window.addEventListener('rfid-scanned', handleGlobalRfidScanInMembers);
+    window.addEventListener('rfid-scan', handleGlobalRfidScanInMembers);
+    return () => {
+      window.removeEventListener('rfid-scanned', handleGlobalRfidScanInMembers);
+      window.removeEventListener('rfid-scan', handleGlobalRfidScanInMembers);
+    };
+  }, []);
+
   const handleOpenModal = (member = null) => {
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+    window.focus();
+
+    setIsImportModalOpen(false);
+    setIsTopUpOpen(false);
     if (member) {
       setFormData({ ...member });
     } else {
       setFormData({
-        id: '',
-        rfidUid: prefilledUidToRegister || `RFID-${Math.floor(1000 + Math.random() * 9000)}`,
+        id: `M-${Math.floor(10000 + Math.random() * 90000)}`,
+        rfidUid: prefilledUidToRegister || '',
         name: '',
         role: 'Siswa',
         classGrade: 'X MIPA 1',
-        nisn: `${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+        nisn: '',
         email: '',
-        phone: '08123456789',
+        phone: '',
         balance: 10000,
         points: 10,
         badge: 'Pembaca Baru 🌱',
@@ -122,40 +168,123 @@ export default function MembersView({
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setFormData({
+      id: '',
+      rfidUid: '',
+      name: '',
+      role: 'Siswa',
+      classGrade: 'X MIPA 1',
+      nisn: '',
+      email: '',
+      phone: '',
+      balance: 10000,
+      points: 10,
+      badge: 'Pembaca Baru 🌱',
+      avatar: ''
+    });
     if (onClearPrefilledUid) onClearPrefilledUid();
   };
 
-  const handleSave = (e) => {
+  const checkDuplicateRfid = (rfidUid, currentId) => {
+    if (!rfidUid || !members) return null;
+    return members.find(m => m.rfidUid && m.rfidUid.trim().toUpperCase() === rfidUid.trim().toUpperCase() && m.id !== currentId);
+  };
+
+  const handleSave = (e, keepOpenForNext = false) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+    setErrorToast(null);
+
     if (!formData.name || !formData.name.trim()) {
-      alert('Nama Siswa / Anggota wajib diisi!');
-      return;
+      setErrorToast('⚠️ Nama Lengkap Siswa / Guru wajib diisi!');
+      setTimeout(() => setErrorToast(null), 4000);
+      if (nameInputRef.current) nameInputRef.current.focus();
+      return false;
     }
+
     if (!formData.rfidUid || !formData.rfidUid.trim()) {
-      alert('Kode RFID UID Kartu Fisik wajib diisi!');
-      return;
+      setErrorToast('⚠️ Kode Chip RFID (UID) wajib diisi! Tempelkan kartu RFID ke reader.');
+      setTimeout(() => setErrorToast(null), 4000);
+      if (rfidInputRef.current) rfidInputRef.current.focus();
+      return false;
     }
+
+    const cleanRfid = formData.rfidUid.trim().toUpperCase();
+    const duplicate = checkDuplicateRfid(cleanRfid, formData.id);
+    if (duplicate) {
+      setErrorToast(`⚠️ KARTU RFID TERSEBUT SUDAH TERDAFTAR!\nKartu RFID "${cleanRfid}" sudah dimiliki oleh ${duplicate.name} (${duplicate.classGrade}). Silakan tempelkan Kartu RFID FISIK LAIN yang belum terdaftar.`);
+      setFormData(prev => ({ ...prev, rfidUid: '' }));
+      setTimeout(() => {
+        if (rfidInputRef.current) {
+          rfidInputRef.current.focus();
+        }
+      }, 50);
+      return false;
+    }
+
+    const newId = (formData.id && String(formData.id).trim()) ? formData.id : `M-${Math.floor(10000 + Math.random() * 90000)}`;
 
     const finalAvatar = (formData.avatar && formData.avatar.trim())
       ? formData.avatar.trim()
-      : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(formData.name)}`;
+      : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(formData.name)}`;
 
-    const memberToSave = { ...formData, avatar: finalAvatar };
+    const memberToSave = { ...formData, id: newId, rfidUid: cleanRfid, avatar: finalAvatar };
 
     saveMember(memberToSave);
     onRefreshData();
-    handleCloseModal();
-    alert(`BERHASIL! Anggota "${memberToSave.name}" (${memberToSave.classGrade}) telah tersimpan.`);
+
+    if (keepOpenForNext) {
+      const currentClass = formData.classGrade;
+      setFormData({
+        id: `M-${Math.floor(10000 + Math.random() * 90000)}`,
+        rfidUid: '',
+        name: '',
+        role: 'Siswa',
+        classGrade: currentClass || 'X MIPA 1',
+        nisn: '',
+        email: '',
+        phone: '',
+        balance: 10000,
+        points: 10,
+        badge: 'Pembaca Baru 🌱',
+        avatar: ''
+      });
+      if (onClearPrefilledUid) onClearPrefilledUid();
+      setSuccessToast(`✅ BERHASIL DISIMPAN! Data "${memberToSave.name}" (${memberToSave.classGrade}) telah tersimpan. Silakan tempelkan Kartu RFID / isi nama Siswa berikutnya...`);
+      setTimeout(() => setSuccessToast(null), 5000);
+      setTimeout(() => {
+        if (rfidInputRef.current) {
+          rfidInputRef.current.focus();
+        }
+      }, 50);
+    } else {
+      handleCloseModal();
+      setGlobalToast(`BERHASIL! Data anggota "${memberToSave.name}" (${memberToSave.classGrade}) telah tersimpan.`);
+      setTimeout(() => setGlobalToast(null), 4000);
+    }
+
+    return true;
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Yakin ingin menghapus anggota ini dari database?')) {
-      deleteMember(id);
-      onRefreshData();
+  const handleDelete = (member) => {
+    setDeleteConfirm({
+      isOpen: true,
+      memberId: member.id,
+      memberName: member.name,
+      isAll: false
+    });
+  };
+
+  const handleExecuteDelete = () => {
+    if (deleteConfirm.isAll) {
+      clearSampleMembers();
+    } else if (deleteConfirm.memberId) {
+      deleteMember(deleteConfirm.memberId);
     }
+    onRefreshData();
+    setDeleteConfirm({ isOpen: false, memberId: null, memberName: '', isAll: false });
   };
 
   const handleOpenTopUp = (member) => {
@@ -215,6 +344,24 @@ export default function MembersView({
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
       
+      {globalToast && (
+        <div style={{
+          background: 'rgba(16, 185, 129, 0.2)',
+          border: '1px solid #10b981',
+          color: '#10b981',
+          padding: '14px 20px',
+          borderRadius: 'var(--radius-md)',
+          marginBottom: '20px',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          <CheckCircle2 size={22} />
+          <span>{globalToast}</span>
+        </div>
+      )}
+
       {/* Registered Unregistered Card Alert Banner */}
       {prefilledUidToRegister && (
         <div style={{
@@ -256,13 +403,19 @@ export default function MembersView({
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
             <button onClick={() => setIsImportModalOpen(true)} className="btn btn-emerald">
               <FileSpreadsheet size={16} /> Import Data CSV / Excel
             </button>
             <button onClick={() => handleOpenModal()} className="btn btn-primary">
               <UserPlus size={16} /> Registrasi Anggota Baru
             </button>
+
+            {members.length > 0 && (
+              <button onClick={handleClearAllMembers} className="btn btn-rose" title="Kosongkan seluruh data anggota dummy">
+                <Trash2 size={16} /> Bersihkan Semua Anggota
+              </button>
+            )}
           </div>
         </div>
 
@@ -353,9 +506,10 @@ export default function MembersView({
                           <Edit size={14} />
                         </button>
                         <button 
-                          onClick={() => handleDelete(m.id)}
+                          onClick={() => handleDelete(m)}
                           className="btn btn-rose"
                           style={{ fontSize: '0.78rem', padding: '6px 8px' }}
+                          title="Hapus Anggota Ini"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -479,8 +633,8 @@ export default function MembersView({
 
       {/* ADD / EDIT MEMBER MODAL WITH REAL STUDENT PHOTO UPLOAD */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-container" style={{ maxWidth: '600px' }}>
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
               <h3 style={{ margin: 0 }}>Form Registrasi Siswa / Guru & Foto Kartu</h3>
               <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={18}/></button>
@@ -488,27 +642,77 @@ export default function MembersView({
             <form onSubmit={handleSave}>
               <div className="modal-body">
                 
+                {successToast && (
+                  <div style={{
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    border: '1px solid #10b981',
+                    color: '#10b981',
+                    padding: '12px 16px',
+                    borderRadius: 'var(--radius-sm)',
+                    marginBottom: '16px',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <CheckCircle2 size={20} />
+                    <span>{successToast}</span>
+                  </div>
+                )}
+
+                {errorToast && (
+                  <div style={{
+                    background: 'rgba(239, 68, 68, 0.2)',
+                    border: '1px solid #ef4444',
+                    color: '#f87171',
+                    padding: '12px 16px',
+                    borderRadius: 'var(--radius-sm)',
+                    marginBottom: '16px',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <AlertTriangle size={20} />
+                    <span style={{ whiteSpace: 'pre-line' }}>{errorToast}</span>
+                  </div>
+                )}
+
                 <div className="form-group">
                   <label className="form-label">Nama Lengkap Siswa / Guru *</label>
                   <input 
+                    ref={nameInputRef}
                     type="text" 
                     className="form-input" 
-                    value={formData.name}
+                    value={formData.name || ''}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Masukkan nama siswa..."
+                    autoFocus
                     required
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div className="form-group">
-                    <label className="form-label">Kode Chip RFID (UID Kartu Fisik) *</label>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Kode Chip RFID (UID Kartu Fisik) *</span>
+                      <span className="badge badge-emerald" style={{ fontSize: '0.65rem' }}>⚡ Reader Siap Tempel</span>
+                    </label>
                     <input 
+                      ref={rfidInputRef}
                       type="text" 
                       className="form-input" 
-                      value={formData.rfidUid}
+                      value={formData.rfidUid || ''}
                       onChange={e => setFormData({ ...formData, rfidUid: e.target.value.toUpperCase() })}
-                      placeholder="Tempelkan kartu ke reader..."
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                      placeholder="Tempelkan kartu RFID fisik ke reader..."
                       style={{ fontFamily: 'var(--font-mono)', color: '#34d399', fontWeight: 700 }}
                       required
                     />
@@ -635,11 +839,65 @@ export default function MembersView({
                 </div>
 
               </div>
-              <div className="modal-footer">
+              <div className="modal-footer" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                 <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Batal</button>
-                <button type="button" className="btn btn-primary" onClick={handleSave}>Simpan Anggota</button>
+                <button type="button" className="btn btn-emerald" onClick={(e) => handleSave(e, true)}>
+                  <Sparkles size={16} /> ⚡ Simpan & Lanjut Input Siswa Berikutnya
+                </button>
+                <button type="button" className="btn btn-primary" onClick={(e) => handleSave(e, false)}>
+                  Simpan & Selesai
+                </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION REACT MODAL (NO NATIVE BROWSER DIALOG FREEZE) */}
+      {deleteConfirm.isOpen && (
+        <div className="modal-overlay" onClick={() => setDeleteConfirm({ isOpen: false, memberId: null, memberName: '', isAll: false })}>
+          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', textAlign: 'center', padding: '28px 24px' }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.15)',
+              color: '#ef4444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px auto',
+              border: '1px solid rgba(239, 68, 68, 0.3)'
+            }}>
+              <AlertTriangle size={32} />
+            </div>
+
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-primary)' }}>
+              Konfirmasi Hapus Data
+            </h3>
+
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.5 }}>
+              Apakah Anda yakin ingin menghapus <strong>"{deleteConfirm.memberName}"</strong> dari database perpustakaan? Tindakan ini tidak dapat dibatalkan.
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button 
+                type="button"
+                className="btn btn-secondary"
+                style={{ minWidth: '100px' }}
+                onClick={() => setDeleteConfirm({ isOpen: false, memberId: null, memberName: '', isAll: false })}
+              >
+                Batal
+              </button>
+              <button 
+                type="button"
+                className="btn btn-rose"
+                style={{ minWidth: '120px' }}
+                onClick={handleExecuteDelete}
+              >
+                Ya, Hapus Data
+              </button>
+            </div>
           </div>
         </div>
       )}

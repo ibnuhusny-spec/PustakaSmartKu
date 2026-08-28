@@ -34,8 +34,12 @@ export const subscribeRfid = (callback) => {
   return () => LISTENERS.delete(callback);
 };
 
+export const simulateRfidTap = emitRfidScan;
+
 // Physical USB RFID Reader Keyboard Sniffer
 export const initRfidKeyboardListener = () => {
+  let fastCharCount = 0;
+
   const handleKeyDown = (event) => {
     const activeElement = document.activeElement;
     const isInputElement = activeElement && (
@@ -48,21 +52,29 @@ export const initRfidKeyboardListener = () => {
     const timeDiff = currentTime - lastKeyTime;
     lastKeyTime = currentTime;
 
-    // Reset buffer if delay between keystrokes is too long (human typing vs RFID scanner)
-    if (timeDiff > 250 && buffer.length > 0 && !isInputElement) {
+    // Physical USB RFID Readers send characters ultra-fast (< 75ms apart).
+    // Human typing is much slower (> 80ms apart).
+    // If delay > 80ms, it is human typing, so clear the RFID buffer immediately!
+    if (timeDiff > 80) {
       buffer = '';
+      fastCharCount = 0;
+    } else {
+      fastCharCount++;
     }
 
     if (event.key === 'Enter') {
-      if (buffer.length >= 3) {
-        const uid = buffer;
+      // Only emit RFID scan if characters were received at ultra-fast hardware scanner speed
+      if (buffer.length >= 4 && fastCharCount >= 3) {
+        const uid = buffer.trim().toUpperCase();
         buffer = '';
+        fastCharCount = 0;
         emitRfidScan(uid);
         if (!isInputElement) {
           event.preventDefault();
         }
       }
       buffer = '';
+      fastCharCount = 0;
     } else if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
       buffer += event.key;
     }
@@ -73,9 +85,4 @@ export const initRfidKeyboardListener = () => {
   return () => {
     window.removeEventListener('keydown', handleKeyDown);
   };
-};
-
-// Virtual Tap Helper
-export const simulateRfidTap = (uid) => {
-  emitRfidScan(uid);
 };

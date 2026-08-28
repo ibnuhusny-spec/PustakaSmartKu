@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { History, Search, CreditCard, RotateCcw, Printer, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { returnBookTransaction } from '../services/db';
+import { History, Search, CreditCard, RotateCcw, Printer, AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
+import { returnBookTransaction, deleteTransaction, clearSampleTransactions } from '../services/db';
 
 export default function TransactionsView({ 
   transactions, 
@@ -31,6 +31,20 @@ export default function TransactionsView({
     }
   };
 
+  const handleDeleteSingle = (tx) => {
+    if (window.confirm(`Hapus riwayat peminjaman "${tx.bookTitle}" oleh ${tx.memberName}?`)) {
+      deleteTransaction(tx.id);
+      onRefreshData();
+    }
+  };
+
+  const handleClearAllHistory = () => {
+    if (window.confirm('⚠️ HAPUS SEMUA RIWAYAT PEMINJAMAN DUMMY?\n\nTindakan ini akan mengosongkan seluruh catatan peminjaman di sistem.')) {
+      clearSampleTransactions();
+      onRefreshData();
+    }
+  };
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
       
@@ -47,7 +61,7 @@ export default function TransactionsView({
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             {['Semua', 'Dipinjam', 'Terlambat', 'Dikembalikan'].map(st => (
               <button
                 key={st}
@@ -65,6 +79,24 @@ export default function TransactionsView({
                 {st}
               </button>
             ))}
+
+            {transactions.length > 0 && (
+              <button
+                onClick={handleClearAllHistory}
+                className="btn btn-rose"
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '0.82rem',
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                title="Hapus seluruh riwayat peminjaman dummy"
+              >
+                <Trash2 size={14} /> Bersihkan Semua Riwayat
+              </button>
+            )}
           </div>
         </div>
 
@@ -155,6 +187,15 @@ export default function TransactionsView({
                             title="Cetak Struk Transaksi"
                           >
                             <Printer size={14} /> Struk
+                          </button>
+
+                          <button 
+                            onClick={() => handleDeleteSingle(tx)}
+                            className="btn btn-rose"
+                            style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                            title="Hapus Riwayat Peminjaman Ini"
+                          >
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </td>
