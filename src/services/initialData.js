@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS = {
   address: "Jalan Poros Makassar - Maros Km. 26 Maccopa",
   cityAddress: "", // Kosong secara default sampai diisi user di pengaturan
   finePerDay: 1000, // Rp 1.000 / hari
-  maxLoanDays: 7,   // 7 Hari
+  maxLoanDays: 3,   // 3 Hari Standar Peminjaman
   maxBooksPerStudent: 3,
   maxDailyAttendancePoints: 1, // Max 1x bonus points per day for attendance
   enableVoice: true,

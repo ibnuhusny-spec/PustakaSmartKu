@@ -77,6 +77,10 @@ export default function App() {
       s.schoolEmail = 'perpustakaan@sditqurratuayun.sch.id';
       saveSettings(s);
     }
+    if (!s.maxLoanDays || s.maxLoanDays === 7) {
+      s.maxLoanDays = 3;
+      saveSettings(s);
+    }
     setSettings(s);
     setBooks(getBooks());
     setMembers(getMembers());
