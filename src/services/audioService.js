@@ -167,16 +167,23 @@ const speakWebSpeechFallback = (cleanText) => {
   }
 };
 
-// Text-To-Speech Authentic Indonesian Female Voice Engine
+// Text-To-Speech Authentic Indonesian Female Voice Engine (Restricted ONLY to Selamat Datang Greetings)
 export const speakText = (text, enabled = true) => {
   if (!enabled || !text || !text.trim()) return;
+
+  // STRICT REQUIREMENT: Only play TTS sound for "Selamat Datang" Greetings! All other actions use text messages.
+  const lower = text.toLowerCase();
+  const isWelcomeGreeting = lower.includes('selamat datang') || lower.includes('selamat membaca');
+  if (!isWelcomeGreeting) {
+    return;
+  }
 
   try {
     stopSpeech();
 
     const cleanText = sanitizeIndonesianSpeechText(text);
 
-    // 1. High-Quality Natural Indonesian Female Voice Engine
+    // High-Quality Natural Indonesian Female Voice Engine
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText.substring(0, 180))}&tl=id&client=tw-ob`;
     const audio = new Audio(ttsUrl);
     audio.volume = 1.0;
@@ -185,7 +192,7 @@ export const speakText = (text, enabled = true) => {
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.then(() => {
-        // Playing authentic Indonesian female voice!
+        // Playing authentic Indonesian female welcome greeting!
       }).catch(err => {
         // Offline or blocked network: Use Web Speech API with female pitch tuning
         speakWebSpeechFallback(cleanText);

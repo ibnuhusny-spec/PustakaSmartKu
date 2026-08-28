@@ -194,6 +194,8 @@ export default function BooksView({ books, onRefreshData }) {
       setFormData({ 
         ...book,
         ddc: book.ddc || '813',
+        pageCount: book.pageCount || book.pages || 250,
+        pages: book.pages || book.pageCount || 250,
         pdfUrl: book.pdfUrl || ''
       });
     } else {
@@ -203,6 +205,8 @@ export default function BooksView({ books, onRefreshData }) {
         title: '',
         author: '',
         isbn: '',
+        pageCount: 250,
+        pages: 250,
         category: defaultCategory,
         ddc: ddcCategoryMap[defaultCategory] || '813',
         publisher: '',
@@ -679,15 +683,26 @@ export default function BooksView({ books, onRefreshData }) {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
                   <div className="form-group">
                     <label className="form-label">ISBN / Barcode</label>
                     <input 
                       type="text" 
                       className="form-input" 
-                      value={formData.isbn}
+                      value={formData.isbn || ''}
                       onChange={e => setFormData({ ...formData, isbn: e.target.value })}
                       placeholder="Scan Barcode / ketik ISBN"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" style={{ color: '#38bdf8', fontWeight: 800 }}>Jumlah Halaman Buku</label>
+                    <input 
+                      type="number" 
+                      className="form-input" 
+                      value={formData.pages || formData.pageCount || ''}
+                      onChange={e => setFormData({ ...formData, pages: Number(e.target.value), pageCount: Number(e.target.value) })}
+                      placeholder="Contoh: 250 Hlm"
+                      min="1"
                     />
                   </div>
                   <div className="form-group">
@@ -695,7 +710,7 @@ export default function BooksView({ books, onRefreshData }) {
                     <input 
                       type="number" 
                       className="form-input" 
-                      value={formData.stock}
+                      value={formData.stock !== undefined ? formData.stock : 1}
                       onChange={e => setFormData({ ...formData, stock: Number(e.target.value), available: Number(e.target.value) })}
                       min="0"
                     />
@@ -705,7 +720,7 @@ export default function BooksView({ books, onRefreshData }) {
                     <input 
                       type="number" 
                       className="form-input" 
-                      value={formData.available}
+                      value={formData.available !== undefined ? formData.available : 1}
                       onChange={e => setFormData({ ...formData, available: Number(e.target.value) })}
                       min="0"
                     />
