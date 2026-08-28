@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Radio, Sparkles, ShieldCheck, Cpu, ChevronRight } from 'lucide-react';
-import defaultLogo from '../assets/logo.png';
+import appLogo from '../assets/logo.png';
 
 export default function SplashScreen({ onFinish, settings }) {
   const [progress, setProgress] = useState(0);
@@ -40,10 +40,6 @@ export default function SplashScreen({ onFinish, settings }) {
 
     return () => clearInterval(timer);
   }, [onFinish]);
-
-  const logoSrc = (settings?.schoolLogoUrl && settings.schoolLogoUrl.trim()) 
-    ? settings.schoolLogoUrl 
-    : ((settings?.logoUrl && settings.logoUrl.trim() && settings.logoUrl.startsWith('data:')) ? settings.logoUrl : defaultLogo);
 
   return (
     <div style={{
@@ -108,7 +104,7 @@ export default function SplashScreen({ onFinish, settings }) {
         alignItems: 'center'
       }}>
         
-        {/* Animated Glowing Logo Container */}
+        {/* Animated Glowing Logo Container - Always uses Software Application Logo */}
         <div style={{
           position: 'relative',
           marginBottom: '24px',
@@ -129,8 +125,8 @@ export default function SplashScreen({ onFinish, settings }) {
           }} />
 
           <img 
-            src={logoSrc} 
-            alt="Logo PustakaSmart"
+            src={appLogo} 
+            alt="Logo PustakaSmart Software"
             style={{
               width: '120px',
               height: '120px',
@@ -138,7 +134,7 @@ export default function SplashScreen({ onFinish, settings }) {
               filter: 'drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5))',
               display: 'block'
             }}
-            onError={(e) => { e.target.src = defaultLogo; }}
+            onError={(e) => { e.target.src = appLogo; }}
           />
         </div>
 

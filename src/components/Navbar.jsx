@@ -19,7 +19,7 @@ import {
   Sparkles
 } from 'lucide-react';
 
-import defaultLogo from '../assets/logo.png';
+import appLogo from '../assets/logo.png';
 import { getTrialDaysRemaining } from '../services/licenseService';
 
 export default function Navbar({ 
@@ -43,11 +43,6 @@ export default function Navbar({
   const daysRemaining = getTrialDaysRemaining(settings?.trialStartDate);
   const isPro = settings?.licenseType === 'pro';
 
-  // Determine active logo source with reliable fallback to bundled defaultLogo
-  const logoSrc = (settings?.schoolLogoUrl && settings.schoolLogoUrl.trim()) 
-    ? settings.schoolLogoUrl 
-    : ((settings?.logoUrl && settings.logoUrl.trim() && settings.logoUrl.startsWith('data:')) ? settings.logoUrl : defaultLogo);
-
   return (
     <header className="glass-card" style={{ 
       margin: '12px 16px 0 16px', 
@@ -59,7 +54,7 @@ export default function Navbar({
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         
-        {/* Brand Logo & Title */}
+        {/* Brand Logo & Title - Always uses PustakaSmart Software Application Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
             width: '46px',
@@ -74,10 +69,10 @@ export default function Navbar({
             boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
           }}>
             <img 
-              src={logoSrc} 
-              alt="Logo Sekolah" 
+              src={appLogo} 
+              alt="Logo PustakaSmart" 
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              onError={(e) => { e.target.src = defaultLogo; }}
+              onError={(e) => { e.target.src = appLogo; }}
             />
           </div>
 
@@ -86,10 +81,12 @@ export default function Navbar({
               fontSize: '1.25rem', 
               fontWeight: 800, 
               margin: 0, 
-              color: 'var(--text-primary)',
+              background: 'linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
               letterSpacing: '-0.5px'
             }}>
-              PustakaSmart <span style={{ color: '#10b981' }}>RFID</span>
+              PustakaSmart <span style={{ color: '#10b981', WebkitTextFillColor: '#10b981' }}>RFID</span>
             </h1>
             <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>{settings?.schoolName || "SDIT QURRATU A'YUN AL-ISLAMI"}</span>
@@ -98,7 +95,7 @@ export default function Navbar({
         </div>
 
         {/* Center Tabs Navigation Bar */}
-        <nav style={{ display: 'flex', gap: '6px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
+        <nav style={{ display: 'flex', gap: '6px', background: 'rgba(15, 23, 42, 0.6)', padding: '4px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
           {publicTabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -111,9 +108,9 @@ export default function Navbar({
                   padding: '8px 16px',
                   borderRadius: '6px',
                   border: 'none',
-                  background: isActive ? 'var(--accent-primary)' : 'transparent',
-                  color: isActive ? '#ffffff' : 'var(--text-primary)',
-                  fontWeight: isActive ? 700 : 600,
+                  background: isActive ? 'var(--primary-color)' : 'transparent',
+                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                  fontWeight: isActive ? 700 : 500,
                   fontSize: '0.85rem',
                   cursor: 'pointer',
                   display: 'flex',
@@ -122,7 +119,7 @@ export default function Navbar({
                   transition: 'all 0.2s ease'
                 }}
               >
-                <Icon size={16} color={isActive ? '#ffffff' : (theme === 'light' ? '#334155' : '#94a3b8')} />
+                <Icon size={16} color={isActive ? '#ffffff' : '#94a3b8'} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -138,19 +135,18 @@ export default function Navbar({
               border: 'none',
               background: activeTab === 'admin_portal' 
                 ? 'linear-gradient(135deg, #10b981, #059669)' 
-                : (theme === 'light' ? '#d1fae5' : 'rgba(16, 185, 129, 0.15)'),
-              color: activeTab === 'admin_portal' ? '#ffffff' : (theme === 'light' ? '#047857' : '#34d399'),
+                : 'rgba(16, 185, 129, 0.15)',
+              color: activeTab === 'admin_portal' ? '#ffffff' : '#34d399',
               fontWeight: 700,
               fontSize: '0.85rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              border: theme === 'light' && activeTab !== 'admin_portal' ? '1px solid #a7f3d0' : 'none',
               boxShadow: activeTab === 'admin_portal' ? '0 4px 14px rgba(16, 185, 129, 0.4)' : 'none'
             }}
           >
-            <ShieldCheck size={16} color={activeTab === 'admin_portal' ? '#ffffff' : (theme === 'light' ? '#047857' : '#34d399')} />
+            <ShieldCheck size={16} color={activeTab === 'admin_portal' ? '#ffffff' : '#34d399'} />
             <span>🔐 Portal Admin</span>
           </button>
         </nav>
