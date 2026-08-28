@@ -331,8 +331,10 @@ export const deleteMember = (id) => {
 };
 
 export const getMemberByRfid = (rfidUid) => {
+  if (!rfidUid) return null;
   const members = getMembers();
-  return members.find(m => m.rfidUid.toLowerCase() === rfidUid.toLowerCase());
+  const clean = String(rfidUid).trim().toLowerCase();
+  return members.find(m => m && m.rfidUid && String(m.rfidUid).trim().toLowerCase() === clean);
 };
 
 // TRANSACTIONS API
@@ -357,34 +359,59 @@ export const saveTransactions = (txs) => {
   }
 };
 
-export const createLoanTransaction = (rfidUid, bookId) => {
-  const member = getMemberByRfid(rfidUid);
-  if (!member) return { success: false, message: 'Kartu RFID belum terdaftar' };
+export const createLoanTransaction = (memberOrRfid, bookOrId) => {
+  // Extract rfidUid whether passed as string or member object
+  const rfidUid = (typeof memberOrRfid === 'object' && memberOrRfid !== null) 
+    ? (memberOrRfid.rfidUid || memberOrRfid.id) 
+    : memberOrRfid;
+
+  // Extract bookId whether passed as string or book object
+  const bookId = (typeof bookOrId === 'object' && bookOrId !== null) 
+    ? bookOrId.id 
+    : bookOrId;
+
+  const member = (typeof memberOrRfid === 'object' && memberOrRfid !== null && memberOrRfid.name)
+    ? memberOrRfid
+    : getMemberByRfid(rfidUid);
+
+  if (!member) {
+    throw new Error('Kartu RFID belum terdaftar di database!');
+  }
 
   const books = getBooks();
-  const book = books.find(b => b.id === bookId);
-  if (!book) return { success: false, message: 'Buku tidak ditemukan' };
-  if (book.available <= 0) return { success: false, message: 'Stok fisik buku habis' };
+  const book = (typeof bookOrId === 'object' && bookOrId !== null && bookOrId.title)
+    ? bookOrId
+    : books.find(b => b.id === bookId);
+
+  if (!book) {
+    throw new Error('Buku tidak ditemukan di katalog!');
+  }
+
+  const currentAvailable = book.available !== undefined ? Number(book.available) : (Number(book.stock) || 1);
+  if (currentAvailable <= 0) {
+    throw new Error(`Stok fisik buku "${book.title}" sedang habis!`);
+  }
 
   const settings = getSettings();
   const txs = getTransactions();
   const activeLoans = txs.filter(t => t.memberId === member.id && t.status !== 'Dikembalikan');
 
   if (activeLoans.length >= settings.maxBooksPerStudent) {
-    return { success: false, message: `Batas maksimal pinjam (${settings.maxBooksPerStudent} buku) telah tercapai` };
+    throw new Error(`Batas maksimal pinjam (${settings.maxBooksPerStudent} buku) untuk ${member.name} telah tercapai!`);
   }
 
   const issueDate = new Date().toISOString().split('T')[0];
   const dueDateObj = new Date();
-  dueDateObj.setDate(dueDateObj.getDate() + settings.maxLoanDays);
+  const loanDays = settings.maxLoanDays || 3;
+  dueDateObj.setDate(dueDateObj.getDate() + loanDays);
   const dueDate = dueDateObj.toISOString().split('T')[0];
 
   const newTx = {
     id: `TRX-${Date.now().toString().slice(-6)}`,
-    rfidUid,
+    rfidUid: member.rfidUid || rfidUid,
     memberId: member.id,
     memberName: member.name,
-    bookId,
+    bookId: book.id,
     bookTitle: book.title,
     issueDate,
     dueDate,
@@ -395,14 +422,14 @@ export const createLoanTransaction = (rfidUid, bookId) => {
     notes: 'Peminjaman Kios Mandiri'
   };
 
-  book.available -= 1;
+  book.available = Math.max(0, currentAvailable - 1);
   updateBook(book);
 
   member.points = (member.points || 0) + 10;
   updateMember(member);
 
   saveTransactions([newTx, ...txs]);
-  return { success: true, transaction: newTx, member };
+  return newTx;
 };
 
 export const returnBookTransaction = (txId, payFineViaRfid = false) => {
