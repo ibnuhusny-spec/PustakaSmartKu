@@ -138,11 +138,6 @@ export default function MembersView({
   }, []);
 
   const handleOpenModal = (member = null) => {
-    if (document.activeElement && typeof document.activeElement.blur === 'function') {
-      document.activeElement.blur();
-    }
-    window.focus();
-
     setIsImportModalOpen(false);
     setIsTopUpOpen(false);
     if (member) {
@@ -164,6 +159,11 @@ export default function MembersView({
       });
     }
     setIsModalOpen(true);
+    setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+      }
+    }, 100);
   };
 
   const handleCloseModal = () => {
@@ -634,7 +634,12 @@ export default function MembersView({
       {/* ADD / EDIT MEMBER MODAL WITH REAL STUDENT PHOTO UPLOAD */}
       {isModalOpen && (
         <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+          <div 
+            className="modal-container" 
+            onClick={e => e.stopPropagation()} 
+            onMouseDown={e => e.stopPropagation()} 
+            style={{ maxWidth: '600px' }}
+          >
             <div className="modal-header">
               <h3 style={{ margin: 0 }}>Form Registrasi Siswa / Guru & Foto Kartu</h3>
               <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={18}/></button>
