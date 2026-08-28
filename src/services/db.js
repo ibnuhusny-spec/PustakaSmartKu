@@ -507,19 +507,24 @@ export const saveAttendance = (records) => {
   }
 };
 
-export const recordAttendance = (rfidUid, purpose = 'Membaca & Meminjam Buku') => {
-  const member = getMemberByRfid(rfidUid);
+export const recordAttendance = (memberOrRfid, purpose = 'Presensi Mandiri Kios RFID') => {
+  const member = (typeof memberOrRfid === 'object' && memberOrRfid !== null && memberOrRfid.name)
+    ? memberOrRfid
+    : getMemberByRfid(memberOrRfid);
+
   if (!member) return { success: false, message: 'Kartu RFID belum terdaftar' };
 
   const records = getAttendance();
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
+  const todayStr = getLocalDateString(now);
+
+  const cleanRfid = member.rfidUid || (typeof memberOrRfid === 'string' ? memberOrRfid : member.id);
 
   const newRecord = {
     id: `ATT-${Date.now().toString().slice(-6)}`,
-    rfidUid,
+    rfidUid: cleanRfid,
     memberName: member.name,
-    classGrade: member.classGrade,
+    classGrade: member.classGrade || 'Siswa',
     purpose,
     timestamp: now.toISOString(),
     date: todayStr
@@ -527,7 +532,7 @@ export const recordAttendance = (rfidUid, purpose = 'Membaca & Meminjam Buku') =
 
   const settings = getSettings();
   const maxPointsPerDay = settings.maxDailyAttendancePoints !== undefined ? settings.maxDailyAttendancePoints : 1;
-  const todayAttendanceCount = records.filter(r => r.rfidUid === rfidUid && r.date === todayStr).length;
+  const todayAttendanceCount = records.filter(r => (r.rfidUid === cleanRfid || r.memberName === member.name) && (r.date === todayStr || getLocalDateString(new Date(r.timestamp)) === todayStr)).length;
 
   if (todayAttendanceCount < maxPointsPerDay) {
     member.points = (member.points || 0) + 5;
