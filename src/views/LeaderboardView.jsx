@@ -53,8 +53,8 @@ export default function LeaderboardView({ members, onRefreshData }) {
         setActivePlayer(member);
         setQuizState('playing');
         setSelectedOpt(null);
-        playSoundEffect('success');
-        speakText(`Kuis Literasi dimulai untuk ${member.name}. Silakan jawab pertanyaan di layar!`);
+        playSoundEffect('scan');
+        speakText(`Silakan menjawab kuis, ${member.name}!`);
       } else {
         playSoundEffect('error');
         alert(`Kartu RFID (UID: ${rfidUid}) belum terdaftar di database siswa.`);
@@ -82,9 +82,9 @@ export default function LeaderboardView({ members, onRefreshData }) {
       onRefreshData();
       
       setQuizState('correct');
-      playSoundEffect('success');
+      playSoundEffect('ting');
       confetti({ particleCount: 70, spread: 80 });
-      speakText(`Hebat sekali ${activePlayer.name}! Jawaban Anda benar. Anda mendapatkan bonus ${currentQuiz.rewardPoints || 15} poin literasi!`);
+      speakText(`Jawaban Anda Benar! Selamat, ${activePlayer.name} mendapatkan bonus ${currentQuiz.rewardPoints || 15} poin!`);
     } else {
       // Wrong answer! Deduct -20 points (penalty)
       const updatedPoints = Math.max(0, (activePlayer.points || 0) - (currentQuiz.penaltyPoints || 20));
@@ -94,8 +94,8 @@ export default function LeaderboardView({ members, onRefreshData }) {
       onRefreshData();
 
       setQuizState('wrong');
-      playSoundEffect('error');
-      speakText(`Waduh, jawaban kurang tepat! Poin ${activePlayer.name} berkurang ${currentQuiz.penaltyPoints || 20} poin.`);
+      playSoundEffect('quiz_wrong');
+      speakText(`Jawaban belum tepat, ${activePlayer.name}. Tetap semangat membaca!`);
     }
   };
 

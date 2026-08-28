@@ -73,7 +73,7 @@ const sanitizeIndonesianSpeechText = (rawText = '') => {
     .replace(/\bIT\b/g, 'I Te');
 };
 
-// Play synthesized Futuristic Sound FX
+// Play synthesized Futuristic & Game Sound FX
 export const playSoundEffect = (type = 'scan') => {
   try {
     const ctx = getAudioContext();
@@ -105,6 +105,49 @@ export const playSoundEffect = (type = 'scan') => {
         g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
         o.start(now + idx * 0.08);
         o.stop(now + idx * 0.08 + 0.25);
+      });
+    } else if (type === 'ting' || type === 'quiz_correct') {
+      // Crisp Crystal Bell Chime ("TING!")
+      const o1 = ctx.createOscillator();
+      const o2 = ctx.createOscillator();
+      const g1 = ctx.createGain();
+      const g2 = ctx.createGain();
+
+      o1.type = 'sine';
+      o2.type = 'sine';
+
+      // High C7 (2093 Hz) + E7 (2637 Hz) bell harmonic
+      o1.frequency.setValueAtTime(2093, now);
+      o2.frequency.setValueAtTime(2637, now);
+
+      g1.gain.setValueAtTime(0.4, now);
+      g1.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+      g2.gain.setValueAtTime(0.3, now);
+      g2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+      o1.connect(g1);
+      o2.connect(g2);
+      g1.connect(ctx.destination);
+      g2.connect(ctx.destination);
+
+      o1.start(now);
+      o2.start(now);
+      o1.stop(now + 0.6);
+      o2.stop(now + 0.6);
+    } else if (type === 'quiz_wrong') {
+      // Gentle double buzz tone
+      [180, 140].forEach((freq, idx) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'triangle';
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.frequency.setValueAtTime(freq, now + idx * 0.12);
+        g.gain.setValueAtTime(0.35, now + idx * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.2);
+        o.start(now + idx * 0.12);
+        o.stop(now + idx * 0.12 + 0.2);
       });
     } else if (type === 'error') {
       // Low buzz tone
@@ -167,14 +210,19 @@ const speakWebSpeechFallback = (cleanText) => {
   }
 };
 
-// Text-To-Speech Authentic Indonesian Female Voice Engine (Restricted ONLY to Selamat Datang Greetings)
+// Text-To-Speech Authentic Indonesian Female Voice Engine (Greetings & Quiz Voice Only)
 export const speakText = (text, enabled = true) => {
   if (!enabled || !text || !text.trim()) return;
 
-  // STRICT REQUIREMENT: Only play TTS sound for "Selamat Datang" Greetings! All other actions use text messages.
+  // STRICT REQUIREMENT: Only play TTS sound for Welcome Greetings and Quiz Game!
   const lower = text.toLowerCase();
-  const isWelcomeGreeting = lower.includes('selamat datang') || lower.includes('selamat membaca');
-  if (!isWelcomeGreeting) {
+  const isAllowedVoice = lower.includes('selamat datang') || 
+                         lower.includes('selamat membaca') || 
+                         lower.includes('silakan menjawab') || 
+                         lower.includes('jawaban') ||
+                         lower.includes('kuis');
+
+  if (!isAllowedVoice) {
     return;
   }
 
@@ -192,7 +240,7 @@ export const speakText = (text, enabled = true) => {
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.then(() => {
-        // Playing authentic Indonesian female welcome greeting!
+        // Playing authentic Indonesian female voice!
       }).catch(err => {
         // Offline or blocked network: Use Web Speech API with female pitch tuning
         speakWebSpeechFallback(cleanText);
