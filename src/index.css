@@ -134,11 +134,25 @@
 }
 
 /* Global Light Mode High Contrast Overrides for inline grey text */
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] [style*="color: var(--text-secondary)"],
+[data-theme="light"] [style*="color: var(--text-muted)"] {
+  color: #334155 !important;
+}
+
 [data-theme="light"] [style*="color: #94a3b8"],
 [data-theme="light"] [style*="color: #9ca3af"],
 [data-theme="light"] [style*="color: #cbd5e1"],
 [data-theme="light"] [style*="color: #64748b"],
-[data-theme="light"] [style*="color: #6b7280"] {
+[data-theme="light"] [style*="color: #6b7280"],
+[data-theme="light"] [style*="color: #475569"] {
   color: #334155 !important;
 }
 

@@ -590,10 +590,21 @@ export const clearAllAttendanceLogs = () => {
 };
 
 export const saveMember = (member) => {
-  if (member.id) {
+  const members = getMembers();
+  const exists = members.some(m => m.id === member.id);
+  if (exists) {
     updateMember(member);
   } else {
-    addMember(member);
+    const newMember = {
+      ...member,
+      id: member.id || `M-${Date.now().toString().slice(-4)}`,
+      balance: member.balance || 0,
+      points: member.points || 0,
+      badge: member.badge || "Pembaca Baru 🌱",
+      registeredAt: member.registeredAt || new Date().toISOString().split('T')[0]
+    };
+    const updated = [newMember, ...members];
+    saveMembers(updated);
   }
 };
 
@@ -618,10 +629,18 @@ export const clearAllMembers = () => {
 };
 
 export const saveBook = (book) => {
-  if (book.id) {
+  const books = getBooks();
+  const exists = books.some(b => b.id === book.id);
+  if (exists) {
     updateBook(book);
   } else {
-    addBook(book);
+    const newBook = {
+      ...book,
+      id: book.id || `B-${Date.now().toString().slice(-4)}`,
+      available: book.available !== undefined ? book.available : book.stock
+    };
+    const updated = [newBook, ...books];
+    saveBooks(updated);
   }
 };
 
