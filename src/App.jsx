@@ -178,16 +178,13 @@ export default function App() {
       setRfidScanEvent(scanData);
 
       const member = getMemberByRfid(scanData.rfidUid);
-      if (member && settings.autoAttendanceOnTap && activeTab !== 'kiosk') {
+      // Auto attendance voice ONLY triggers on Attendance View tab!
+      if (member && settings.autoAttendanceOnTap && activeTab === 'attendance') {
         const result = recordAttendance(scanData.rfidUid, 'Presensi Tap Mandiri');
         if (result.success) {
           setActiveAttendanceToast(result.attendance);
           if (settings.enableVoice) {
-            if (result.isFirstToday) {
-              speakText(`Selamat datang, ${member.name}. Kehadiran tercatat, bonus poin literasi plus 5.`);
-            } else {
-              speakText(`Selamat datang kembali, ${member.name}. Kehadiran hari ini sudah tercatat.`);
-            }
+            speakText(`Selamat datang di perpustakaan, ${member.name}!`);
           }
           refreshData();
         }
