@@ -62,9 +62,17 @@ export const initRfidKeyboardListener = () => {
     const activeElement = document.activeElement;
     const isInputElement = activeElement && (
       activeElement.tagName === 'INPUT' ||
+      activeElement.tagName === 'SELECT' ||
       activeElement.tagName === 'TEXTAREA' ||
       activeElement.isContentEditable
     );
+
+    // If typing in any input field, bypass RFID keyboard sniffer completely!
+    if (isInputElement) {
+      buffer = '';
+      fastCharCount = 0;
+      return;
+    }
 
     const currentTime = Date.now();
     const timeDiff = currentTime - lastKeyTime;

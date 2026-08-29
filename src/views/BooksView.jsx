@@ -72,13 +72,23 @@ export default function BooksView({ books, onRefreshData }) {
   };
 
   const handleTitleChange = (newTitle) => {
-    const rec = recommendDdcFromTitle(newTitle, formData.category);
     setFormData(prev => ({
       ...prev,
-      title: newTitle,
-      ddc: rec.code || prev.ddc,
-      category: rec.category || prev.category
+      title: newTitle
     }));
+  };
+
+  const handleTitleBlur = () => {
+    if (formData.title && formData.title.trim()) {
+      const rec = recommendDdcFromTitle(formData.title, formData.category);
+      if (rec && rec.code) {
+        setFormData(prev => ({
+          ...prev,
+          ddc: rec.code || prev.ddc,
+          category: rec.category || prev.category
+        }));
+      }
+    }
   };
 
   const ddcQuickList = [
@@ -534,6 +544,7 @@ export default function BooksView({ books, onRefreshData }) {
                     onMouseDown={e => e.stopPropagation()}
                     onClick={e => e.stopPropagation()}
                     onChange={e => handleTitleChange(e.target.value)}
+                    onBlur={handleTitleBlur}
                     placeholder="Ketik judul buku..."
                     required
                   />

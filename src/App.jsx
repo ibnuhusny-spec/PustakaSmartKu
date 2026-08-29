@@ -103,15 +103,30 @@ export default function App() {
 
     initApp();
 
-    // Auto-sync live database every 10 seconds and when window regains focus
+    // Helper to check if librarian is actively typing in a form input
+    const isUserTypingInForm = () => {
+      const activeEl = document.activeElement;
+      return activeEl && (
+        activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        activeEl.tagName === 'SELECT' ||
+        activeEl.isContentEditable
+      );
+    };
+
+    // Auto-sync live database every 12 seconds only if not currently typing in a form
     const syncInterval = setInterval(async () => {
-      await syncLocalToSqliteServer();
-      refreshData();
-    }, 10000);
+      if (!isUserTypingInForm()) {
+        await syncLocalToSqliteServer();
+        refreshData();
+      }
+    }, 12000);
 
     const handleFocus = async () => {
-      await syncLocalToSqliteServer();
-      refreshData();
+      if (!isUserTypingInForm()) {
+        await syncLocalToSqliteServer();
+        refreshData();
+      }
     };
 
     window.addEventListener('focus', handleFocus);
