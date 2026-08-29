@@ -15,6 +15,12 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Serve static Vite production Web UI assets from 'dist' directory
+const distDir = path.join(__dirname, 'dist');
+if (fs.existsSync(distDir)) {
+  app.use(express.static(distDir));
+}
+
 // Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
@@ -484,8 +490,19 @@ app.post('/api/sync-bulk', async (req, res) => {
   }
 });
 
-// Start Express Server
-const server = app.listen(PORT, () => {
+// Serve SPA index.html for non-API routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.send('🚀 PustakaSmart RFID Backend Active.');
+  }
+});
+
+// Start Express Server (Listen on all network interfaces '0.0.0.0' for LAN HP & Client devices)
+const server = app.listen(PORT, '0.0.0.0', () => {
   const lanIp = getLocalServerIp();
   const hddSerial = getHardDiskSerialNumber();
   console.log(`===================================================`);
