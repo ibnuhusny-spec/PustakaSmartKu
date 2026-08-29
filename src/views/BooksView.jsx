@@ -236,8 +236,16 @@ export default function BooksView({ books, onRefreshData }) {
       return;
     }
 
+    const pagesNum = Number(formData.pages || formData.pageCount || 250);
+    const stockNum = Number(formData.stock !== '' && formData.stock !== undefined ? formData.stock : 0);
+    const availableNum = Number(formData.available !== '' && formData.available !== undefined ? formData.available : 0);
+
     const formattedData = {
       ...formData,
+      pages: pagesNum,
+      pageCount: pagesNum,
+      stock: stockNum,
+      available: availableNum,
       pdfUrl: formatPdfUrlForEmbedding(formData.pdfUrl)
     };
 
@@ -694,41 +702,43 @@ export default function BooksView({ books, onRefreshData }) {
                   <div className="form-group">
                     <label className="form-label" style={{ color: '#38bdf8', fontWeight: 800 }}>Jumlah Halaman Buku</label>
                     <input 
-                      type="number" 
+                      type="text" 
+                      inputMode="numeric"
                       className="form-input" 
                       value={formData.pages !== undefined && formData.pages !== null ? formData.pages : (formData.pageCount || '')}
                       onChange={e => {
-                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        const val = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({ ...formData, pages: val, pageCount: val });
                       }}
                       placeholder="Contoh: 250 Hlm"
-                      min="1"
                     />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Total Stok Fisik (Isi 0 jika E-Book PDF Digital)</label>
                     <input 
-                      type="number" 
+                      type="text" 
+                      inputMode="numeric"
                       className="form-input" 
                       value={formData.stock !== undefined && formData.stock !== null ? formData.stock : ''}
                       onChange={e => {
-                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        const val = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({ ...formData, stock: val, available: val });
                       }}
-                      min="0"
+                      placeholder="Contoh: 5"
                     />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Stok Fisik Tersedia</label>
                     <input 
-                      type="number" 
+                      type="text" 
+                      inputMode="numeric"
                       className="form-input" 
                       value={formData.available !== undefined && formData.available !== null ? formData.available : ''}
                       onChange={e => {
-                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        const val = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({ ...formData, available: val });
                       }}
-                      min="0"
+                      placeholder="Contoh: 5"
                     />
                   </div>
                 </div>
