@@ -138,36 +138,54 @@ export const checkServerConnection = async () => {
   return { connected: false, info: null };
 };
 
-// Sync LocalStorage with SQLite Server (Push local data on server, then pull combined state)
+// Helper to detect if running on client HP or mobile browser
+export const isMobileOrRemoteClient = () => {
+  if (typeof window === 'undefined') return false;
+  if (window.electronAPI) return false;
+  
+  const host = window.location.hostname;
+  const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+  const isMobileUserAgent = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
+  
+  return isMobileUserAgent || !isLocalhost;
+};
+
+// Sync LocalStorage with SQLite Server (Push local data ONLY on Host Laptop, pull state on HP)
 export const syncLocalToSqliteServer = async () => {
   const conn = await checkServerConnection();
   if (!conn.connected) return false;
 
   try {
-    const localBooksStr = localStorage.getItem(KEYS.BOOKS);
-    const localMembersStr = localStorage.getItem(KEYS.MEMBERS);
-    const localTxStr = localStorage.getItem(KEYS.TRANSACTIONS);
-    const localAttStr = localStorage.getItem(KEYS.ATTENDANCE);
-    const localSettingsStr = localStorage.getItem(KEYS.SETTINGS);
+    const isRemoteClient = isMobileOrRemoteClient();
 
-    const localBooks = localBooksStr !== null ? JSON.parse(localBooksStr) : [];
-    const localMembers = localMembersStr !== null ? JSON.parse(localMembersStr) : [];
-    const localTx = localTxStr !== null ? JSON.parse(localTxStr) : [];
-    const localAtt = localAttStr !== null ? JSON.parse(localAttStr) : [];
-    const localSettings = localSettingsStr !== null ? JSON.parse(localSettingsStr) : DEFAULT_SETTINGS;
+    // ONLY the Main Laptop Server (Electron app or localhost) pushes local state to SQLite!
+    // Remote Mobile HP clients MUST NEVER push or overwrite the Laptop database!
+    if (!isRemoteClient) {
+      const localBooksStr = localStorage.getItem(KEYS.BOOKS);
+      const localMembersStr = localStorage.getItem(KEYS.MEMBERS);
+      const localTxStr = localStorage.getItem(KEYS.TRANSACTIONS);
+      const localAttStr = localStorage.getItem(KEYS.ATTENDANCE);
+      const localSettingsStr = localStorage.getItem(KEYS.SETTINGS);
 
-    if (localBooks.length > 0) {
-      await fetch(`${activeServerUrl}/api/sync-bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          books: localBooks,
-          members: localMembers,
-          transactions: localTx,
-          attendance: localAtt,
-          settings: localSettings.schoolName ? localSettings : DEFAULT_SETTINGS
-        })
-      });
+      const localBooks = localBooksStr !== null ? JSON.parse(localBooksStr) : [];
+      const localMembers = localMembersStr !== null ? JSON.parse(localMembersStr) : [];
+      const localTx = localTxStr !== null ? JSON.parse(localTxStr) : [];
+      const localAtt = localAttStr !== null ? JSON.parse(localAttStr) : [];
+      const localSettings = localSettingsStr !== null ? JSON.parse(localSettingsStr) : DEFAULT_SETTINGS;
+
+      if (localBooks.length > 0) {
+        await fetch(`${activeServerUrl}/api/sync-bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            books: localBooks,
+            members: localMembers,
+            transactions: localTx,
+            attendance: localAtt,
+            settings: localSettings.schoolName ? localSettings : DEFAULT_SETTINGS
+          })
+        });
+      }
     }
 
     await loadFromSqliteServerToLocalCache();
