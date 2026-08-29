@@ -288,18 +288,30 @@ export const getSettings = () => {
   }
 };
 
-export const saveSettings = (newSettings) => {
+export const saveSettings = async (newSettings) => {
   const merged = { ...getSettings(), ...newSettings };
   if (!merged.logoUrl) {
     merged.logoUrl = '/perpustakaansmart.png';
   }
   localStorage.setItem(KEYS.SETTINGS, JSON.stringify(merged));
   
-  fetch(`${activeServerUrl}/api/settings`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(merged)
-  }).catch(err => console.warn('SQLite settings save fail:', err));
+  const endpoints = [
+    `${activeServerUrl}/api/settings`,
+    'http://localhost:3001/api/settings'
+  ];
+  const uniqueEndpoints = [...new Set(endpoints)];
+
+  for (const ep of uniqueEndpoints) {
+    try {
+      await fetch(ep, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(merged)
+      });
+    } catch (err) {
+      // Continue to next endpoint
+    }
+  }
   
   return merged;
 };

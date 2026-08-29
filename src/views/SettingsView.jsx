@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2, Mail, Server, Network, Wifi } from 'lucide-react';
-import { saveSettings, exportData, importData, resetToDefault, getServerUrl, setServerUrl, checkServerConnection } from '../services/db';
+import { saveSettings, exportData, importData, resetToDefault, getServerUrl, setServerUrl, checkServerConnection, syncLocalToSqliteServer } from '../services/db';
 import { getTrialDaysRemaining, validateDynamicLicenseKey } from '../services/licenseService';
 
 export default function SettingsView({ settings, onRefreshData, onReplaySplash }) {
@@ -18,9 +18,10 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
   const daysRemaining = getTrialDaysRemaining(formData.trialStartDate);
   const isPro = formData.licenseType === 'pro';
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    saveSettings(formData);
+    await saveSettings(formData);
+    await syncLocalToSqliteServer();
     onRefreshData();
     alert('Pengaturan sekolah, Email Resmi, PIN Admin, logo instansi, & sistem perpustakaan berhasil disimpan!');
   };
@@ -39,7 +40,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     });
   };
 
-  const handleActivateLicense = (e) => {
+  const handleActivateLicense = async (e) => {
     e.preventDefault();
     if (validateDynamicLicenseKey(licenseInput, formData.schoolName, formData.schoolEmail)) {
       const updated = {
@@ -48,7 +49,8 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
         licenseKey: licenseInput.trim().toUpperCase()
       };
       setFormData(updated);
-      saveSettings(updated);
+      await saveSettings(updated);
+      await syncLocalToSqliteServer();
       onRefreshData();
       setLicenseInput('');
       alert('🎉 SELAMAT! Aplikasi Berhasil Diaktivasi Menjadi PustakaSmart RFID Pro Full Version!');

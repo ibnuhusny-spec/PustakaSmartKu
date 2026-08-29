@@ -207,14 +207,15 @@ export default function App() {
     setActiveTab('catalog');
   };
 
-  const handleActivateLicenseSuccess = (key) => {
+  const handleActivateLicenseSuccess = async (key) => {
     const updated = {
       ...settings,
       licenseType: 'pro',
       licenseKey: key
     };
     setSettings(updated);
-    saveSettings(updated);
+    await saveSettings(updated);
+    await syncLocalToSqliteServer();
     setIsLicenseModalOpen(false);
   };
 
