@@ -466,7 +466,7 @@ export default function BooksView({ books, onRefreshData }) {
                             <FileText size={14} /> Baca PDF Online
                           </button>
                         ) : (
-                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Fisik Sahaja</span>
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Fisik Saja</span>
                         )}
                       </td>
 

@@ -78,7 +78,8 @@ export default function CatalogView({ books }) {
       {/* Book Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
         {filteredBooks.map(book => {
-          const isDigitalOnly = (book.pdfUrl || book.ebookContent) && Number(book.stock) === 0;
+          const hasDigitalPdf = Boolean(book.pdfUrl || book.ebookContent);
+          const isDigitalOnly = hasDigitalPdf && Number(book.stock) === 0;
 
           return (
             <div key={book.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
@@ -162,15 +163,17 @@ export default function CatalogView({ books }) {
                     className="btn btn-secondary catalog-card-btn"
                     style={{ flex: 1, minWidth: 0 }}
                   >
-                    <Eye size={13} /> <span>Detail</span>
+                    <Eye size={13} /> <span>{hasDigitalPdf ? 'Detail' : 'Detail Informasi'}</span>
                   </button>
-                  <button 
-                    onClick={() => setActiveEbook(book)}
-                    className="btn btn-emerald catalog-card-btn"
-                    style={{ flex: 1, minWidth: 0, fontWeight: 800 }}
-                  >
-                    <FileText size={13} /> <span>{isDigitalOnly ? 'Baca PDF' : 'E-Book'}</span>
-                  </button>
+                  {hasDigitalPdf && (
+                    <button 
+                      onClick={() => setActiveEbook(book)}
+                      className="btn btn-emerald catalog-card-btn"
+                      style={{ flex: 1, minWidth: 0, fontWeight: 800 }}
+                    >
+                      <FileText size={13} /> <span>Baca PDF</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
