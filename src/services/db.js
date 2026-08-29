@@ -124,35 +124,41 @@ export const checkServerConnection = async () => {
   return { connected: false, info: null };
 };
 
-// Sync LocalStorage to SQLite Server on startup
+// Sync LocalStorage with SQLite Server (Pull server data first to prevent client mock data overwrites)
 export const syncLocalToSqliteServer = async () => {
   const conn = await checkServerConnection();
   if (!conn.connected) return false;
 
   try {
+    // 1. Pull current live server data into local cache first!
+    await loadFromSqliteServerToLocalCache();
+
+    // 2. Push any local custom data to server if server returned empty arrays
     const localBooksStr = localStorage.getItem(KEYS.BOOKS);
     const localMembersStr = localStorage.getItem(KEYS.MEMBERS);
     const localTxStr = localStorage.getItem(KEYS.TRANSACTIONS);
     const localAttStr = localStorage.getItem(KEYS.ATTENDANCE);
     const localSettingsStr = localStorage.getItem(KEYS.SETTINGS);
 
-    const localBooks = localBooksStr !== null ? JSON.parse(localBooksStr) : INITIAL_BOOKS;
-    const localMembers = localMembersStr !== null ? JSON.parse(localMembersStr) : INITIAL_MEMBERS;
-    const localTx = localTxStr !== null ? JSON.parse(localTxStr) : INITIAL_TRANSACTIONS;
-    const localAtt = localAttStr !== null ? JSON.parse(localAttStr) : INITIAL_ATTENDANCE;
+    const localBooks = localBooksStr !== null ? JSON.parse(localBooksStr) : [];
+    const localMembers = localMembersStr !== null ? JSON.parse(localMembersStr) : [];
+    const localTx = localTxStr !== null ? JSON.parse(localTxStr) : [];
+    const localAtt = localAttStr !== null ? JSON.parse(localAttStr) : [];
     const localSettings = localSettingsStr !== null ? JSON.parse(localSettingsStr) : DEFAULT_SETTINGS;
 
-    await fetch(`${activeServerUrl}/api/sync-bulk`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        books: localBooks,
-        members: localMembers,
-        transactions: localTx,
-        attendance: localAtt,
-        settings: localSettings.schoolName ? localSettings : DEFAULT_SETTINGS
-      })
-    });
+    if (localBooks.length > 0) {
+      await fetch(`${activeServerUrl}/api/sync-bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          books: localBooks,
+          members: localMembers,
+          transactions: localTx,
+          attendance: localAtt,
+          settings: localSettings.schoolName ? localSettings : DEFAULT_SETTINGS
+        })
+      });
+    }
 
     await loadFromSqliteServerToLocalCache();
     return true;
