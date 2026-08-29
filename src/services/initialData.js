@@ -13,7 +13,7 @@ export const DEFAULT_SETTINGS = {
   enableVoice: true,
   enableSoundFX: true,
   autoAttendanceOnTap: true,
-  enableAdminPin: false, // Toggle PIN Admin: Set to false to disable PIN requirement completely!
+  enableAdminPin: true, // Toggle PIN Admin: Set to true to strictly enforce PIN requirement!
   schoolLogoUrl: "", // Dedicated School Logo
   logoUrl: "/perpustakaansmart.png", // App Logo
   cardTemplate: "clean_corporate", // Default card template theme: clean_corporate, school_luxury, royal_gold

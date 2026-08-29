@@ -83,6 +83,8 @@ export default function App() {
       s.maxLoanDays = 3;
       saveSettings(s);
     }
+    s.enableAdminPin = true;
+    saveSettings(s);
     setSettings(s);
     setBooks(getBooks());
     setMembers(getMembers());
@@ -142,12 +144,10 @@ export default function App() {
     setActiveTab(newTab);
   };
 
-  // Open Admin Portal (Always prompt for PIN if session is locked or not yet authed)
+  // Open Admin Portal (ALWAYS mandate PIN verification if not currently authed)
   const handleOpenAdminPortal = () => {
     stopSpeech();
-    if (settings.enableAdminPin === false) {
-      setActiveTab('admin_portal');
-    } else if (isAdminAuthed) {
+    if (isAdminAuthed) {
       setActiveTab('admin_portal');
     } else {
       setIsAdminPinModalOpen(true);
