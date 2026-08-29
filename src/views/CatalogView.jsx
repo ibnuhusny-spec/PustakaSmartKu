@@ -155,21 +155,21 @@ export default function CatalogView({ books }) {
                   </div>
                 </div>
 
-                {/* Compact, Unclipped Card Action Buttons */}
+                {/* Compact, Perfectly Centered Card Action Buttons */}
                 <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
                   <button 
                     onClick={() => setDetailBook(book)}
-                    className="btn btn-secondary"
-                    style={{ flex: 1, fontSize: '0.75rem', padding: '6px 4px', minWidth: 0, justifyContent: 'center' }}
+                    className="btn btn-secondary catalog-card-btn"
+                    style={{ flex: 1, minWidth: 0 }}
                   >
-                    <Eye size={13} /> Detail
+                    <Eye size={13} /> <span>Detail</span>
                   </button>
                   <button 
                     onClick={() => setActiveEbook(book)}
-                    className="btn btn-emerald"
-                    style={{ flex: 1, fontSize: '0.75rem', padding: '6px 4px', minWidth: 0, fontWeight: 800, justifyContent: 'center', whiteSpace: 'nowrap' }}
+                    className="btn btn-emerald catalog-card-btn"
+                    style={{ flex: 1, minWidth: 0, fontWeight: 800 }}
                   >
-                    <FileText size={13} /> {isDigitalOnly ? 'Baca PDF' : 'E-Book'}
+                    <FileText size={13} /> <span>{isDigitalOnly ? 'Baca PDF' : 'E-Book'}</span>
                   </button>
                 </div>
               </div>

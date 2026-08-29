@@ -709,3 +709,17 @@ input:focus, select:focus, textarea:focus {
   outline: 2px solid var(--accent-primary) !important;
   outline-offset: 1px !important;
 }
+
+/* Catalog Card Buttons - Perfectly Centered & Compact */
+.catalog-card-btn {
+  font-size: 0.72rem !important;
+  padding: 6px 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 4px !important;
+  width: 100% !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+}

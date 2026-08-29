@@ -497,7 +497,15 @@ export default function BooksView({ books, onRefreshData }) {
 
       {/* MODAL TAMBAH / EDIT BUKU & E-BOOK PDF */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+        <div 
+          className="modal-overlay" 
+          onClick={e => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+          onMouseDown={e => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+        >
           <div 
             className="modal-container" 
             onClick={e => e.stopPropagation()} 
@@ -523,10 +531,11 @@ export default function BooksView({ books, onRefreshData }) {
                     type="text" 
                     className="form-input" 
                     value={formData.title}
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={e => e.stopPropagation()}
                     onChange={e => handleTitleChange(e.target.value)}
                     placeholder="Ketik judul buku..."
                     required
-                    autoFocus
                   />
                 </div>
 
