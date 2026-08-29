@@ -104,23 +104,37 @@ export const setServerUrl = (url) => {
 
 export const getServerUrl = () => activeServerUrl;
 
-// Check connection to SQLite Express Server
+// Check connection to SQLite Express Server (with smart fallbacks for mobile HP)
 export const checkServerConnection = async () => {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    const res = await fetch(`${activeServerUrl}/api/health`, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    if (res.ok) {
-      const data = await res.json();
-      isSqliteConnected = true;
-      serverInfo = data;
-      return { connected: true, info: data };
+  const urlsToTry = [
+    activeServerUrl,
+    typeof window !== 'undefined' && window.location ? window.location.origin : null,
+    'http://localhost:3001'
+  ].filter(Boolean);
+
+  const uniqueUrls = [...new Set(urlsToTry)];
+
+  for (const targetUrl of uniqueUrls) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(`${targetUrl}/api/health`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        isSqliteConnected = true;
+        serverInfo = data;
+        activeServerUrl = targetUrl;
+        localStorage.setItem(KEYS.SERVER_URL, targetUrl);
+        return { connected: true, info: data, url: targetUrl };
+      }
+    } catch (e) {
+      // Try next fallback URL
     }
-  } catch (e) {
-    isSqliteConnected = false;
-    serverInfo = null;
   }
+
+  isSqliteConnected = false;
+  serverInfo = null;
   return { connected: false, info: null };
 };
 

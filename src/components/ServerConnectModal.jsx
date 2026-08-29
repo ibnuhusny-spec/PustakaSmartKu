@@ -16,16 +16,18 @@ export default function ServerConnectModal({ isOpen, onClose, onRefreshData }) {
 
   const testConnection = async (targetUrl) => {
     setStatus({ loading: true, connected: false, message: 'Menguji koneksi ke Laptop Server...' });
-    setServerUrl(targetUrl);
+    if (targetUrl) setServerUrl(targetUrl);
     
     const result = await checkServerConnection();
     if (result.connected) {
       await syncLocalToSqliteServer();
       if (onRefreshData) onRefreshData();
+      const activeUrl = result.url || targetUrl;
+      setUrlInput(activeUrl);
       setStatus({ 
         loading: false, 
         connected: true, 
-        message: `Terhubung! Server: ${result.info?.serverIp || targetUrl}` 
+        message: `Terhubung! Laptop Server: ${result.info?.serverIp || activeUrl}` 
       });
     } else {
       setStatus({ 
