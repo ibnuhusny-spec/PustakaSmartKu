@@ -87,7 +87,12 @@ export default function LicenseModal({
 
   return (
     <div className="modal-overlay" onClick={isExpiredLockout ? null : onClose}>
-      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '540px', padding: '24px' }}>
+      <div 
+        className="modal-container" 
+        onClick={e => e.stopPropagation()} 
+        onMouseDown={e => e.stopPropagation()} 
+        style={{ maxWidth: '540px', padding: '24px' }}
+      >
         
         <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

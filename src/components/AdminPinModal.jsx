@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Lock, KeyRound, ShieldCheck, X, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = 'PustakaSmart2026', targetTabName = 'Pengaturan' }) {
   const [pinInput, setPinInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const pinInputRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        if (pinInputRef.current) pinInputRef.current.focus();
+      }, 100);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -24,7 +33,12 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px', padding: '24px' }}>
+      <div 
+        className="modal-container" 
+        onClick={e => e.stopPropagation()} 
+        onMouseDown={e => e.stopPropagation()} 
+        style={{ maxWidth: '420px', padding: '24px' }}
+      >
         
         <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#fb7185' }}>
@@ -60,6 +74,7 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
             </label>
             <div style={{ position: 'relative' }}>
               <input 
+                ref={pinInputRef}
                 type={showPassword ? "text" : "password"} 
                 className="form-input"
                 value={pinInput}
