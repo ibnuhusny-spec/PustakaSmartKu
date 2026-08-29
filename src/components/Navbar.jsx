@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   LayoutDashboard,
   Award,
-  Sparkles
+  Sparkles,
+  Server
 } from 'lucide-react';
 
 import appLogo from '../assets/logo.png';
@@ -28,6 +29,7 @@ export default function Navbar({
   theme, 
   setTheme, 
   onOpenRfidSimulator, 
+  onOpenServerConnect,
   settings,
   isAdminAuthed,
   onOpenAdminPortal,
@@ -199,6 +201,27 @@ export default function Navbar({
             ) : (
               <span>TRIAL ({daysRemaining} HARI)</span>
             )}
+          </button>
+
+          {/* Server Connection Floating Launcher (No Admin PIN needed!) */}
+          <button 
+            onClick={onOpenServerConnect}
+            className="btn btn-secondary"
+            style={{ 
+              padding: '8px 12px', 
+              fontSize: '0.8rem', 
+              borderRadius: 'var(--radius-sm)',
+              borderColor: '#3b82f6',
+              color: isLight ? '#1d4ed8' : '#60a5fa',
+              background: isLight ? '#dbeafe' : 'rgba(59, 130, 246, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Buka Pengaturan Koneksi Server Laptop Utama"
+          >
+            <Server size={16} color="#3b82f6" />
+            <span style={{ fontSize: '0.78rem', fontWeight: 800 }}>Server</span>
           </button>
 
           {/* RFID Hardware Simulator Floating Launcher */}

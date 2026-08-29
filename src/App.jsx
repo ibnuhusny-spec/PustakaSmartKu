@@ -7,6 +7,7 @@ import ReceiptModal from './components/ReceiptModal';
 import CardPrinterModal from './components/CardPrinterModal';
 import AdminPinModal from './components/AdminPinModal';
 import LicenseModal from './components/LicenseModal';
+import ServerConnectModal from './components/ServerConnectModal';
 
 import KioskView from './views/KioskView';
 import CatalogView from './views/CatalogView';
@@ -60,6 +61,7 @@ export default function App() {
 
   // Modals
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
+  const [isServerModalOpen, setIsServerModalOpen] = useState(false);
   const [activeReceiptModal, setActiveReceiptModal] = useState({ isOpen: false, tx: null, member: null });
   const [activeCardPrinterModal, setActiveCardPrinterModal] = useState({ isOpen: false, member: null });
 
@@ -246,6 +248,7 @@ export default function App() {
         theme={theme}
         setTheme={setTheme}
         onOpenRfidSimulator={() => setIsSimulatorOpen(true)}
+        onOpenServerConnect={() => setIsServerModalOpen(true)}
         settings={settings}
         isAdminAuthed={isAdminAuthed}
         onOpenAdminPortal={handleOpenAdminPortal}
@@ -346,6 +349,12 @@ export default function App() {
         onClose={() => setActiveCardPrinterModal({ isOpen: false, member: null })}
         member={activeCardPrinterModal.member}
         settings={settings}
+      />
+
+      <ServerConnectModal 
+        isOpen={isServerModalOpen}
+        onClose={() => setIsServerModalOpen(false)}
+        onRefreshData={refreshData}
       />
 
     </div>
