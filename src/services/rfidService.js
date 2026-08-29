@@ -1,4 +1,4 @@
-// RFID Handler for Physical USB RFID Reader (HID Keyboard Emulation) and Virtual Simulator
+// RFID & NFC Handler for Physical USB RFID Reader (HID Keyboard Emulation) and Virtual Simulator
 
 import { playSoundEffect } from './audioService';
 
@@ -6,10 +6,22 @@ let buffer = '';
 let lastKeyTime = 0;
 const LISTENERS = new Set();
 
+// Helper to detect if device is Mobile Phone or Tablet (NFC Device)
+export const isMobileDevice = () => {
+  if (typeof navigator === 'undefined') return false;
+  return /Mobi|Android|iPhone|iPad|iPod|Windows Phone|Tablet/i.test(navigator.userAgent);
+};
+
 // Emit RFID scan event to all subscribers with a unique scan event
 export const emitRfidScan = (rfidUid) => {
   const cleanUid = String(rfidUid).trim().toUpperCase();
   if (!cleanUid) return;
+
+  // Block RFID/NFC scanning processing on Mobile client devices!
+  if (isMobileDevice()) {
+    console.warn('📱 RFID/NFC scan ignored: Mobile client devices are view-only.');
+    return;
+  }
 
   playSoundEffect('scan');
 
@@ -36,8 +48,14 @@ export const subscribeRfid = (callback) => {
 
 export const simulateRfidTap = emitRfidScan;
 
-// Physical USB RFID Reader Keyboard Sniffer
+// Physical USB RFID Reader Keyboard Sniffer (Disabled on Mobile Phones)
 export const initRfidKeyboardListener = () => {
+  // If user is on HP / Tablet, disable RFID keyboard sniffing completely!
+  if (isMobileDevice()) {
+    console.log('📱 Mobile Device Detected: RFID Keyboard Sniffer Disabled.');
+    return () => {};
+  }
+
   let fastCharCount = 0;
 
   const handleKeyDown = (event) => {

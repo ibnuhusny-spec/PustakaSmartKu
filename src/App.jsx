@@ -93,10 +93,35 @@ export default function App() {
   };
 
   useEffect(() => {
-    initDB();
-    refreshData();
+    const initApp = async () => {
+      initDB();
+      refreshData();
+      // Pull live SQLite database from main laptop server!
+      await syncLocalToSqliteServer();
+      refreshData();
+    };
+
+    initApp();
+
+    // Auto-sync live database every 10 seconds and when window regains focus
+    const syncInterval = setInterval(async () => {
+      await syncLocalToSqliteServer();
+      refreshData();
+    }, 10000);
+
+    const handleFocus = async () => {
+      await syncLocalToSqliteServer();
+      refreshData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
     const cleanupListener = initRfidKeyboardListener();
-    return () => cleanupListener();
+    return () => {
+      clearInterval(syncInterval);
+      window.removeEventListener('focus', handleFocus);
+      cleanupListener();
+    };
   }, []);
 
   // Sync Theme attribute and persist in LocalStorage
