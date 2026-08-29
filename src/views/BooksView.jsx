@@ -523,7 +523,7 @@ export default function BooksView({ books, onRefreshData }) {
                     className="form-input" 
                     value={formData.title}
                     onChange={e => handleTitleChange(e.target.value)}
-                    placeholder="Contoh: Laskar Pelangi / Fisika Modern Class XII"
+                    placeholder="Ketik judul buku..."
                     required
                     autoFocus
                   />
@@ -549,7 +549,7 @@ export default function BooksView({ books, onRefreshData }) {
                       className="form-input" 
                       value={formData.publisher}
                       onChange={e => setFormData({ ...formData, publisher: e.target.value })}
-                      placeholder="Contoh: Erlangga (2024)"
+                      placeholder="Penerbit & Tahun..."
                     />
                   </div>
                 </div>
@@ -593,7 +593,7 @@ export default function BooksView({ books, onRefreshData }) {
                       className="form-input"
                       value={formData.pdfUrl || ''}
                       onChange={e => setFormData({ ...formData, pdfUrl: e.target.value })}
-                      placeholder="Atau paste Link Google Drive / Direct Link PDF (misal https://drive.google.com/file/d/...)..."
+                      placeholder="Paste URL / Link E-Book Drive PDF..."
                       style={{ fontSize: '0.82rem' }}
                     />
                   </div>
@@ -639,7 +639,7 @@ export default function BooksView({ books, onRefreshData }) {
                       className="form-input" 
                       value={formData.ddc}
                       onChange={e => setFormData({ ...formData, ddc: e.target.value })}
-                      placeholder="Contoh: 297.1"
+                      placeholder="Nomor DDC..."
                       style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', width: '140px', color: '#fbbf24', background: 'var(--bg-secondary)' }}
                       required
                     />
@@ -683,7 +683,7 @@ export default function BooksView({ books, onRefreshData }) {
                       className="form-input" 
                       value={formData.shelf}
                       onChange={e => setFormData({ ...formData, shelf: e.target.value })}
-                      placeholder="Misal: Rak A1 atau Rak E-Book Digital"
+                      placeholder="Lokasi rak..."
                     />
                   </div>
                 </div>
@@ -696,7 +696,7 @@ export default function BooksView({ books, onRefreshData }) {
                       className="form-input" 
                       value={formData.isbn || ''}
                       onChange={e => setFormData({ ...formData, isbn: e.target.value })}
-                      placeholder="Scan Barcode / ketik ISBN"
+                      placeholder="Scan / ketik ISBN..."
                     />
                   </div>
                   <div className="form-group">
@@ -710,7 +710,7 @@ export default function BooksView({ books, onRefreshData }) {
                         const val = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({ ...formData, pages: val, pageCount: val });
                       }}
-                      placeholder="Contoh: 250 Hlm"
+                      placeholder="Halaman..."
                     />
                   </div>
                   <div className="form-group">
@@ -724,7 +724,7 @@ export default function BooksView({ books, onRefreshData }) {
                         const val = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({ ...formData, stock: val, available: val });
                       }}
-                      placeholder="Contoh: 5"
+                      placeholder="Stok..."
                     />
                   </div>
                   <div className="form-group">
@@ -738,7 +738,7 @@ export default function BooksView({ books, onRefreshData }) {
                         const val = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({ ...formData, available: val });
                       }}
-                      placeholder="Contoh: 5"
+                      placeholder="Tersedia..."
                     />
                   </div>
                 </div>

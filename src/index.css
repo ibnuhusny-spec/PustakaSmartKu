@@ -156,11 +156,18 @@
   border: 1.5px solid #64748b !important;
 }
 
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.45 !important;
+  font-weight: 400 !important;
+}
+
 [data-theme="light"] input::placeholder,
 [data-theme="light"] textarea::placeholder {
-  color: #475569 !important;
-  opacity: 1 !important;
-  font-weight: 600 !important;
+  color: #94a3b8 !important;
+  opacity: 0.45 !important;
+  font-weight: 400 !important;
 }
 
 /* Global Light Mode High Contrast Overrides for inline grey text */
