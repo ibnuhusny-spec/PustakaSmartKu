@@ -268,14 +268,26 @@ export const getBooks = () => {
   }
 };
 
-export const saveBooks = (books) => {
+export const saveBooks = async (books) => {
   localStorage.setItem(KEYS.BOOKS, JSON.stringify(books));
   
-  fetch(`${activeServerUrl}/api/books/bulk`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(books)
-  }).catch(err => console.warn('SQLite books save fail:', err));
+  const endpoints = [
+    `${activeServerUrl}/api/books/bulk`,
+    'http://localhost:3001/api/books/bulk'
+  ];
+  const uniqueEndpoints = [...new Set(endpoints)];
+
+  for (const ep of uniqueEndpoints) {
+    try {
+      await fetch(ep, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(books)
+      });
+    } catch (err) {
+      // Continue to next endpoint
+    }
+  }
 };
 
 export const addBook = (book) => {
@@ -312,14 +324,26 @@ export const getMembers = () => {
   }
 };
 
-export const saveMembers = (members) => {
+export const saveMembers = async (members) => {
   localStorage.setItem(KEYS.MEMBERS, JSON.stringify(members));
   
-  fetch(`${activeServerUrl}/api/members/bulk`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(members)
-  }).catch(err => console.warn('SQLite members save fail:', err));
+  const endpoints = [
+    `${activeServerUrl}/api/members/bulk`,
+    'http://localhost:3001/api/members/bulk'
+  ];
+  const uniqueEndpoints = [...new Set(endpoints)];
+
+  for (const ep of uniqueEndpoints) {
+    try {
+      await fetch(ep, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(members)
+      });
+    } catch (err) {
+      // Continue to next endpoint
+    }
+  }
 };
 
 export const addMember = (member) => {
@@ -366,14 +390,26 @@ export const getTransactions = () => {
   }
 };
 
-export const saveTransactions = (txs) => {
+export const saveTransactions = async (txs) => {
   localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
   
-  fetch(`${activeServerUrl}/api/transactions/bulk`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(txs)
-  }).catch(err => console.warn('SQLite transactions save fail:', err));
+  const endpoints = [
+    `${activeServerUrl}/api/transactions/bulk`,
+    'http://localhost:3001/api/transactions/bulk'
+  ];
+  const uniqueEndpoints = [...new Set(endpoints)];
+
+  for (const ep of uniqueEndpoints) {
+    try {
+      await fetch(ep, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(txs)
+      });
+    } catch (err) {
+      // Continue to next endpoint
+    }
+  }
 };
 
 export const createLoanTransaction = (memberOrRfid, bookOrId) => {
@@ -689,11 +725,11 @@ export const clearAllMembers = () => {
   saveMembers([]);
 };
 
-export const saveBook = (book) => {
+export const saveBook = async (book) => {
   const books = getBooks();
   const exists = books.some(b => b.id === book.id);
   if (exists) {
-    updateBook(book);
+    await updateBook(book);
   } else {
     const newBook = {
       ...book,
@@ -701,7 +737,7 @@ export const saveBook = (book) => {
       available: book.available !== undefined ? book.available : book.stock
     };
     const updated = [newBook, ...books];
-    saveBooks(updated);
+    await saveBooks(updated);
   }
 };
 

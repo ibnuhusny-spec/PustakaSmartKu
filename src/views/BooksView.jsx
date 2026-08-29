@@ -24,7 +24,7 @@ import {
   Globe,
   Smartphone
 } from 'lucide-react';
-import { saveBook, deleteBook, clearSampleBooks, importBooksCSV } from '../services/db';
+import { saveBook, deleteBook, clearSampleBooks, importBooksCSV, syncLocalToSqliteServer } from '../services/db';
 import DdcPickerModal from '../components/DdcPickerModal';
 import { recommendDdcFromTitle, BOOK_CATEGORIES } from '../services/ddcData';
 
@@ -246,10 +246,10 @@ export default function BooksView({ books, onRefreshData }) {
     }, 100);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.author) {
-      alert('Judul buku dan nama penulis wajib diisi!');
+      setFormNotice('⚠️ Judul buku dan nama penulis wajib diisi!');
       return;
     }
 
@@ -267,7 +267,8 @@ export default function BooksView({ books, onRefreshData }) {
       pdfUrl: formatPdfUrlForEmbedding(formData.pdfUrl)
     };
 
-    saveBook(formattedData);
+    await saveBook(formattedData);
+    await syncLocalToSqliteServer();
     onRefreshData();
     setIsModalOpen(false);
   };
