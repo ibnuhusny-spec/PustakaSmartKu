@@ -19,7 +19,7 @@ import {
   CheckCircle2,
   AlertTriangle
 } from 'lucide-react';
-import { saveMember, deleteMember, clearSampleMembers, updateMemberBalance, importMembersCSV } from '../services/db';
+import { saveMember, deleteMember, clearSampleMembers, updateMemberBalance, importMembersCSV, syncLocalToSqliteServer } from '../services/db';
 
 export default function MembersView({ 
   members, 
@@ -190,7 +190,7 @@ export default function MembersView({
     return members.find(m => m.rfidUid && m.rfidUid.trim().toUpperCase() === rfidUid.trim().toUpperCase() && m.id !== currentId);
   };
 
-  const handleSave = (e, keepOpenForNext = false) => {
+  const handleSave = async (e, keepOpenForNext = false) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -232,7 +232,8 @@ export default function MembersView({
 
     const memberToSave = { ...formData, id: newId, rfidUid: cleanRfid, avatar: finalAvatar };
 
-    saveMember(memberToSave);
+    await saveMember(memberToSave);
+    await syncLocalToSqliteServer();
     onRefreshData();
 
     if (keepOpenForNext) {

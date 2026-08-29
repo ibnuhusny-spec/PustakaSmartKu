@@ -609,19 +609,29 @@ export const getAttendance = () => {
   }
 };
 
-export const saveAttendance = (records) => {
+export const saveAttendance = async (records) => {
   localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify(records));
   
-  if (isSqliteConnected) {
-    fetch(`${activeServerUrl}/api/attendance/bulk`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(records)
-    }).catch(err => console.warn('SQLite attendance save fail:', err));
+  const endpoints = [
+    `${activeServerUrl}/api/attendance/bulk`,
+    'http://localhost:3001/api/attendance/bulk'
+  ];
+  const uniqueEndpoints = [...new Set(endpoints)];
+
+  for (const ep of uniqueEndpoints) {
+    try {
+      await fetch(ep, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(records)
+      });
+    } catch (err) {
+      // Continue to next endpoint
+    }
   }
 };
 
-export const recordAttendance = (memberOrRfid, purpose = 'Presensi Mandiri Kios RFID') => {
+export const recordAttendance = async (memberOrRfid, purpose = 'Presensi Mandiri Kios RFID') => {
   const member = (typeof memberOrRfid === 'object' && memberOrRfid !== null && memberOrRfid.name)
     ? memberOrRfid
     : getMemberByRfid(memberOrRfid);
@@ -666,9 +676,10 @@ export const recordAttendance = (memberOrRfid, purpose = 'Presensi Mandiri Kios 
   if (member.points >= 300) member.badge = "Pembina Literasi 🌟";
   else if (member.points >= 150) member.badge = "Penjelajah Sastra 🚀";
   else if (member.points >= 50) member.badge = "Kutu Buku 📚";
-  updateMember(member);
+  await updateMember(member);
 
-  saveAttendance([newRecord, ...records]);
+  await saveAttendance([newRecord, ...records]);
+  await syncLocalToSqliteServer();
   return { success: true, isFirstToday: true, attendance: newRecord, member };
 };
 

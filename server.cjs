@@ -486,6 +486,28 @@ app.post('/api/attendance', async (req, res) => {
   }
 });
 
+app.post('/api/attendance/bulk', async (req, res) => {
+  try {
+    const attendance = req.body;
+    if (Array.isArray(attendance)) {
+      await dbRun('DELETE FROM attendance');
+      for (const a of attendance) {
+        await dbRun(`
+          INSERT OR REPLACE INTO attendance (
+            id, rfidUid, memberName, classGrade, purpose, timestamp, date
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+          a.id, a.rfidUid, a.memberName, a.classGrade, a.purpose,
+          a.timestamp || new Date().toISOString(), a.date || new Date().toISOString().split('T')[0]
+        ]);
+      }
+    }
+    res.json({ success: true, count: attendance.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 7. Bulk Sync / Import Database Endpoint
 app.post('/api/sync-bulk', async (req, res) => {
   try {
