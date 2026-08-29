@@ -512,7 +512,7 @@ export const recordAttendance = (memberOrRfid, purpose = 'Presensi Mandiri Kios 
     ? memberOrRfid
     : getMemberByRfid(memberOrRfid);
 
-  if (!member) return { success: false, message: 'Kartu RFID belum terdaftar' };
+  if (!member) return { success: false, isFirstToday: false, message: 'Kartu RFID belum terdaftar' };
 
   const records = getAttendance();
   const now = new Date();
@@ -520,6 +520,24 @@ export const recordAttendance = (memberOrRfid, purpose = 'Presensi Mandiri Kios 
 
   const cleanRfid = member.rfidUid || (typeof memberOrRfid === 'string' ? memberOrRfid : member.id);
 
+  // Check if member HAS ALREADY RECORDED ATTENDANCE TODAY
+  const alreadyRecordedToday = records.find(r => 
+    (r.rfidUid === cleanRfid || r.memberName === member.name) && 
+    (r.date === todayStr || getLocalDateString(new Date(r.timestamp)) === todayStr)
+  );
+
+  if (alreadyRecordedToday) {
+    // Already recorded today! DO NOT add new record, DO NOT add points, DO NOT play voice!
+    return {
+      success: true,
+      isFirstToday: false,
+      attendance: alreadyRecordedToday,
+      member,
+      message: `Kehadiran ${member.name} untuk hari ini sudah tercatat sebelumnya.`
+    };
+  }
+
+  // FIRST TAP TODAY: Create attendance record & award +5 points!
   const newRecord = {
     id: `ATT-${Date.now().toString().slice(-6)}`,
     rfidUid: cleanRfid,
@@ -530,20 +548,14 @@ export const recordAttendance = (memberOrRfid, purpose = 'Presensi Mandiri Kios 
     date: todayStr
   };
 
-  const settings = getSettings();
-  const maxPointsPerDay = settings.maxDailyAttendancePoints !== undefined ? settings.maxDailyAttendancePoints : 1;
-  const todayAttendanceCount = records.filter(r => (r.rfidUid === cleanRfid || r.memberName === member.name) && (r.date === todayStr || getLocalDateString(new Date(r.timestamp)) === todayStr)).length;
-
-  if (todayAttendanceCount < maxPointsPerDay) {
-    member.points = (member.points || 0) + 5;
-    if (member.points >= 300) member.badge = "Pembina Literasi 🌟";
-    else if (member.points >= 150) member.badge = "Penjelajah Sastra 🚀";
-    else if (member.points >= 50) member.badge = "Kutu Buku 📚";
-    updateMember(member);
-  }
+  member.points = (member.points || 0) + 5;
+  if (member.points >= 300) member.badge = "Pembina Literasi 🌟";
+  else if (member.points >= 150) member.badge = "Penjelajah Sastra 🚀";
+  else if (member.points >= 50) member.badge = "Kutu Buku 📚";
+  updateMember(member);
 
   saveAttendance([newRecord, ...records]);
-  return { success: true, attendance: newRecord, member };
+  return { success: true, isFirstToday: true, attendance: newRecord, member };
 };
 
 // QUIZ API

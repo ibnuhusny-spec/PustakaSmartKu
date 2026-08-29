@@ -56,17 +56,26 @@ export default function KioskView({
 
       if (activeStep === 'attendance') {
         // ONLY Attendance / Presensi Mode records attendance & speaks Selamat Datang Voice!
-        playSoundEffect('success');
-        recordAttendance(member, 'Presensi Mandiri Kios RFID');
+        const result = recordAttendance(member, 'Presensi Mandiri Kios RFID');
         onRefreshData();
         
-        setMessage({ 
-          type: 'success', 
-          text: `Selamat Datang, ${member.name}! Presensi kehadiran Anda telah dicatat.` 
-        });
-        speakText(`Selamat datang di perpustakaan, ${member.name}!`, settings.enableVoice);
-        
-        confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
+        if (result.isFirstToday) {
+          // FIRST TAP TODAY: Record attendance, award +5 pts, play female voice greeting!
+          playSoundEffect('success');
+          setMessage({ 
+            type: 'success', 
+            text: `Selamat Datang, ${member.name}! Presensi kehadiran Anda hari ini telah dicatat (+5 Poin Duta Baca).` 
+          });
+          speakText(`Selamat datang di perpustakaan, ${member.name}!`, settings.enableVoice);
+          confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
+        } else {
+          // SUBSEQUENT TAP SAME DAY: Quiet scan sound, NO VOICE, NO DUPLICATE RECORD, NO EXTRA POINTS!
+          playSoundEffect('scan');
+          setMessage({ 
+            type: 'amber', 
+            text: `Kehadiran ${member.name} untuk hari ini sudah tercatat sebelumnya. Selamat membaca!` 
+          });
+        }
       } else if (activeStep === 'borrow') {
         // Peminjaman Mode: Identifikasi Anggota TANPA Presensi & TANPA Suara
         playSoundEffect('scan');
