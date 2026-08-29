@@ -131,16 +131,23 @@ export default function App() {
     };
   }, [settings]);
 
-  // Tab Navigation Switcher
+  // Tab Navigation Switcher: Auto-lock Admin session when navigating away from Admin Portal
   const handleTabChange = (newTab) => {
     stopSpeech();
+    if (activeTab === 'admin_portal' && newTab !== 'admin_portal') {
+      // Auto-lock Admin Portal session as soon as librarian leaves to a public tab!
+      setIsAdminAuthed(false);
+      sessionStorage.removeItem('pustakasmart_admin_authed');
+    }
     setActiveTab(newTab);
   };
 
-  // Open Admin Portal (Direct entry if enableAdminPin === false or already authenticated)
+  // Open Admin Portal (Always prompt for PIN if session is locked or not yet authed)
   const handleOpenAdminPortal = () => {
     stopSpeech();
-    if (!settings.enableAdminPin || isAdminAuthed) {
+    if (settings.enableAdminPin === false) {
+      setActiveTab('admin_portal');
+    } else if (isAdminAuthed) {
       setActiveTab('admin_portal');
     } else {
       setIsAdminPinModalOpen(true);
