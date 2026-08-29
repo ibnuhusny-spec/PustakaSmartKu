@@ -25,7 +25,12 @@ export default function RFIDSimulator({ isOpen, onClose, members }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '580px' }}>
+      <div 
+        className="modal-container" 
+        onClick={e => e.stopPropagation()} 
+        onMouseDown={e => e.stopPropagation()} 
+        style={{ maxWidth: '580px' }}
+      >
         
         {/* Modal Header */}
         <div className="modal-header">
