@@ -136,9 +136,17 @@ async function initDatabaseSchemas() {
       points INTEGER,
       badge TEXT,
       avatar TEXT,
+      idCardUrl TEXT,
       registeredAt TEXT
     );
   `);
+
+  // Auto-migration for idCardUrl column
+  try {
+    await dbRun(`ALTER TABLE members ADD COLUMN idCardUrl TEXT`);
+  } catch (e) {
+    // Column already exists
+  }
 
   await dbRun(`
     CREATE TABLE IF NOT EXISTS transactions (
@@ -333,12 +341,12 @@ app.post('/api/members', async (req, res) => {
     const m = req.body;
     await dbRun(`
       INSERT OR REPLACE INTO members (
-        id, rfidUid, name, role, classGrade, nisn, email, phone, balance, points, badge, avatar, registeredAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, rfidUid, name, role, classGrade, nisn, email, phone, balance, points, badge, avatar, idCardUrl, registeredAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       m.id, m.rfidUid, m.name, m.role || 'Siswa', m.classGrade || '', m.nisn || '',
       m.email || '', m.phone || '', Number(m.balance) || 0, Number(m.points) || 0,
-      m.badge || 'Pembaca Baru 🌱', m.avatar || '', m.registeredAt || new Date().toISOString().split('T')[0]
+      m.badge || 'Pembaca Baru 🌱', m.avatar || '', m.idCardUrl || '', m.registeredAt || new Date().toISOString().split('T')[0]
     ]);
     res.json({ success: true, member: m });
   } catch (err) {
@@ -355,12 +363,12 @@ app.post('/api/members/bulk', async (req, res) => {
       for (const m of members) {
         await dbRun(`
           INSERT OR REPLACE INTO members (
-            id, rfidUid, name, role, classGrade, nisn, email, phone, balance, points, badge, avatar, registeredAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            id, rfidUid, name, role, classGrade, nisn, email, phone, balance, points, badge, avatar, idCardUrl, registeredAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           m.id, m.rfidUid || null, m.name, m.role || 'Siswa', m.classGrade || '',
           m.nisn || '', m.email || '', m.phone || '', Number(m.balance) || 0,
-          Number(m.points) || 0, m.badge || 'Pembaca Baru 🌱', m.avatar || '',
+          Number(m.points) || 0, m.badge || 'Pembaca Baru 🌱', m.avatar || '', m.idCardUrl || '',
           m.registeredAt || new Date().toISOString().split('T')[0]
         ]);
       }
@@ -533,12 +541,12 @@ app.post('/api/sync-bulk', async (req, res) => {
       for (const m of members) {
         await dbRun(`
           INSERT OR REPLACE INTO members (
-            id, rfidUid, name, role, classGrade, nisn, email, phone, balance, points, badge, avatar, registeredAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            id, rfidUid, name, role, classGrade, nisn, email, phone, balance, points, badge, avatar, idCardUrl, registeredAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           m.id, m.rfidUid, m.name, m.role || 'Siswa', m.classGrade || '', m.nisn || '',
           m.email || '', m.phone || '', Number(m.balance) || 0, Number(m.points) || 0,
-          m.badge || 'Pembaca Baru 🌱', m.avatar || '', m.registeredAt || new Date().toISOString().split('T')[0]
+          m.badge || 'Pembaca Baru 🌱', m.avatar || '', m.idCardUrl || '', m.registeredAt || new Date().toISOString().split('T')[0]
         ]);
       }
     }

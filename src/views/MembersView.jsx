@@ -17,9 +17,13 @@ import {
   FolderOpen,
   Image as ImageIcon,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Camera,
+  FileText
 } from 'lucide-react';
 import { saveMember, deleteMember, clearSampleMembers, updateMemberBalance, importMembersCSV, syncLocalToSqliteServer } from '../services/db';
+import WebcamCaptureModal from '../components/WebcamCaptureModal';
+import IdCardViewerModal from '../components/IdCardViewerModal';
 
 export default function MembersView({ 
   members, 
@@ -50,6 +54,9 @@ export default function MembersView({
   };
 
   const [topUpData, setTopUpData] = useState({ memberId: '', name: '', amount: 10000 });
+  const [webcamModal, setWebcamModal] = useState({ isOpen: false, mode: 'avatar', title: '' });
+  const [idCardViewerModal, setIdCardViewerModal] = useState({ isOpen: false, member: null });
+
   const [formData, setFormData] = useState({
     id: '',
     rfidUid: '',
@@ -62,7 +69,8 @@ export default function MembersView({
     balance: 10000,
     points: 10,
     badge: 'Pembaca Baru 🌱',
-    avatar: ''
+    avatar: '',
+    idCardUrl: ''
   });
 
   const filteredMembers = members.filter(m => 
@@ -114,6 +122,33 @@ export default function MembersView({
     setFormData(prev => ({ ...prev, avatar: robotAvatar }));
   };
 
+  const handleLocalIdCardUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const MAX_WIDTH = 900;
+        let width = img.width;
+        let height = img.height;
+        if (width > MAX_WIDTH) {
+          height = Math.round(height * (MAX_WIDTH / width));
+          width = MAX_WIDTH;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setFormData(prev => ({ ...prev, idCardUrl: compressedDataUrl }));
+      };
+      img.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   useEffect(() => {
     const handleGlobalRfidScanInMembers = (e) => {
       if (e.detail && e.detail.rfidUid) {
@@ -141,7 +176,7 @@ export default function MembersView({
     setIsImportModalOpen(false);
     setIsTopUpOpen(false);
     if (member) {
-      setFormData({ ...member });
+      setFormData({ ...member, idCardUrl: member.idCardUrl || '' });
     } else {
       setFormData({
         id: `M-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -155,7 +190,8 @@ export default function MembersView({
         balance: 10000,
         points: 10,
         badge: 'Pembaca Baru 🌱',
-        avatar: ''
+        avatar: '',
+        idCardUrl: ''
       });
     }
     setIsModalOpen(true);
@@ -180,7 +216,8 @@ export default function MembersView({
       balance: 10000,
       points: 10,
       badge: 'Pembaca Baru 🌱',
-      avatar: ''
+      avatar: '',
+      idCardUrl: ''
     });
     if (onClearPrefilledUid) onClearPrefilledUid();
   };
@@ -483,6 +520,25 @@ export default function MembersView({
                     </td>
                     <td style={{ padding: '12px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        {m.idCardUrl ? (
+                          <button 
+                            onClick={() => setIdCardViewerModal({ isOpen: true, member: m })}
+                            className="btn btn-primary"
+                            style={{ fontSize: '0.78rem', padding: '6px 10px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
+                            title="Lihat Berkas Dokumen KTP / Kartu Identitas Resmi"
+                          >
+                            <FileText size={14} /> Berkas KTP/ID
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleOpenModal(m)}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.78rem', padding: '6px 10px', opacity: 0.7 }}
+                            title="Belum Ada KTP. Klik Untuk Memfoto KTP"
+                          >
+                            <FileText size={14} /> + KTP/ID
+                          </button>
+                        )}
                         <button 
                           onClick={() => onOpenCardPrinter(m)}
                           className="btn btn-emerald"
@@ -737,18 +793,18 @@ export default function MembersView({
                   </div>
                 </div>
 
-                {/* REAL STUDENT PHOTO UPLOAD FIELD */}
+                {/* REAL STUDENT PHOTO & CAMERA CAPTURE SECTION */}
                 <div className="form-group" style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.3)', marginBottom: '16px' }}>
                   <label className="form-label" style={{ color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
-                    <ImageIcon size={18} /> Upload Foto Asli Siswa / Guru (Untuk Kartu RFID PVC)
+                    <ImageIcon size={18} /> Foto Profil Siswa / Guru (Untuk Kartu RFID PVC)
                   </label>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '8px' }}>
                     
                     {/* Photo Preview */}
                     <div style={{ 
-                      width: '70px', 
-                      height: '70px', 
+                      width: '75px', 
+                      height: '75px', 
                       borderRadius: '50%', 
                       background: '#1e293b', 
                       border: '2px solid #34d399',
@@ -766,19 +822,31 @@ export default function MembersView({
                     </div>
 
                     <div style={{ flex: 1, minWidth: '240px' }}>
-                      <label 
-                        className="btn btn-emerald"
-                        style={{ cursor: 'pointer', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}
-                      >
-                        <FolderOpen size={16} />
-                        <span>Pilih Foto Asli dari Komputer/HP...</span>
-                        <input 
-                          type="file" 
-                          accept="image/*"
-                          onChange={handleLocalPhotoUpload}
-                          style={{ display: 'none' }}
-                        />
-                      </label>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                        {/* Live Webcam Snapshot Trigger */}
+                        <button 
+                          type="button"
+                          onClick={() => setWebcamModal({ isOpen: true, mode: 'avatar', title: 'Ambil Foto Profil via Kamera' })}
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.82rem', padding: '6px 14px', borderRadius: '8px', fontWeight: 800 }}
+                        >
+                          <Camera size={16} /> 📸 Foto via Kamera Langsung
+                        </button>
+
+                        <label 
+                          className="btn btn-emerald"
+                          style={{ cursor: 'pointer', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px' }}
+                        >
+                          <FolderOpen size={16} />
+                          <span>Pilih File Foto...</span>
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={handleLocalPhotoUpload}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                      </div>
 
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <input 
@@ -799,8 +867,81 @@ export default function MembersView({
                           <Sparkles size={14} /> Avatar Robot
                         </button>
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                        Foto asli yang diunggah akan **otomatis tercetak di Kartu Pelajar RFID**!
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* KTP / KARTU IDENTITAS DOCUMENT ATTACHMENT SECTION */}
+                <div className="form-group" style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.3)', marginBottom: '16px' }}>
+                  <label className="form-label" style={{ color: '#60a5fa', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.95rem' }}>
+                    <FileText size={18} /> Berkas Dokumen KTP / Kartu Identitas (Keamanan Ekstra)
+                  </label>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                    Scan/Foto KTP atau Kartu Identitas anggota ini untuk memverifikasi keamanan peminjaman buku perpustakaan.
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    {/* KTP Image Thumbnail Preview */}
+                    <div style={{ 
+                      width: '120px', 
+                      height: '75px', 
+                      borderRadius: '10px', 
+                      background: '#0f172a', 
+                      border: '2px solid #3b82f6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      flexShrink: 0
+                    }}>
+                      {formData.idCardUrl ? (
+                        <img src={formData.idCardUrl} alt="Scan KTP Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <FileText size={28} color="#60a5fa" style={{ opacity: 0.7 }} />
+                      )}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: '240px' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                        {/* Live Webcam Snapshot for KTP */}
+                        <button 
+                          type="button"
+                          onClick={() => setWebcamModal({ isOpen: true, mode: 'idCard', title: 'Foto Dokumen KTP / Kartu Identitas via Kamera' })}
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.82rem', padding: '6px 14px', borderRadius: '8px', fontWeight: 800, background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
+                        >
+                          <Camera size={16} /> 📷 Foto KTP/ID via Kamera
+                        </button>
+
+                        <label 
+                          className="btn btn-secondary"
+                          style={{ cursor: 'pointer', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px' }}
+                        >
+                          <FolderOpen size={16} />
+                          <span>Unggah File KTP/ID...</span>
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={handleLocalIdCardUpload}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+
+                        {formData.idCardUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, idCardUrl: '' })}
+                            className="btn btn-rose"
+                            style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                          >
+                            <X size={14} /> Hapus KTP
+                          </button>
+                        )}
+                      </div>
+
+                      <div style={{ fontSize: '0.75rem', color: '#60a5fa', fontWeight: 600 }}>
+                        {formData.idCardUrl ? '✅ Berkas KTP/Kartu Identitas Siap Tersimpan' : '⚠️ Belum Ada Berkas KTP (Opsional)'}
                       </div>
                     </div>
 
@@ -907,6 +1048,28 @@ export default function MembersView({
           </div>
         </div>
       )}
+
+      {/* Webcam Live Capture Modal */}
+      <WebcamCaptureModal 
+        isOpen={webcamModal.isOpen}
+        onClose={() => setWebcamModal({ isOpen: false, mode: 'avatar', title: '' })}
+        mode={webcamModal.mode}
+        title={webcamModal.title}
+        onCapture={(dataUrl) => {
+          if (webcamModal.mode === 'avatar') {
+            setFormData(prev => ({ ...prev, avatar: dataUrl }));
+          } else {
+            setFormData(prev => ({ ...prev, idCardUrl: dataUrl }));
+          }
+        }}
+      />
+
+      {/* Scanned KTP / ID Card Document Viewer Modal */}
+      <IdCardViewerModal 
+        isOpen={idCardViewerModal.isOpen}
+        onClose={() => setIdCardViewerModal({ isOpen: false, member: null })}
+        member={idCardViewerModal.member}
+      />
 
     </div>
   );
