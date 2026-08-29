@@ -215,7 +215,7 @@ export default function BooksView({ books, onRefreshData }) {
         shelf: 'Rak A1',
         stock: 5,
         available: 5,
-        coverUrl: categoryCovers[defaultCategory] || '',
+        coverUrl: '',
         description: '',
         ebookContent: '',
         pdfUrl: ''
@@ -242,6 +242,7 @@ export default function BooksView({ books, onRefreshData }) {
 
     const formattedData = {
       ...formData,
+      coverUrl: (formData.coverUrl && formData.coverUrl.trim()) ? formData.coverUrl.trim() : (categoryCovers[formData.category] || categoryCovers['Novel / Fiksi']),
       pages: pagesNum,
       pageCount: pagesNum,
       stock: stockNum,
@@ -771,7 +772,7 @@ export default function BooksView({ books, onRefreshData }) {
                       className="form-input" 
                       value={formData.coverUrl}
                       onChange={e => setFormData({ ...formData, coverUrl: e.target.value })}
-                      placeholder="Atau paste URL gambar / biarkan auto..."
+                      placeholder="URL foto sampul (opsional)..."
                     />
                     <button 
                       type="button"
