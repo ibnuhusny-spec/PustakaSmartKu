@@ -191,11 +191,6 @@ export default function BooksView({ books, onRefreshData }) {
   };
 
   const handleOpenModal = (book = null) => {
-    if (document.activeElement && typeof document.activeElement.blur === 'function') {
-      document.activeElement.blur();
-    }
-    window.focus();
-
     if (book) {
       setFormData({ 
         ...book,
@@ -214,7 +209,7 @@ export default function BooksView({ books, onRefreshData }) {
         pageCount: 250,
         pages: 250,
         category: defaultCategory,
-        ddc: ddcCategoryMap[defaultCategory] || '813',
+        ddc: '813',
         publisher: '',
         year: new Date().getFullYear(),
         shelf: 'Rak A1',
@@ -231,7 +226,7 @@ export default function BooksView({ books, onRefreshData }) {
       if (titleInputRef.current) {
         titleInputRef.current.focus();
       }
-    }, 50);
+    }, 100);
   };
 
   const handleSave = (e) => {
