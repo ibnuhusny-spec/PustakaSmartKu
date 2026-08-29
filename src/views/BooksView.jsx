@@ -696,6 +696,8 @@ export default function BooksView({ books, onRefreshData }) {
                       type="text" 
                       className="form-input" 
                       value={formData.isbn || ''}
+                      onMouseDown={e => e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                       onChange={e => setFormData({ ...formData, isbn: e.target.value })}
                       placeholder="Scan / ketik ISBN..."
                     />
@@ -707,6 +709,8 @@ export default function BooksView({ books, onRefreshData }) {
                       inputMode="numeric"
                       className="form-input" 
                       value={formData.pages !== undefined && formData.pages !== null ? formData.pages : (formData.pageCount || '')}
+                      onMouseDown={e => e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                       onChange={e => {
                         const val = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({ ...formData, pages: val, pageCount: val });
@@ -721,6 +725,8 @@ export default function BooksView({ books, onRefreshData }) {
                       inputMode="numeric"
                       className="form-input" 
                       value={formData.stock !== undefined && formData.stock !== null ? formData.stock : ''}
+                      onMouseDown={e => e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                       onChange={e => {
                         const val = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({ ...formData, stock: val, available: val });
@@ -735,6 +741,8 @@ export default function BooksView({ books, onRefreshData }) {
                       inputMode="numeric"
                       className="form-input" 
                       value={formData.available !== undefined && formData.available !== null ? formData.available : ''}
+                      onMouseDown={e => e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                       onChange={e => {
                         const val = e.target.value.replace(/[^0-9]/g, '');
                         setFormData({ ...formData, available: val });

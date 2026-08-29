@@ -89,60 +89,87 @@ export default function CatalogView({ books }) {
                   style={{ width: '100%', height: '180px', objectFit: 'cover' }}
                 />
                 
-                <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span className="badge badge-purple" style={{ backdropFilter: 'blur(8px)' }}>
+                {/* Compact, High-Contrast Sleek Badges */}
+                <div style={{ position: 'absolute', top: '6px', left: '6px', right: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  <span style={{
+                    background: 'rgba(15, 23, 42, 0.92)',
+                    color: '#38bdf8',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    fontSize: '0.65rem',
+                    fontWeight: 800,
+                    padding: '2px 7px',
+                    borderRadius: '6px',
+                    backdropFilter: 'blur(4px)',
+                    maxWidth: '100%',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
+                  }}>
                     {book.category}
                   </span>
                   {isDigitalOnly && (
-                    <span className="badge badge-emerald" style={{ backdropFilter: 'blur(8px)', fontWeight: 800 }}>
+                    <span style={{
+                      background: 'rgba(6, 78, 59, 0.95)',
+                      color: '#34d399',
+                      border: '1px solid rgba(52, 211, 153, 0.5)',
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      padding: '2px 7px',
+                      borderRadius: '6px',
+                      backdropFilter: 'blur(4px)',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
+                    }}>
                       📱 DIGITAL E-BOOK
                     </span>
                   )}
                 </div>
               </div>
 
-              <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div style={{ padding: '14px 12px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
+                  <h3 style={{ fontSize: '0.98rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--text-primary)', lineHeight: '1.3' }}>
                     {book.title}
                   </h3>
-                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 10px 0' }}>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 8px 0' }}>
                     Oleh: {book.author} ({book.year})
                   </p>
 
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isDigitalOnly ? '#34d399' : '#f59e0b' }}>
-                      <MapPin size={14} /> {isDigitalOnly ? 'Rak E-Book Digital' : (book.shelf || 'Rak A1')}
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: isDigitalOnly ? '#34d399' : '#f59e0b', fontWeight: 700 }}>
+                      <MapPin size={13} /> {isDigitalOnly ? 'Rak E-Book Digital' : (book.shelf || 'Rak A1')}
                     </div>
                     {book.isbn && <div>ISBN: {book.isbn}</div>}
                     
-                    {/* Dynamic Availability Display (Distinguishing Digital-Only vs Physical Books) */}
+                    {/* Dynamic Availability Display */}
                     {isDigitalOnly ? (
-                      <div style={{ color: '#34d399', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Smartphone size={14} /> 📱 E-Book Digital (Akses 24/7 Tanpa Batas)
+                      <div style={{ color: '#34d399', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem' }}>
+                        <Smartphone size={13} /> 📱 E-Book Digital (Akses 24/7)
                       </div>
                     ) : (
                       <div style={{ color: book.available > 0 ? '#34d399' : '#fb7185', fontWeight: 600 }}>
-                        Ketersediaan: {book.available} dari {book.stock} Eksemplar Fisik
+                        Ketersediaan: {book.available} dari {book.stock} Fisik
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px' }}>
+                {/* Compact, Unclipped Card Action Buttons */}
+                <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
                   <button 
                     onClick={() => setDetailBook(book)}
                     className="btn btn-secondary"
-                    style={{ flex: 1, fontSize: '0.8rem', padding: '8px' }}
+                    style={{ flex: 1, fontSize: '0.75rem', padding: '6px 4px', minWidth: 0, justifyContent: 'center' }}
                   >
-                    <Eye size={14} /> Detail
+                    <Eye size={13} /> Detail
                   </button>
                   <button 
                     onClick={() => setActiveEbook(book)}
                     className="btn btn-emerald"
-                    style={{ flex: 1, fontSize: '0.8rem', padding: '8px', fontWeight: isDigitalOnly ? 800 : 500 }}
+                    style={{ flex: 1, fontSize: '0.75rem', padding: '6px 4px', minWidth: 0, fontWeight: 800, justifyContent: 'center', whiteSpace: 'nowrap' }}
                   >
-                    <FileText size={14} /> {isDigitalOnly ? 'Baca PDF' : 'E-Book'}
+                    <FileText size={13} /> {isDigitalOnly ? 'Baca PDF' : 'E-Book'}
                   </button>
                 </div>
               </div>
