@@ -50,6 +50,8 @@ export default function WebcamCaptureModal({
     };
   }, [isOpen]);
 
+  const [activeResolution, setActiveResolution] = useState('');
+
   // Start MediaStream whenever selectedDeviceId or isOpen changes
   useEffect(() => {
     if (!isOpen) {
@@ -60,26 +62,43 @@ export default function WebcamCaptureModal({
     let isCancelled = false;
     setIsCameraLoading(true);
     setErrorMessage('');
+    setActiveResolution('');
 
     async function startCamera() {
       stopCameraStream();
 
       try {
+        // High-Definition Full HD 1080p / HD 720p constraints
         const constraints = {
           video: {
             deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 },
+            frameRate: { ideal: 30 }
           },
           audio: false
         };
 
-        const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        let mediaStream;
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (fallbackErr) {
+          // Fallback to basic video if 1080p/720p strict request fails
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true,
+            audio: false
+          });
+        }
 
         if (!isCancelled) {
           setStream(mediaStream);
           if (videoRef.current) {
             videoRef.current.srcObject = mediaStream;
+            videoRef.current.onloadedmetadata = () => {
+              const w = videoRef.current.videoWidth;
+              const h = videoRef.current.videoHeight;
+              setActiveResolution(`${w} x ${h} ${w >= 1920 ? 'Full HD 1080p' : w >= 1280 ? 'HD 720p' : 'SD'}`);
+            };
           }
           setIsCameraLoading(false);
         } else {
@@ -123,30 +142,33 @@ export default function WebcamCaptureModal({
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
-    const vWidth = video.videoWidth || 640;
-    const vHeight = video.videoHeight || 480;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    const vWidth = video.videoWidth || 1280;
+    const vHeight = video.videoHeight || 720;
 
     if (mode === 'avatar') {
-      // Crop center square
+      // Crop center square with 600x600 high resolution
       const size = Math.min(vWidth, vHeight);
       const startX = (vWidth - size) / 2;
       const startY = (vHeight - size) / 2;
 
-      canvas.width = 400;
-      canvas.height = 400;
-      ctx.drawImage(video, startX, startY, size, size, 0, 0, 400, 400);
+      canvas.width = 600;
+      canvas.height = 600;
+      ctx.drawImage(video, startX, startY, size, size, 0, 0, 600, 600);
     } else {
-      // ID Card mode: 1.58:1 aspect ratio
+      // ID Card mode: 1.58:1 aspect ratio with 1200x760 high resolution
       const cardWidth = vWidth;
       const cardHeight = Math.round(vWidth / 1.58);
       const startY = Math.max(0, (vHeight - cardHeight) / 2);
 
-      canvas.width = 800;
-      canvas.height = 506;
-      ctx.drawImage(video, 0, startY, cardWidth, Math.min(vHeight, cardHeight), 0, 0, 800, 506);
+      canvas.width = 1200;
+      canvas.height = 760;
+      ctx.drawImage(video, 0, startY, cardWidth, Math.min(vHeight, cardHeight), 0, 0, 1200, 760);
     }
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
     setCapturedImage(dataUrl);
   };
 
@@ -207,23 +229,31 @@ export default function WebcamCaptureModal({
         </div>
 
         {/* Camera Selector & Info */}
-        {devices.length > 1 && !capturedImage && (
-          <div style={{ margin: '14px 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <SwitchCamera size={16} color="var(--primary-color)" />
-            <select
-              className="form-input"
-              value={selectedDeviceId}
-              onChange={e => setSelectedDeviceId(e.target.value)}
-              style={{ fontSize: '0.82rem', padding: '6px 12px', borderRadius: '8px' }}
-            >
-              {devices.map((dev, idx) => (
-                <option key={dev.deviceId || idx} value={dev.deviceId}>
-                  {dev.label || `Kamera ${idx + 1}`}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div style={{ margin: '14px 0 8px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+          {devices.length > 0 && !capturedImage && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+              <SwitchCamera size={16} color="var(--primary-color)" />
+              <select
+                className="form-input"
+                value={selectedDeviceId}
+                onChange={e => setSelectedDeviceId(e.target.value)}
+                style={{ fontSize: '0.82rem', padding: '6px 12px', borderRadius: '8px' }}
+              >
+                {devices.map((dev, idx) => (
+                  <option key={dev.deviceId || idx} value={dev.deviceId}>
+                    {dev.label || `Kamera ${idx + 1}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {activeResolution && !capturedImage && (
+            <span className="badge badge-emerald" style={{ fontSize: '0.72rem', padding: '4px 10px', borderRadius: '12px' }}>
+              📷 {activeResolution}
+            </span>
+          )}
+        </div>
 
         {/* Camera Stream Viewport / Snapshot Preview */}
         <div style={{ position: 'relative', marginTop: '12px', borderRadius: '16px', overflow: 'hidden', background: '#090d16', border: '2px solid var(--border-color)', minHeight: '260px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
