@@ -21,10 +21,10 @@ export const DEFAULT_SETTINGS = {
   classFieldLabel: "Peran / Kelas", // Custom Class/Role Label
   adminPin: "PustakaSmart2026", // Strong Default Secure Admin PIN
   
-  // Anti-Piracy 30-Day Trial & Pro Licensing System
-  licenseType: "trial", // 'trial' or 'pro'
-  trialStartDate: new Date().toISOString().split('T')[0], // 30-day countdown start
-  licenseKey: "" // Permanent Pro Key
+  // Default Pro Licensing System
+  licenseType: "pro",
+  trialStartDate: new Date().toISOString().split('T')[0],
+  licenseKey: "PUSTAKASMART-PRO-FULL"
 };
 
 export const INITIAL_BOOKS = [

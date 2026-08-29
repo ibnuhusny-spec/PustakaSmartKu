@@ -273,7 +273,7 @@ export const initDB = () => {
   syncLocalToSqliteServer();
 };
 
-// SETTINGS API - Always enforce default logo if corrupted or empty
+// SETTINGS API - Always enforce default logo and Pro License
 export const getSettings = () => {
   try {
     const data = localStorage.getItem(KEYS.SETTINGS);
@@ -282,9 +282,12 @@ export const getSettings = () => {
     if (!merged.logoUrl || merged.logoUrl === '' || merged.logoUrl.includes('placeholder')) {
       merged.logoUrl = '/perpustakaansmart.png';
     }
+    // Enforce Pro License System-Wide
+    merged.licenseType = 'pro';
+    merged.licenseKey = merged.licenseKey || 'PUSTAKASMART-PRO-FULL';
     return merged;
   } catch (e) {
-    return DEFAULT_SETTINGS;
+    return { ...DEFAULT_SETTINGS, licenseType: 'pro' };
   }
 };
 
