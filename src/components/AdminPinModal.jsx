@@ -37,9 +37,20 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
   };
 
   return (
-    <div className="modal-overlay" style={{ zIndex: 1200 }}>
+    <div 
+      className="modal-overlay" 
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onMouseDown={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      style={{ zIndex: 1200 }}
+    >
       <div 
         className="modal-container" 
+        onClick={e => e.stopPropagation()}
+        onMouseDown={e => e.stopPropagation()}
         style={{ maxWidth: '420px', padding: '24px', borderRadius: '16px' }}
       >
         

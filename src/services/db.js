@@ -239,13 +239,11 @@ export const saveSettings = (newSettings) => {
   }
   localStorage.setItem(KEYS.SETTINGS, JSON.stringify(merged));
   
-  if (isSqliteConnected) {
-    fetch(`${activeServerUrl}/api/settings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(merged)
-    }).catch(err => console.warn('SQLite settings save fail:', err));
-  }
+  fetch(`${activeServerUrl}/api/settings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(merged)
+  }).catch(err => console.warn('SQLite settings save fail:', err));
   
   return merged;
 };
@@ -263,13 +261,11 @@ export const getBooks = () => {
 export const saveBooks = (books) => {
   localStorage.setItem(KEYS.BOOKS, JSON.stringify(books));
   
-  if (isSqliteConnected) {
-    fetch(`${activeServerUrl}/api/books/bulk`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(books)
-    }).catch(err => console.warn('SQLite books save fail:', err));
-  }
+  fetch(`${activeServerUrl}/api/books/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(books)
+  }).catch(err => console.warn('SQLite books save fail:', err));
 };
 
 export const addBook = (book) => {
@@ -309,13 +305,11 @@ export const getMembers = () => {
 export const saveMembers = (members) => {
   localStorage.setItem(KEYS.MEMBERS, JSON.stringify(members));
   
-  if (isSqliteConnected) {
-    fetch(`${activeServerUrl}/api/members/bulk`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(members)
-    }).catch(err => console.warn('SQLite members save fail:', err));
-  }
+  fetch(`${activeServerUrl}/api/members/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(members)
+  }).catch(err => console.warn('SQLite members save fail:', err));
 };
 
 export const addMember = (member) => {
@@ -365,13 +359,11 @@ export const getTransactions = () => {
 export const saveTransactions = (txs) => {
   localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
   
-  if (isSqliteConnected) {
-    fetch(`${activeServerUrl}/api/transactions/bulk`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(txs)
-    }).catch(err => console.warn('SQLite transactions save fail:', err));
-  }
+  fetch(`${activeServerUrl}/api/transactions/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(txs)
+  }).catch(err => console.warn('SQLite transactions save fail:', err));
 };
 
 export const createLoanTransaction = (memberOrRfid, bookOrId) => {

@@ -165,7 +165,6 @@ export default function App() {
     setIsAdminAuthed(false);
     sessionStorage.removeItem('pustakasmart_admin_authed');
     setActiveTab('catalog');
-    alert('🔒 Sesi Admin Perpustakaan berhasil dikunci! Aplikasi kini kembali ke Mode Publik Siswa.');
   };
 
   const handleActivateLicenseSuccess = (key) => {
