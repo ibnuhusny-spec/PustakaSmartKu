@@ -276,6 +276,30 @@ app.post('/api/books', async (req, res) => {
   }
 });
 
+// Bulk Books Endpoint
+app.post('/api/books/bulk', async (req, res) => {
+  try {
+    const books = req.body;
+    if (Array.isArray(books)) {
+      await dbRun('DELETE FROM books');
+      for (const b of books) {
+        await dbRun(`
+          INSERT OR REPLACE INTO books (
+            id, title, author, isbn, category, ddc, publisher, year, shelf, stock, available, coverUrl, description, ebookContent, pdfUrl
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          b.id, b.title, b.author, b.isbn || '', b.category || 'Novel / Fiksi', b.ddc || '800',
+          b.publisher || '', Number(b.year) || 2024, b.shelf || 'Rak A1', Number(b.stock) || 0,
+          Number(b.available) || 0, b.coverUrl || '', b.description || '', b.ebookContent || '', b.pdfUrl || ''
+        ]);
+      }
+    }
+    res.json({ success: true, count: books.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.delete('/api/books/:id', async (req, res) => {
   try {
     await dbRun('DELETE FROM books WHERE id = ?', [req.params.id]);
@@ -322,6 +346,31 @@ app.post('/api/members', async (req, res) => {
   }
 });
 
+// Bulk Members Endpoint
+app.post('/api/members/bulk', async (req, res) => {
+  try {
+    const members = req.body;
+    if (Array.isArray(members)) {
+      await dbRun('DELETE FROM members');
+      for (const m of members) {
+        await dbRun(`
+          INSERT OR REPLACE INTO members (
+            id, rfidUid, name, role, classGrade, nisn, email, phone, balance, points, badge, avatar, registeredAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          m.id, m.rfidUid || null, m.name, m.role || 'Siswa', m.classGrade || '',
+          m.nisn || '', m.email || '', m.phone || '', Number(m.balance) || 0,
+          Number(m.points) || 0, m.badge || 'Pembaca Baru 🌱', m.avatar || '',
+          m.registeredAt || new Date().toISOString().split('T')[0]
+        ]);
+      }
+    }
+    res.json({ success: true, count: members.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.delete('/api/members/:id', async (req, res) => {
   try {
     await dbRun('DELETE FROM members WHERE id = ?', [req.params.id]);
@@ -363,6 +412,30 @@ app.post('/api/transactions', async (req, res) => {
       Number(t.fineAmount) || 0, t.finePaid ? 1 : 0, t.notes || ''
     ]);
     res.json({ success: true, transaction: t });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Bulk Transactions Endpoint
+app.post('/api/transactions/bulk', async (req, res) => {
+  try {
+    const transactions = req.body;
+    if (Array.isArray(transactions)) {
+      await dbRun('DELETE FROM transactions');
+      for (const t of transactions) {
+        await dbRun(`
+          INSERT OR REPLACE INTO transactions (
+            id, rfidUid, memberId, memberName, bookId, bookTitle, issueDate, dueDate, returnDate, status, fineAmount, finePaid, notes
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          t.id, t.rfidUid, t.memberId, t.memberName, t.bookId, t.bookTitle,
+          t.issueDate, t.dueDate, t.returnDate || null, t.status,
+          Number(t.fineAmount) || 0, t.finePaid ? 1 : 0, t.notes || ''
+        ]);
+      }
+    }
+    res.json({ success: true, count: transactions.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

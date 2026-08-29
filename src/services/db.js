@@ -138,16 +138,12 @@ export const checkServerConnection = async () => {
   return { connected: false, info: null };
 };
 
-// Sync LocalStorage with SQLite Server (Pull server data first to prevent client mock data overwrites)
+// Sync LocalStorage with SQLite Server (Push local data on server, then pull combined state)
 export const syncLocalToSqliteServer = async () => {
   const conn = await checkServerConnection();
   if (!conn.connected) return false;
 
   try {
-    // 1. Pull current live server data into local cache first!
-    await loadFromSqliteServerToLocalCache();
-
-    // 2. Push any local custom data to server if server returned empty arrays
     const localBooksStr = localStorage.getItem(KEYS.BOOKS);
     const localMembersStr = localStorage.getItem(KEYS.MEMBERS);
     const localTxStr = localStorage.getItem(KEYS.TRANSACTIONS);
