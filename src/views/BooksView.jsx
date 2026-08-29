@@ -35,6 +35,7 @@ export default function BooksView({ books, onRefreshData }) {
   const [isDdcPickerOpen, setIsDdcPickerOpen] = useState(false);
   const [activeEbook, setActiveEbook] = useState(null);
   const [csvText, setCsvText] = useState('');
+  const [formNotice, setFormNotice] = useState('');
   const titleInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -137,12 +138,14 @@ export default function BooksView({ books, onRefreshData }) {
 
   const handleAutoRecommendDDC = () => {
     if (!formData.title || !formData.title.trim()) {
-      alert('Silakan ketik Judul Buku terlebih dahulu agar sistem dapat mengunci rekomendasi DDC secara otomatis!');
+      setFormNotice('⚠️ Silakan ketik Judul Buku terlebih dahulu!');
+      setTimeout(() => setFormNotice(''), 4000);
       return;
     }
     const rec = recommendDdcFromTitle(formData.title, formData.category);
     setFormData(prev => ({ ...prev, ddc: rec.code, category: rec.category }));
-    alert(`💡 Rekomendasi DDC Terperinci Berhasil: DDC ${rec.code} (${rec.category}) berdasarkan judul "${formData.title}"`);
+    setFormNotice(`✨ Rekomendasi DDC Berhasil: DDC ${rec.code} (${rec.category})`);
+    setTimeout(() => setFormNotice(''), 4000);
   };
 
   const handleLocalImageUpload = (e) => {
@@ -178,6 +181,8 @@ export default function BooksView({ books, onRefreshData }) {
 
         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
         setFormData(prev => ({ ...prev, coverUrl: compressedDataUrl }));
+        setFormNotice('✓ Sampul gambar berhasil diunggah!');
+        setTimeout(() => setFormNotice(''), 3000);
       };
       img.src = evt.target.result;
     };
@@ -188,14 +193,16 @@ export default function BooksView({ books, onRefreshData }) {
     const file = e.target.files[0];
     if (!file) return;
     if (file.type !== 'application/pdf') {
-      alert('Mohon pilih file dalam format PDF (.pdf)');
+      setFormNotice('⚠️ Mohon pilih file dalam format PDF (.pdf)');
+      setTimeout(() => setFormNotice(''), 4000);
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (evt) => {
       setFormData(prev => ({ ...prev, pdfUrl: evt.target.result }));
-      alert('✓ File PDF E-Book berhasil diunggah!');
+      setFormNotice('✓ File PDF E-Book berhasil diunggah!');
+      setTimeout(() => setFormNotice(''), 4000);
     };
     reader.readAsDataURL(file);
   };
@@ -534,6 +541,22 @@ export default function BooksView({ books, onRefreshData }) {
             <form onSubmit={handleSave}>
               <div className="modal-body" style={{ maxHeight: '72vh', overflowY: 'auto' }}>
                 
+                {formNotice && (
+                  <div style={{
+                    background: formNotice.includes('⚠️') ? 'rgba(244, 63, 94, 0.15)' : 'rgba(16, 185, 129, 0.18)',
+                    color: formNotice.includes('⚠️') ? '#fb7185' : '#34d399',
+                    border: formNotice.includes('⚠️') ? '1px solid rgba(244, 63, 94, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: 800,
+                    marginBottom: '14px',
+                    textAlign: 'center'
+                  }}>
+                    {formNotice}
+                  </div>
+                )}
+
                 <div className="form-group">
                   <label className="form-label">Judul Buku *</label>
                   <input 
