@@ -146,7 +146,7 @@ export default function CatalogView({ books }) {
                     {/* Dynamic Availability Display */}
                     {isDigitalOnly ? (
                       <div style={{ color: '#34d399', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem' }}>
-                        <Smartphone size={13} /> 📱 E-Book Digital (Akses 24/7)
+                        <Smartphone size={13} /> 📱 E-Book Digital (Bebas Akses)
                       </div>
                     ) : (
                       <div style={{ color: book.available > 0 ? '#34d399' : '#fb7185', fontWeight: 600 }}>

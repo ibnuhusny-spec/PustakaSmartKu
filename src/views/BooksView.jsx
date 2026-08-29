@@ -473,7 +473,7 @@ export default function BooksView({ books, onRefreshData }) {
                       <td style={{ padding: '12px', fontWeight: 700 }}>
                         {isDigitalOnly ? (
                           <span style={{ color: '#34d399', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Smartphone size={14} /> ♾️ Akses Digital 24/7
+                            <Smartphone size={14} /> ♾️ Bebas Akses Digital
                           </span>
                         ) : b.available <= 0 ? (
                           <span className="badge badge-rose" style={{ fontSize: '0.78rem' }}>
