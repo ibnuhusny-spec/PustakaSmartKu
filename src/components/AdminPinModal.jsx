@@ -11,11 +11,16 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
     if (isOpen) {
       setPinInput('');
       setErrorMessage('');
-      setTimeout(() => {
-        if (pinInputRef.current) {
-          pinInputRef.current.focus();
-        }
-      }, 150);
+      const timer1 = setTimeout(() => {
+        if (pinInputRef.current) pinInputRef.current.focus();
+      }, 50);
+      const timer2 = setTimeout(() => {
+        if (pinInputRef.current) pinInputRef.current.focus();
+      }, 200);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
     }
   }, [isOpen]);
 
@@ -94,6 +99,8 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
                 type={showPassword ? "text" : "password"} 
                 className="form-input"
                 value={pinInput}
+                onMouseDown={e => e.stopPropagation()}
+                onClick={e => e.stopPropagation()}
                 onChange={e => {
                   setPinInput(e.target.value);
                   if (errorMessage) setErrorMessage('');
@@ -108,7 +115,6 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
                   background: 'var(--bg-secondary)',
                   borderColor: errorMessage ? '#ef4444' : 'var(--border-color)'
                 }}
-                autoFocus
                 required
               />
               <button
