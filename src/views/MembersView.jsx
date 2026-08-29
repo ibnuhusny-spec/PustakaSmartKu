@@ -19,11 +19,13 @@ import {
   CheckCircle2,
   AlertTriangle,
   Camera,
-  FileText
+  FileText,
+  Scissors
 } from 'lucide-react';
 import { saveMember, deleteMember, clearSampleMembers, updateMemberBalance, importMembersCSV, syncLocalToSqliteServer } from '../services/db';
 import WebcamCaptureModal from '../components/WebcamCaptureModal';
 import IdCardViewerModal from '../components/IdCardViewerModal';
+import ImageCropModal from '../components/ImageCropModal';
 
 export default function MembersView({ 
   members, 
@@ -56,6 +58,7 @@ export default function MembersView({
   const [topUpData, setTopUpData] = useState({ memberId: '', name: '', amount: 10000 });
   const [webcamModal, setWebcamModal] = useState({ isOpen: false, mode: 'avatar', title: '' });
   const [idCardViewerModal, setIdCardViewerModal] = useState({ isOpen: false, member: null });
+  const [cropModal, setCropModal] = useState({ isOpen: false, imageSrc: '', mode: 'avatar' });
 
   const [formData, setFormData] = useState({
     id: '',
@@ -830,7 +833,7 @@ export default function MembersView({
                           className="btn btn-primary"
                           style={{ fontSize: '0.82rem', padding: '6px 14px', borderRadius: '8px', fontWeight: 800 }}
                         >
-                          <Camera size={16} /> 📸 Foto via Kamera Langsung
+                          <Camera size={16} /> 📸 Foto via Kamera
                         </button>
 
                         <label 
@@ -838,7 +841,7 @@ export default function MembersView({
                           style={{ cursor: 'pointer', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px' }}
                         >
                           <FolderOpen size={16} />
-                          <span>Pilih File Foto...</span>
+                          <span>Pilih File...</span>
                           <input 
                             type="file" 
                             accept="image/*"
@@ -846,6 +849,18 @@ export default function MembersView({
                             style={{ display: 'none' }}
                           />
                         </label>
+
+                        {formData.avatar && (
+                          <button 
+                            type="button"
+                            onClick={() => setCropModal({ isOpen: true, imageSrc: formData.avatar, mode: 'avatar' })}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.82rem', padding: '6px 12px', borderRadius: '8px', color: '#ec4899', borderColor: 'rgba(236, 72, 153, 0.4)' }}
+                            title="Potong (Crop), Putar, atau Perbesar Foto Profil"
+                          >
+                            <Scissors size={15} /> ✂️ Crop Foto
+                          </button>
+                        )}
                       </div>
 
                       <div style={{ display: 'flex', gap: '8px' }}>
@@ -911,7 +926,7 @@ export default function MembersView({
                           className="btn btn-primary"
                           style={{ fontSize: '0.82rem', padding: '6px 14px', borderRadius: '8px', fontWeight: 800, background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
                         >
-                          <Camera size={16} /> 📷 Foto KTP/ID via Kamera
+                          <Camera size={16} /> 📷 Foto KTP/ID
                         </button>
 
                         <label 
@@ -919,7 +934,7 @@ export default function MembersView({
                           style={{ cursor: 'pointer', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '8px' }}
                         >
                           <FolderOpen size={16} />
-                          <span>Unggah File KTP/ID...</span>
+                          <span>Unggah File...</span>
                           <input 
                             type="file" 
                             accept="image/*"
@@ -929,14 +944,26 @@ export default function MembersView({
                         </label>
 
                         {formData.idCardUrl && (
-                          <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, idCardUrl: '' })}
-                            className="btn btn-rose"
-                            style={{ fontSize: '0.78rem', padding: '6px 10px' }}
-                          >
-                            <X size={14} /> Hapus KTP
-                          </button>
+                          <>
+                            <button 
+                              type="button"
+                              onClick={() => setCropModal({ isOpen: true, imageSrc: formData.idCardUrl, mode: 'idCard' })}
+                              className="btn btn-secondary"
+                              style={{ fontSize: '0.82rem', padding: '6px 12px', borderRadius: '8px', color: '#ec4899', borderColor: 'rgba(236, 72, 153, 0.4)' }}
+                              title="Potong (Crop), Putar, atau Perbesar Dokumen KTP"
+                            >
+                              <Scissors size={15} /> ✂️ Crop KTP
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setFormData({ ...formData, idCardUrl: '' })}
+                              className="btn btn-rose"
+                              style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                            >
+                              <X size={14} /> Hapus KTP
+                            </button>
+                          </>
                         )}
                       </div>
 
@@ -1069,6 +1096,21 @@ export default function MembersView({
         isOpen={idCardViewerModal.isOpen}
         onClose={() => setIdCardViewerModal({ isOpen: false, member: null })}
         member={idCardViewerModal.member}
+      />
+
+      {/* Interactive Drag-to-Crop & Rotation Modal */}
+      <ImageCropModal 
+        isOpen={cropModal.isOpen}
+        onClose={() => setCropModal({ isOpen: false, imageSrc: '', mode: 'avatar' })}
+        imageSrc={cropModal.imageSrc}
+        mode={cropModal.mode}
+        onCropSave={(croppedUrl) => {
+          if (cropModal.mode === 'avatar') {
+            setFormData(prev => ({ ...prev, avatar: croppedUrl }));
+          } else {
+            setFormData(prev => ({ ...prev, idCardUrl: croppedUrl }));
+          }
+        }}
       />
 
     </div>

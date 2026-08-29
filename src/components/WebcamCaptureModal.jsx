@@ -158,14 +158,19 @@ export default function WebcamCaptureModal({
       canvas.height = 600;
       ctx.drawImage(video, startX, startY, size, size, 0, 0, 600, 600);
     } else {
-      // ID Card mode: 1.58:1 aspect ratio with 1200x760 high resolution
-      const cardWidth = vWidth;
-      const cardHeight = Math.round(vWidth / 1.58);
-      const startY = Math.max(0, (vHeight - cardHeight) / 2);
+      // ID Card mode: 1.58:1 aspect ratio with ZERO distortion
+      let srcW = vWidth;
+      let srcH = Math.round(vWidth / 1.58);
+      if (srcH > vHeight) {
+        srcH = vHeight;
+        srcW = Math.round(vHeight * 1.58);
+      }
+      const startX = (vWidth - srcW) / 2;
+      const startY = (vHeight - srcH) / 2;
 
-      canvas.width = 1200;
-      canvas.height = 760;
-      ctx.drawImage(video, 0, startY, cardWidth, Math.min(vHeight, cardHeight), 0, 0, 1200, 760);
+      canvas.width = 1000;
+      canvas.height = 633;
+      ctx.drawImage(video, startX, startY, srcW, srcH, 0, 0, 1000, 633);
     }
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
