@@ -83,8 +83,17 @@ const DEFAULT_QUIZZES = [
   }
 ];
 
-// Server Connection State
-let activeServerUrl = localStorage.getItem(KEYS.SERVER_URL) || 'http://localhost:3001';
+// Server Connection State: Auto-detect origin if opened on Mobile / Client device
+const getDefaultServerUrl = () => {
+  const saved = localStorage.getItem(KEYS.SERVER_URL);
+  if (saved) return saved;
+  if (typeof window !== 'undefined' && window.location && window.location.origin && !window.location.origin.includes('localhost') && !window.location.origin.includes('127.0.0.1')) {
+    return window.location.origin;
+  }
+  return 'http://localhost:3001';
+};
+
+let activeServerUrl = getDefaultServerUrl();
 let isSqliteConnected = false;
 let serverInfo = null;
 

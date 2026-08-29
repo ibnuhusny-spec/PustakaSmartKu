@@ -624,4 +624,65 @@ body {
     font-size: 0.9rem !important;
     padding: 8px 12px !important;
   }
+
+  /* Admin Portal Responsive on Mobile Screens */
+  .admin-portal-container {
+    flex-direction: column !important;
+    padding: 0 8px !important;
+    gap: 12px !important;
+    min-height: auto !important;
+  }
+
+  .admin-sidebar {
+    width: 100% !important;
+    position: static !important;
+    max-height: none !important;
+    padding: 12px !important;
+  }
+
+  .admin-sidebar nav.admin-subnav {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding-bottom: 6px !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .admin-sidebar nav.admin-subnav button {
+    flex-shrink: 0 !important;
+    padding: 8px 12px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .admin-main-content {
+    width: 100% !important;
+    overflow-x: hidden !important;
+  }
+}
+
+/* Admin Portal Layout Base Styles */
+.admin-portal-container {
+  display: flex;
+  min-height: calc(100vh - 100px);
+  gap: 20px;
+  padding: 0 16px;
+}
+
+.admin-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: sticky;
+  top: 90px;
+  height: fit-content;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+}
+
+.admin-main-content {
+  flex: 1;
+  min-width: 0;
 }

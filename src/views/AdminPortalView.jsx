@@ -54,22 +54,10 @@ export default function AdminPortalView({
   }).length;
 
   return (
-    <div style={{ display: 'flex', minHeight: 'calc(100vh - 100px)', gap: '20px', padding: '0 16px' }}>
+    <div className="admin-portal-container">
       
       {/* LEFT SIDEBAR NAVIGATION FOR ADMIN PORTAL */}
-      <aside className="glass-card" style={{
-        width: '260px',
-        flexShrink: 0,
-        padding: '20px 14px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: '90px',
-        height: 'fit-content',
-        maxHeight: 'calc(100vh - 110px)',
-        overflowY: 'auto'
-      }}>
+      <aside className="glass-card admin-sidebar">
         <div>
           
           {/* Admin Header Title */}
@@ -105,7 +93,7 @@ export default function AdminPortalView({
           </div>
 
           {/* Sub Navigation Items */}
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <nav className="admin-subnav" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             
             <button
               onClick={() => setAdminSubTab('overview')}
@@ -170,7 +158,7 @@ export default function AdminPortalView({
       </aside>
 
       {/* RIGHT MAIN CONTENT AREA */}
-      <main style={{ flex: 1, minWidth: 0 }}>
+      <main className="admin-main-content">
         
         {/* OVERVIEW DASHBOARD */}
         {adminSubTab === 'overview' && (
