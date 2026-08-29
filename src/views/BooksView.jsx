@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { saveBook, deleteBook, clearSampleBooks, importBooksCSV } from '../services/db';
 import DdcPickerModal from '../components/DdcPickerModal';
-import { recommendDdcFromTitle } from '../services/ddcData';
+import { recommendDdcFromTitle, BOOK_CATEGORIES } from '../services/ddcData';
 
 export default function BooksView({ books, onRefreshData }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,9 +46,11 @@ export default function BooksView({ books, onRefreshData }) {
     ddc: '813',
     publisher: '',
     year: 2024,
-    shelf: 'Rak E-Book Digital',
-    stock: 0,
-    available: 0,
+    shelf: 'Rak A1',
+    stock: 5,
+    available: 5,
+    pageCount: 250,
+    pages: 250,
     coverUrl: '',
     description: '',
     ebookContent: '',
@@ -56,23 +58,27 @@ export default function BooksView({ books, onRefreshData }) {
   });
 
   const categoryCovers = {
-    'Novel / Fiksi': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80',
-    'Sejarah / Sastra': 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=400&q=80',
-    'Sains & Teknologi': 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&w=400&q=80',
-    'Komputer & IT': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=400&q=80',
-    'Pengembangan Diri': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=400&q=80',
-    'Agama & Keimanan': 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80',
-    'Umum': 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=400&q=80',
+    'Novel / Fiksi': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=400',
+    'Agama & Keimanan': 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&q=80&w=400',
+    'Sains & IPA': 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=400',
+    'Matematika': 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=400',
+    'Komputer & IT': 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=400',
+    'Sejarah & Biografi': 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=400',
+    'Sastra & Bahasa': 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&q=80&w=400',
+    'Pengembangan Diri': 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=400',
+    'Pelajaran & Buku Teks': 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=400',
+    'Komik & Ensiklopedia': 'https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?auto=format&fit=crop&q=80&w=400',
+    'Umum': 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400'
   };
 
-  const ddcCategoryMap = {
-    'Novel / Fiksi': '813',
-    'Sejarah / Sastra': '959',
-    'Sains & Teknologi': '530',
-    'Komputer & IT': '005',
-    'Pengembangan Diri': '158',
-    'Agama & Keimanan': '297',
-    'Umum': '000'
+  const handleTitleChange = (newTitle) => {
+    const rec = recommendDdcFromTitle(newTitle, formData.category);
+    setFormData(prev => ({
+      ...prev,
+      title: newTitle,
+      ddc: rec.code || prev.ddc,
+      category: rec.category || prev.category
+    }));
   };
 
   const ddcQuickList = [
@@ -513,7 +519,7 @@ export default function BooksView({ books, onRefreshData }) {
                     type="text" 
                     className="form-input" 
                     value={formData.title}
-                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                    onChange={e => handleTitleChange(e.target.value)}
                     placeholder="Contoh: Laskar Pelangi / Fisika Modern Class XII"
                     required
                     autoFocus
@@ -661,13 +667,9 @@ export default function BooksView({ books, onRefreshData }) {
                       value={formData.category}
                       onChange={e => setFormData({ ...formData, category: e.target.value })}
                     >
-                      <option value="Novel / Fiksi">Novel / Fiksi</option>
-                      <option value="Sejarah / Sastra">Sejarah / Sastra</option>
-                      <option value="Sains & Teknologi">Sains & Teknologi</option>
-                      <option value="Komputer & IT">Komputer & IT</option>
-                      <option value="Pengembangan Diri">Pengembangan Diri</option>
-                      <option value="Agama & Keimanan">Agama & Keimanan</option>
-                      <option value="Umum">Umum</option>
+                      {BOOK_CATEGORIES.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -699,8 +701,11 @@ export default function BooksView({ books, onRefreshData }) {
                     <input 
                       type="number" 
                       className="form-input" 
-                      value={formData.pages || formData.pageCount || ''}
-                      onChange={e => setFormData({ ...formData, pages: Number(e.target.value), pageCount: Number(e.target.value) })}
+                      value={formData.pages !== undefined && formData.pages !== null ? formData.pages : (formData.pageCount || '')}
+                      onChange={e => {
+                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        setFormData({ ...formData, pages: val, pageCount: val });
+                      }}
                       placeholder="Contoh: 250 Hlm"
                       min="1"
                     />
@@ -710,8 +715,11 @@ export default function BooksView({ books, onRefreshData }) {
                     <input 
                       type="number" 
                       className="form-input" 
-                      value={formData.stock !== undefined ? formData.stock : 1}
-                      onChange={e => setFormData({ ...formData, stock: Number(e.target.value), available: Number(e.target.value) })}
+                      value={formData.stock !== undefined && formData.stock !== null ? formData.stock : ''}
+                      onChange={e => {
+                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        setFormData({ ...formData, stock: val, available: val });
+                      }}
                       min="0"
                     />
                   </div>
@@ -720,8 +728,11 @@ export default function BooksView({ books, onRefreshData }) {
                     <input 
                       type="number" 
                       className="form-input" 
-                      value={formData.available !== undefined ? formData.available : 1}
-                      onChange={e => setFormData({ ...formData, available: Number(e.target.value) })}
+                      value={formData.available !== undefined && formData.available !== null ? formData.available : ''}
+                      onChange={e => {
+                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        setFormData({ ...formData, available: val });
+                      }}
                       min="0"
                     />
                   </div>
