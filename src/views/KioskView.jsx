@@ -33,7 +33,7 @@ export default function KioskView({
   const [searchTerm, setSearchTerm] = useState('');
   const [message, setMessage] = useState(null);
 
-  // Listen directly to live RFID scan events (NEVER triggers on tab switch)
+  // Listen directly to live RFID scan events
   useEffect(() => {
     const handleLiveRfidScan = (e) => {
       const { rfidUid } = e.detail;
@@ -54,15 +54,8 @@ export default function KioskView({
       // Member found on live tap!
       setSelectedMember(member);
 
-      // Check active step: DO NOT play "Selamat Datang" voice during Borrow or Return!
-      if (activeStep === 'borrow' || activeStep === 'return') {
-        playSoundEffect('scan');
-        setMessage({ 
-          type: 'success', 
-          text: `Kartu RFID Terverifikasi: ${member.name} (${member.classGrade}). Saldo RFID: Rp ${member.balance.toLocaleString('id-ID')} | Poin: ${member.points} pts.` 
-        });
-      } else {
-        // Attendance / Presensi Mode: Record Attendance & play Selamat Datang Voice
+      if (activeStep === 'attendance') {
+        // ONLY Attendance / Presensi Mode records attendance & speaks Selamat Datang Voice!
         playSoundEffect('success');
         recordAttendance(member, 'Presensi Mandiri Kios RFID');
         onRefreshData();
@@ -74,7 +67,34 @@ export default function KioskView({
         speakText(`Selamat datang di perpustakaan, ${member.name}!`, settings.enableVoice);
         
         confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
-        setActiveStep('balance');
+      } else if (activeStep === 'borrow') {
+        // Peminjaman Mode: Identifikasi Anggota TANPA Presensi & TANPA Suara
+        playSoundEffect('scan');
+        setMessage({ 
+          type: 'success', 
+          text: `Kartu RFID Terverifikasi: ${member.name} (${member.classGrade}). Saldo: Rp ${member.balance.toLocaleString('id-ID')} | Poin: ${member.points} pts.` 
+        });
+      } else if (activeStep === 'return') {
+        // Pengembalian Mode: Identifikasi Anggota TANPA Presensi & TANPA Suara
+        playSoundEffect('scan');
+        setMessage({ 
+          type: 'success', 
+          text: `Kartu RFID Terverifikasi: ${member.name} (${member.classGrade}). Berikut daftar buku yang sedang dipinjam.` 
+        });
+      } else if (activeStep === 'balance') {
+        // Cek Saldo & Poin: Informasi Anggota TANPA Presensi & TANPA Suara
+        playSoundEffect('scan');
+        setMessage({ 
+          type: 'success', 
+          text: `Informasi Anggota: ${member.name} (${member.classGrade}). Saldo RFID: Rp ${member.balance.toLocaleString('id-ID')} | Poin: ${member.points} pts.` 
+        });
+      } else {
+        // Kiosk Menu Utama: Identifikasi Anggota TANPA Presensi & TANPA Suara
+        playSoundEffect('scan');
+        setMessage({ 
+          type: 'success', 
+          text: `Anggota Terdeteksi: ${member.name} (${member.classGrade}). Saldo: Rp ${member.balance.toLocaleString('id-ID')}` 
+        });
       }
     };
 
@@ -96,7 +116,6 @@ export default function KioskView({
 
       setMessage({ type: 'success', text: `Peminjaman buku "${book.title}" untuk ${selectedMember.name} berhasil!` });
       onOpenReceipt(tx, selectedMember);
-      setActiveStep('menu');
     } catch (err) {
       playSoundEffect('error');
       setMessage({ type: 'error', text: err.message });
@@ -117,7 +136,6 @@ export default function KioskView({
       }
 
       onOpenReceipt(updatedTx, selectedMember);
-      setActiveStep('menu');
     } catch (err) {
       playSoundEffect('error');
       setMessage({ type: 'error', text: err.message });
