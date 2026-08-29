@@ -138,29 +138,32 @@ export const checkServerConnection = async () => {
   return { connected: false, info: null };
 };
 
-// Helper to detect if running on client HP or mobile browser
-export const isMobileOrRemoteClient = () => {
-  if (typeof window === 'undefined') return false;
-  if (window.electronAPI) return false;
+// Helper to detect if running on the Host Laptop (Electron or Localhost)
+export const isHostLaptop = () => {
+  if (typeof window === 'undefined') return true;
+  if (window.electronAPI || (navigator.userAgent && navigator.userAgent.includes('Electron'))) return true;
   
   const host = window.location.hostname;
-  const isLocalhost = host === 'localhost' || host === '127.0.0.1';
-  const isMobileUserAgent = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
+  const protocol = window.location.protocol;
+  if (protocol === 'file:' || host === 'localhost' || host === '127.0.0.1' || host === '') return true;
   
-  return isMobileUserAgent || !isLocalhost;
+  return false;
 };
 
-// Sync LocalStorage with SQLite Server (Push local data ONLY on Host Laptop, pull state on HP)
+export const isMobileOrRemoteClient = () => {
+  return !isHostLaptop();
+};
+
+// Sync LocalStorage with SQLite Server (Push local data on Host Laptop, pull state on HP)
 export const syncLocalToSqliteServer = async () => {
   const conn = await checkServerConnection();
   if (!conn.connected) return false;
 
   try {
-    const isRemoteClient = isMobileOrRemoteClient();
+    const isHost = isHostLaptop();
 
-    // ONLY the Main Laptop Server (Electron app or localhost) pushes local state to SQLite!
-    // Remote Mobile HP clients MUST NEVER push or overwrite the Laptop database!
-    if (!isRemoteClient) {
+    // 1. Host Laptop pushes its local localStorage data to SQLite database
+    if (isHost) {
       const localBooksStr = localStorage.getItem(KEYS.BOOKS);
       const localMembersStr = localStorage.getItem(KEYS.MEMBERS);
       const localTxStr = localStorage.getItem(KEYS.TRANSACTIONS);
@@ -188,6 +191,7 @@ export const syncLocalToSqliteServer = async () => {
       }
     }
 
+    // 2. Both Laptop & HP pull latest SQLite database state into local cache
     await loadFromSqliteServerToLocalCache();
     return true;
   } catch (e) {
@@ -206,13 +210,37 @@ const loadFromSqliteServerToLocalCache = async () => {
       fetch(`${activeServerUrl}/api/settings`)
     ]);
 
-    if (bRes.ok) localStorage.setItem(KEYS.BOOKS, JSON.stringify(await bRes.json()));
-    if (mRes.ok) localStorage.setItem(KEYS.MEMBERS, JSON.stringify(await mRes.json()));
-    if (tRes.ok) localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(await tRes.json()));
-    if (aRes.ok) localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify(await aRes.json()));
+    if (bRes.ok) {
+      const serverBooks = await bRes.json();
+      if (serverBooks && Array.isArray(serverBooks)) {
+        if (serverBooks.length > 0 || !localStorage.getItem(KEYS.BOOKS)) {
+          localStorage.setItem(KEYS.BOOKS, JSON.stringify(serverBooks));
+        }
+      }
+    }
+    if (mRes.ok) {
+      const serverMembers = await mRes.json();
+      if (serverMembers && Array.isArray(serverMembers)) {
+        if (serverMembers.length > 0 || !localStorage.getItem(KEYS.MEMBERS)) {
+          localStorage.setItem(KEYS.MEMBERS, JSON.stringify(serverMembers));
+        }
+      }
+    }
+    if (tRes.ok) {
+      const serverTx = await tRes.json();
+      if (serverTx && Array.isArray(serverTx)) {
+        localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(serverTx));
+      }
+    }
+    if (aRes.ok) {
+      const serverAtt = await aRes.json();
+      if (serverAtt && Array.isArray(serverAtt)) {
+        localStorage.setItem(KEYS.ATTENDANCE, JSON.stringify(serverAtt));
+      }
+    }
     if (sRes.ok) {
       const s = await sRes.json();
-      if (Object.keys(s).length > 0) {
+      if (s && Object.keys(s).length > 0) {
         localStorage.setItem(KEYS.SETTINGS, JSON.stringify({ ...DEFAULT_SETTINGS, ...s }));
       }
     }
