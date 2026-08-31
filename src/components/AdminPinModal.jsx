@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Lock, ShieldCheck, X, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = 'PustakaSmart2026', targetTabName = 'Portal Petugas Admin' }) {
@@ -9,6 +9,23 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
 
   const wasOpenRef = useRef(false);
 
+  // Callback Ref: Ensures focus & blinking cursor immediately as soon as DOM element is attached!
+  const setPinInputRef = useCallback((node) => {
+    if (node) {
+      pinInputRef.current = node;
+      const doFocus = () => {
+        try {
+          node.focus();
+        } catch (e) {}
+      };
+      doFocus();
+      requestAnimationFrame(doFocus);
+      setTimeout(doFocus, 50);
+      setTimeout(doFocus, 150);
+      setTimeout(doFocus, 300);
+    }
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       if (!wasOpenRef.current) {
@@ -18,8 +35,10 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
       }
 
       const focusInput = () => {
-        if (pinInputRef.current && document.activeElement !== pinInputRef.current) {
-          pinInputRef.current.focus();
+        if (pinInputRef.current) {
+          try {
+            pinInputRef.current.focus();
+          } catch (e) {}
         }
       };
 
@@ -32,7 +51,9 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
       const handleGlobalKeyDown = (e) => {
         if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
           if (pinInputRef.current) {
-            pinInputRef.current.focus();
+            try {
+              pinInputRef.current.focus();
+            } catch (err) {}
           }
         }
       };
@@ -126,7 +147,7 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
             <label className="form-label" style={{ fontWeight: 800 }}>Password / PIN Admin Perpustakaan</label>
             <div style={{ position: 'relative' }}>
               <input 
-                ref={pinInputRef}
+                ref={setPinInputRef}
                 autoFocus
                 type={showPassword ? "text" : "password"} 
                 className="form-input"

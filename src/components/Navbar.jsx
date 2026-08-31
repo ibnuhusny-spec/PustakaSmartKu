@@ -148,7 +148,11 @@ export default function Navbar({
 
           {/* Unified Single Admin Portal Drawer Button */}
           <button
-            onClick={onOpenAdminPortal}
+            onClick={(e) => {
+              e.preventDefault();
+              if (e.currentTarget) e.currentTarget.blur();
+              onOpenAdminPortal();
+            }}
             className={`nav-tab ${activeTab === 'admin_portal' ? 'active' : ''}`}
             style={{
               padding: '8px 16px',
