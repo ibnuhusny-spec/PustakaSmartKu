@@ -187,9 +187,8 @@ export default function App() {
   // Open Admin Portal (ALWAYS mandate PIN verification if not currently authed)
   const handleOpenAdminPortal = () => {
     stopSpeech();
-    if (isAdminAuthed) {
-      setActiveTab('admin_portal');
-    } else {
+    setActiveTab('admin_portal');
+    if (!isAdminAuthed && settings?.enableAdminPin !== false) {
       setIsAdminPinModalOpen(true);
     }
   };
@@ -341,6 +340,8 @@ export default function App() {
             members={members}
             transactions={transactions}
             attendance={attendance}
+            isAdminAuthed={isAdminAuthed}
+            onAuthenticateAdmin={handleAdminPinSuccess}
             onRefreshData={refreshData}
             onOpenReceipt={handleOpenReceipt}
             onOpenCardPrinter={handleOpenCardPrinter}
