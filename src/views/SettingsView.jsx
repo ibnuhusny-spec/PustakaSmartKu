@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2, Mail, Server, Network, Wifi } from 'lucide-react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2, Mail, Server, Network, Wifi, Eye, EyeOff } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault, getServerUrl, setServerUrl, checkServerConnection, syncLocalToSqliteServer } from '../services/db';
 import { getTrialDaysRemaining, validateDynamicLicenseKey } from '../services/licenseService';
 
 export default function SettingsView({ settings, onRefreshData, onReplaySplash }) {
   const [formData, setFormData] = useState({ ...settings });
+  const [showAdminPinText, setShowAdminPinText] = useState(false);
   const [licenseInput, setLicenseInput] = useState('');
+  
+  // Keep form data in sync if settings prop updates externally
+  useEffect(() => {
+    if (settings) {
+      setFormData(prev => ({ ...settings, ...prev }));
+    }
+  }, [settings]);
   
   // Server State
   const [serverUrlInput, setServerUrlInput] = useState(getServerUrl());
@@ -285,19 +293,55 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
             </p>
 
             {formData.enableAdminPin && (
-              <div style={{ maxWidth: '360px' }}>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={formData.adminPin !== undefined ? formData.adminPin : 'PustakaSmart2026'}
-                  onChange={e => setFormData({ ...formData, adminPin: e.target.value })}
-                  placeholder="Masukkan PIN Admin Baru..."
-                  style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '1px', fontFamily: 'var(--font-mono)', color: '#fb7185', background: '#1e293b' }}
-                  autoComplete="off"
-                  required
-                />
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>
-                  💡 <em>PIN Bawaan Pabrik:</em> <strong>PustakaSmart2026</strong>. Ubah PIN ini untuk keamanan maksimal!
+              <div style={{ maxWidth: '400px' }}>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    id="admin-pin-input-field"
+                    name="adminPin"
+                    type={showAdminPinText ? "text" : "password"} 
+                    className="form-input" 
+                    value={formData.adminPin ?? 'PustakaSmart2026'}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setFormData(prev => ({ ...prev, adminPin: val }));
+                    }}
+                    placeholder="Ketik PIN / Password Admin Baru..."
+                    style={{
+                      fontSize: '1.05rem',
+                      fontWeight: 800,
+                      letterSpacing: showAdminPinText ? '1px' : '3px',
+                      fontFamily: 'var(--font-mono)',
+                      color: '#fb7185',
+                      background: '#1e293b',
+                      paddingRight: '45px'
+                    }}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPinText(!showAdminPinText)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '4px'
+                    }}
+                    title={showAdminPinText ? "Sembunyikan Password" : "Tampilkan Password"}
+                  >
+                    {showAdminPinText ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px' }}>
+                  💡 <em>PIN Bawaan Pabrik:</em> <strong>PustakaSmart2026</strong>. Ubah PIN ini lalu klik <strong>Simpan Pengaturan Sekolah</strong> di bawah!
                 </div>
               </div>
             )}
