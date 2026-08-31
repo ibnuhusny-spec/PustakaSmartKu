@@ -25,43 +25,53 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      setPinInput('');
-      setErrorMessage('');
+    if (!isOpen) return;
 
-      const focusInput = () => {
+    setPinInput('');
+    setErrorMessage('');
+
+    const forceFocus = () => {
+      try {
+        if (typeof window !== 'undefined') window.focus();
         if (pinInputRef.current) {
-          try {
-            pinInputRef.current.focus();
-          } catch (e) {}
+          pinInputRef.current.focus();
         }
-      };
+      } catch (e) {}
+    };
 
-      focusInput();
-      const t1 = setTimeout(focusInput, 50);
-      const t2 = setTimeout(focusInput, 150);
-      const t3 = setTimeout(focusInput, 300);
+    forceFocus();
+    requestAnimationFrame(forceFocus);
+    const t1 = setTimeout(forceFocus, 50);
+    const t2 = setTimeout(forceFocus, 150);
 
-      // Keyboard Listener: If user types while modal is open, auto-focus input
-      const handleGlobalKeyDown = (e) => {
-        if (e.target && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-          if (pinInputRef.current) {
-            try {
-              pinInputRef.current.focus();
-            } catch (err) {}
-          }
-        }
-      };
+    // 100ms Continuous Focus Enforcer while modal is open
+    const focusInterval = setInterval(() => {
+      if (pinInputRef.current && document.activeElement !== pinInputRef.current) {
+        try {
+          if (typeof window !== 'undefined') window.focus();
+          pinInputRef.current.focus();
+        } catch (e) {}
+      }
+    }, 100);
 
-      window.addEventListener('keydown', handleGlobalKeyDown);
+    // Keyboard Listener: If user types while modal is open, auto-focus input
+    const handleGlobalKeyDown = (e) => {
+      if (pinInputRef.current && document.activeElement !== pinInputRef.current) {
+        try {
+          if (typeof window !== 'undefined') window.focus();
+          pinInputRef.current.focus();
+        } catch (err) {}
+      }
+    };
 
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-        window.removeEventListener('keydown', handleGlobalKeyDown);
-      };
-    }
+    window.addEventListener('keydown', handleGlobalKeyDown);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearInterval(focusInterval);
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
