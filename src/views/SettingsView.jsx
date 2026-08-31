@@ -20,10 +20,11 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
 
   const handleSave = async (e) => {
     e.preventDefault();
-    await saveSettings(formData);
+    const saved = await saveSettings(formData);
     await syncLocalToSqliteServer();
     onRefreshData();
-    alert('Pengaturan sekolah, Email Resmi, PIN Admin, logo instansi, & sistem perpustakaan berhasil disimpan!');
+    setFormData(saved);
+    alert('🎉 BERHASIL! Pengaturan sekolah, Email Resmi, PIN Admin Baru, logo instansi, & sistem perpustakaan tersimpan permanen di Database SQLite!');
   };
 
   const handleSaveServerUrl = (e) => {

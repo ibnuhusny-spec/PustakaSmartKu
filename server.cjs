@@ -231,11 +231,21 @@ app.get('/api/settings', async (req, res) => {
     const rows = await dbAll('SELECT * FROM settings');
     const settings = {};
     rows.forEach(r => {
-      try {
-        settings[r.key] = JSON.parse(r.value);
-      } catch (e) {
-        settings[r.key] = r.value;
+      let val = r.value;
+      if (typeof val === 'string') {
+        try {
+          val = JSON.parse(val);
+        } catch (e) {
+          val = r.value;
+        }
       }
+      if (typeof val === 'string') {
+        val = val.trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+      }
+      settings[r.key] = val;
     });
     res.json(settings);
   } catch (err) {
@@ -247,7 +257,8 @@ app.post('/api/settings', async (req, res) => {
   try {
     const newSettings = req.body;
     for (const key in newSettings) {
-      const valStr = JSON.stringify(newSettings[key]);
+      const val = newSettings[key];
+      const valStr = typeof val === 'string' ? val : JSON.stringify(val);
       await dbRun(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, [key, valStr]);
     }
     res.json({ success: true });

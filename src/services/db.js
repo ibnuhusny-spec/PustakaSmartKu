@@ -279,6 +279,12 @@ export const getSettings = () => {
     const data = localStorage.getItem(KEYS.SETTINGS);
     const parsed = data !== null ? JSON.parse(data) : DEFAULT_SETTINGS;
     const merged = { ...DEFAULT_SETTINGS, ...parsed };
+    
+    // Clean string values if they accidentally have surrounding quotes
+    if (typeof merged.adminPin === 'string') {
+      merged.adminPin = merged.adminPin.trim().replace(/^["']|["']$/g, '');
+    }
+
     if (!merged.logoUrl || merged.logoUrl === '' || merged.logoUrl.includes('placeholder')) {
       merged.logoUrl = '/perpustakaansmart.png';
     }
@@ -292,7 +298,11 @@ export const getSettings = () => {
 };
 
 export const saveSettings = async (newSettings) => {
-  const merged = { ...getSettings(), ...newSettings };
+  const current = getSettings();
+  const merged = { ...current, ...newSettings };
+  if (typeof merged.adminPin === 'string') {
+    merged.adminPin = merged.adminPin.trim().replace(/^["']|["']$/g, '');
+  }
   if (!merged.logoUrl) {
     merged.logoUrl = '/perpustakaansmart.png';
   }

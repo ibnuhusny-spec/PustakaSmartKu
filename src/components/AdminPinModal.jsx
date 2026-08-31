@@ -28,8 +28,8 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const cleanInput = pinInput.trim();
-    const correctPin = (adminPin || 'PustakaSmart2026').trim();
+    const cleanInput = pinInput.trim().replace(/^["']|["']$/g, '');
+    const correctPin = (adminPin || 'PustakaSmart2026').trim().replace(/^["']|["']$/g, '');
 
     // Verify against actual configured admin PIN (or fallback PustakaSmart2026)
     if (cleanInput === correctPin) {
@@ -99,8 +99,6 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
                 type={showPassword ? "text" : "password"} 
                 className="form-input"
                 value={pinInput}
-                onMouseDown={e => e.stopPropagation()}
-                onClick={e => e.stopPropagation()}
                 onChange={e => {
                   setPinInput(e.target.value);
                   if (errorMessage) setErrorMessage('');
