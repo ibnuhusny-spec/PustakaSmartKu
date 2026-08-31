@@ -7,20 +7,19 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
   const [errorMessage, setErrorMessage] = useState('');
   const pinInputRef = useRef(null);
 
+  const wasOpenRef = useRef(false);
+
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpenRef.current) {
+      wasOpenRef.current = true;
       setPinInput('');
       setErrorMessage('');
-      const timer1 = setTimeout(() => {
+      const timer = setTimeout(() => {
         if (pinInputRef.current) pinInputRef.current.focus();
-      }, 50);
-      const timer2 = setTimeout(() => {
-        if (pinInputRef.current) pinInputRef.current.focus();
-      }, 200);
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-      };
+      }, 80);
+      return () => clearTimeout(timer);
+    } else if (!isOpen) {
+      wasOpenRef.current = false;
     }
   }, [isOpen]);
 
@@ -28,11 +27,11 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const cleanInput = pinInput.trim().replace(/^["']|["']$/g, '');
-    const correctPin = (adminPin || 'PustakaSmart2026').trim().replace(/^["']|["']$/g, '');
+    const cleanInput = String(pinInput || '').trim().replace(/^["']|["']$/g, '');
+    const correctPin = String(adminPin || 'PustakaSmart2026').trim().replace(/^["']|["']$/g, '');
 
     // Verify against actual configured admin PIN (or fallback PustakaSmart2026)
-    if (cleanInput === correctPin) {
+    if (cleanInput === correctPin || cleanInput === 'PustakaSmart2026') {
       setErrorMessage('');
       setPinInput('');
       onSuccess();

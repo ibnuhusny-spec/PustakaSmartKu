@@ -289,10 +289,11 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                 <input 
                   type="text" 
                   className="form-input" 
-                  value={formData.adminPin || 'PustakaSmart2026'}
+                  value={formData.adminPin !== undefined ? formData.adminPin : 'PustakaSmart2026'}
                   onChange={e => setFormData({ ...formData, adminPin: e.target.value })}
                   placeholder="Masukkan PIN Admin Baru..."
                   style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '1px', fontFamily: 'var(--font-mono)', color: '#fb7185', background: '#1e293b' }}
+                  autoComplete="off"
                   required
                 />
                 <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>
