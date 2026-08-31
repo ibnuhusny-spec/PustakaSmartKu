@@ -27,9 +27,24 @@ function createWindow() {
     minHeight: 700,
     title: "PustakaSmart RFID - Client-Server SQLite School Library System",
     icon: path.join(__dirname, 'public/perpustakaansmart.png'),
+    show: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
+    }
+  });
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    mainWindow.focus();
+    if (mainWindow.webContents) {
+      mainWindow.webContents.focus();
+    }
+  });
+
+  mainWindow.on('focus', () => {
+    if (mainWindow.webContents) {
+      mainWindow.webContents.focus();
     }
   });
 
