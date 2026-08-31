@@ -1,10 +1,26 @@
 // Electron Main Process Launcher with SQLite Express Server for PustakaSmart RFID
 
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 const { fork } = require('child_process');
 
 let serverProcess = null;
+let mainWindow = null;
+
+function forceActivateWindow() {
+  if (mainWindow) {
+    try {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.setAlwaysOnTop(true);
+      mainWindow.focus();
+      mainWindow.setAlwaysOnTop(false);
+      if (mainWindow.webContents) {
+        mainWindow.webContents.focus();
+      }
+    } catch (e) {}
+  }
+}
 
 // Start Embedded Express + SQLite Server in background thread
 function startBackendServer() {
@@ -21,7 +37,7 @@ function startBackendServer() {
 
 function createWindow() {
   const iconPath = path.join(__dirname, 'public/icon.ico');
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 1024,
@@ -36,11 +52,7 @@ function createWindow() {
   });
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    mainWindow.focus();
-    if (mainWindow.webContents) {
-      mainWindow.webContents.focus();
-    }
+    forceActivateWindow();
   });
 
   mainWindow.on('focus', () => {
@@ -59,6 +71,10 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
   }
 }
+
+ipcMain.on('app-force-focus', () => {
+  forceActivateWindow();
+});
 
 app.whenReady().then(() => {
   startBackendServer();

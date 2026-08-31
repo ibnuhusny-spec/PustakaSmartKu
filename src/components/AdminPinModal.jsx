@@ -32,7 +32,15 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
 
     const forceFocus = () => {
       try {
-        if (typeof window !== 'undefined') window.focus();
+        if (typeof window !== 'undefined') {
+          window.focus();
+          if (window.require) {
+            try {
+              const { ipcRenderer } = window.require('electron');
+              ipcRenderer.send('app-force-focus');
+            } catch (err) {}
+          }
+        }
         if (pinInputRef.current) {
           pinInputRef.current.focus();
         }
