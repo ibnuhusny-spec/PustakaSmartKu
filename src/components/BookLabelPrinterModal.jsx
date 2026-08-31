@@ -91,6 +91,19 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
       {/* CSS for Print Mode */}
       <style>{`
         @media print {
+          @page {
+            size: auto;
+            margin: 0mm;
+          }
+          html, body {
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           body * {
             visibility: hidden !important;
           }
@@ -102,9 +115,14 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
             background: white !important;
-            padding: 0.5cm !important;
+            padding: 4mm !important;
             margin: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
           }
           .no-print {
             display: none !important;
@@ -363,11 +381,22 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
 
                     {/* Optional Logo & Header */}
                     {showLogo && (
-                      <div style={{ padding: '2px 4px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderBottom: '1px solid #e2e8f0' }}>
+                      <div style={{ padding: '3px 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px', borderBottom: '1px solid #cbd5e1', width: '100%', minHeight: '18px' }}>
                         {logoUrl && (
-                          <img src={logoUrl} alt="Logo" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
+                          <img src={logoUrl} alt="Logo" style={{ width: '13px', height: '13px', objectFit: 'contain', flexShrink: 0 }} />
                         )}
-                        <span style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '85px' }}>
+                        <span style={{
+                          fontSize: (headerTitle || '').length > 22 ? '5.5px' : ((headerTitle || '').length > 15 ? '6.5px' : '7.5px'),
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          color: '#1e293b',
+                          textAlign: 'center',
+                          lineHeight: 1.1,
+                          wordBreak: 'break-word',
+                          flex: 1,
+                          maxHeight: '22px',
+                          overflow: 'hidden'
+                        }}>
                           {headerTitle || 'PERPUSTAKAAN'}
                         </span>
                       </div>

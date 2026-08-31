@@ -12,6 +12,7 @@ dist
 dist-ssr
 dist_desktop
 dist_exe
+dist_app
 *.local
 
 # Editor directories and files
