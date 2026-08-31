@@ -30,7 +30,7 @@ import DdcPickerModal from '../components/DdcPickerModal';
 import BookLabelPrinterModal from '../components/BookLabelPrinterModal';
 import { recommendDdcFromTitle, BOOK_CATEGORIES } from '../services/ddcData';
 
-export default function BooksView({ books, onRefreshData }) {
+export default function BooksView({ books, settings, onRefreshData }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -1082,6 +1082,7 @@ export default function BooksView({ books, onRefreshData }) {
         isOpen={isLabelPrinterOpen}
         onClose={() => setIsLabelPrinterOpen(false)}
         books={booksForLabel}
+        settings={settings}
       />
 
     </div>

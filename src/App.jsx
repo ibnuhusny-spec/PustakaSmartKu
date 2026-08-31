@@ -317,7 +317,7 @@ export default function App() {
         )}
 
         {activeTab === 'catalog' && (
-          <CatalogView books={books} />
+          <CatalogView books={books} settings={settings} />
         )}
 
         {activeTab === 'attendance' && (

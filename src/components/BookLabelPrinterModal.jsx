@@ -13,13 +13,19 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
   const [useStockCopies, setUseStockCopies] = useState(false);
   const [copiesPerBook, setCopiesPerBook] = useState(1);
 
+  // Dynamic Header Title from Admin Settings (defaults to libraryName or schoolName)
+  const defaultHeader = settings?.libraryName 
+    ? (settings?.schoolName ? `${settings.libraryName} - ${settings.schoolName}` : settings.libraryName)
+    : (settings?.schoolName || 'PERPUSTAKAAN');
+
+  const [headerTitle, setHeaderTitle] = useState(defaultHeader);
+
   if (!isOpen || !books || books.length === 0) return null;
 
   const handlePrint = () => {
     window.print();
   };
 
-  const schoolName = settings?.schoolName || 'PERPUSTAKAAN SMART';
   const logoUrl = settings?.schoolLogoUrl || settings?.logoUrl || defaultLogo;
 
   // Flatten books into individual label entries considering copy count
@@ -208,6 +214,22 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
               </div>
             </div>
 
+            {/* Custom Header Title Input */}
+            <div>
+              <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '6px', display: 'block' }}>Teks Nama Perpustakaan / Sekolah di Label</label>
+              <input
+                type="text"
+                className="form-input"
+                value={headerTitle}
+                onChange={(e) => setHeaderTitle(e.target.value)}
+                placeholder="Contoh: PERPUSTAKAAN SMA... / MAKTABAH..."
+                style={{ fontSize: '0.82rem', padding: '6px 10px' }}
+              />
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                Otomatis terisi dari Nama Perpustakaan / Sekolah di Pengaturan Admin.
+              </div>
+            </div>
+
             {/* Customization Options */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>
               <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '2px', display: 'block' }}>Elemen Tampilan Label</label>
@@ -345,8 +367,8 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
                         {logoUrl && (
                           <img src={logoUrl} alt="Logo" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
                         )}
-                        <span style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80px' }}>
-                          {schoolName}
+                        <span style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '85px' }}>
+                          {headerTitle || 'PERPUSTAKAAN'}
                         </span>
                       </div>
                     )}

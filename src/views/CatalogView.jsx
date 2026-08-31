@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, BookOpen, Layers, MapPin, Eye, FileText, CheckCircle2, X, ExternalLink, Globe, Smartphone, Printer } from 'lucide-react';
 import BookLabelPrinterModal from '../components/BookLabelPrinterModal';
 
-export default function CatalogView({ books }) {
+export default function CatalogView({ books, settings }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [activeEbook, setActiveEbook] = useState(null);
@@ -300,6 +300,7 @@ export default function CatalogView({ books }) {
         isOpen={!!labelBook}
         onClose={() => setLabelBook(null)}
         books={labelBook ? [labelBook] : []}
+        settings={settings}
       />
 
     </div>

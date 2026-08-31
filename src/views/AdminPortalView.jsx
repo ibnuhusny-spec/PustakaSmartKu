@@ -263,7 +263,7 @@ export default function AdminPortalView({
         )}
 
         {adminSubTab === 'books' && (
-          <BooksView books={books} onRefreshData={onRefreshData} />
+          <BooksView books={books} settings={settings} onRefreshData={onRefreshData} />
         )}
 
         {adminSubTab === 'members' && (
