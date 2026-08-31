@@ -23,6 +23,76 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
   if (!isOpen || !books || books.length === 0) return null;
 
   const handlePrint = () => {
+    const printArea = document.getElementById('book-label-print-area');
+    if (!printArea) {
+      window.print();
+      return;
+    }
+
+    try {
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Cetak Label Punggung Buku</title>
+              <style>
+                @page {
+                  size: A4 portrait;
+                  margin: 12mm 10mm 12mm 10mm;
+                }
+                * {
+                  box-sizing: border-box;
+                }
+                html, body {
+                  margin: 0;
+                  padding: 0;
+                  background: #ffffff;
+                  color: #0f172a;
+                  font-family: system-ui, -apple-system, sans-serif;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+                .print-container {
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 12px;
+                  justify-content: flex-start;
+                  align-items: flex-start;
+                }
+                .print-label-item {
+                  break-inside: avoid !important;
+                  page-break-inside: avoid !important;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="print-container">
+                ${printArea.innerHTML}
+              </div>
+              <script>
+                window.onload = () => {
+                  setTimeout(() => {
+                    window.focus();
+                    window.print();
+                    setTimeout(() => {
+                      window.close();
+                    }, 400);
+                  }, 200);
+                };
+              </script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        return;
+      }
+    } catch (e) {}
+
     window.print();
   };
 
@@ -92,8 +162,8 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
       <style>{`
         @media print {
           @page {
-            size: auto;
-            margin: 0mm;
+            size: A4 portrait;
+            margin: 12mm 10mm;
           }
           html, body {
             height: auto !important;
