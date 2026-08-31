@@ -7,8 +7,6 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
   const [errorMessage, setErrorMessage] = useState('');
   const pinInputRef = useRef(null);
 
-  const wasOpenRef = useRef(false);
-
   // Callback Ref: Ensures focus & blinking cursor immediately as soon as DOM element is attached!
   const setPinInputRef = useCallback((node) => {
     if (node) {
@@ -28,11 +26,8 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
 
   useEffect(() => {
     if (isOpen) {
-      if (!wasOpenRef.current) {
-        wasOpenRef.current = true;
-        setPinInput('');
-        setErrorMessage('');
-      }
+      setPinInput('');
+      setErrorMessage('');
 
       const focusInput = () => {
         if (pinInputRef.current) {
@@ -49,7 +44,7 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
 
       // Keyboard Listener: If user types while modal is open, auto-focus input
       const handleGlobalKeyDown = (e) => {
-        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        if (e.target && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
           if (pinInputRef.current) {
             try {
               pinInputRef.current.focus();
@@ -66,8 +61,6 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
         clearTimeout(t3);
         window.removeEventListener('keydown', handleGlobalKeyDown);
       };
-    } else {
-      wasOpenRef.current = false;
     }
   }, [isOpen]);
 
