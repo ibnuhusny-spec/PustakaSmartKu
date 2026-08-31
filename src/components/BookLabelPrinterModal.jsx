@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Printer, X, Tag, Bookmark, Sparkles, Layers, Sliders, CheckSquare, FileText } from 'lucide-react';
+import { Printer, X, Tag, Sliders, Check, FileText } from 'lucide-react';
 import { generateCallNumber, getDdcColor } from '../services/labelService';
 import defaultLogo from '../assets/logo.png';
 
@@ -41,33 +41,24 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
   // Dimensional styles based on selected label size
   const sizeConfig = {
     standard: {
-      widthCm: 3.0,
-      heightCm: 4.0,
       widthPx: '113px',
       heightPx: '151px',
       fontSizeDdc: '0.85rem',
       fontSizeCode: '0.9rem',
-      gridCols: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6',
       labelName: 'Standar Perpusnas (3 x 4 cm)'
     },
     jumbo: {
-      widthCm: 3.5,
-      heightCm: 5.0,
       widthPx: '132px',
       heightPx: '189px',
       fontSizeDdc: '0.95rem',
       fontSizeCode: '1.0rem',
-      gridCols: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5',
       labelName: 'Jumbo (3.5 x 5 cm)'
     },
     compact: {
-      widthCm: 2.5,
-      heightCm: 3.8,
       widthPx: '94px',
       heightPx: '143px',
       fontSizeDdc: '0.75rem',
       fontSizeCode: '0.8rem',
-      gridCols: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7',
       labelName: 'Kecil / Slim (2.5 x 3.8 cm)'
     }
   };
@@ -75,22 +66,36 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
   const currentSize = sizeConfig[labelSize] || sizeConfig.standard;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md overflow-y-auto print:p-0 print:bg-white print:overflow-visible print:static">
+    <div 
+      className="modal-overlay" 
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1500,
+        background: 'rgba(15, 23, 42, 0.85)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px'
+      }}
+    >
       
-      {/* Dynamic CSS for Print Mode */}
+      {/* CSS for Print Mode */}
       <style>{`
         @media print {
           body * {
-            visibility: hidden;
+            visibility: hidden !important;
           }
           #book-label-print-area, #book-label-print-area * {
-            visibility: visible;
+            visibility: visible !important;
           }
           #book-label-print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
             background: white !important;
             padding: 0.5cm !important;
             margin: 0 !important;
@@ -98,65 +103,76 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
           .no-print {
             display: none !important;
           }
-          .page-break-after {
-            page-break-after: always;
-          }
           .print-label-item {
-            break-inside: avoid;
-            page-break-inside: avoid;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
         }
       `}</style>
 
-      <div className="relative w-full max-w-6xl bg-slate-800 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden my-8 print:border-none print:shadow-none print:w-full print:max-w-none print:bg-white print:m-0">
+      <div 
+        className="modal-container glass-card" 
+        style={{
+          maxWidth: '1150px',
+          width: '96%',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          background: '#0f172a',
+          border: '1px solid var(--border-color)',
+          borderRadius: '20px',
+          padding: '24px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+        }}
+      >
         
-        {/* Header (Hidden when printing) */}
-        <div className="flex items-center justify-between px-6 py-4 bg-slate-900/70 border-b border-slate-700/60 no-print">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/30">
-              <Tag size={22} />
+        {/* Modal Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(37, 99, 235, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+              <Printer size={22} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 Cetak Label Punggung Buku
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-medium">
+                <span className="badge badge-purple" style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '12px' }}>
                   {labelItems.length} Label ({books.length} Judul Buku)
                 </span>
               </h2>
-              <p className="text-xs text-slate-400">
-                Format Standar Perpusnas RI &bull; DDC &bull; Pengarang &bull; Judul &bull; Salinan
-              </p>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                Format Standar Perpusnas RI &bull; DDC &bull; 3 Huruf Pengarang &bull; 1 Huruf Judul &bull; Eksemplar
+              </div>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/60 rounded-xl transition-colors"
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px' }}
           >
-            <X size={20} />
+            <X size={22} />
           </button>
         </div>
 
-        {/* Content Area */}
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 print:p-0 print:block">
+        {/* Modal Body: Controls & Preview */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           
-          {/* Controls Panel (Hidden when printing) */}
-          <div className="lg:col-span-1 space-y-5 bg-slate-900/40 p-4 rounded-xl border border-slate-700/50 no-print">
-            <div className="flex items-center gap-2 font-semibold text-white text-sm pb-2 border-b border-slate-700/60">
-              <Sliders size={16} className="text-blue-400" />
-              Pengaturan Cetak
+          {/* Controls Panel */}
+          <div style={{ background: '#1e293b', padding: '18px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            
+            <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+              <Sliders size={16} color="#3b82f6" /> Pengaturan Cetak Label
             </div>
 
             {/* Size Selector */}
             <div>
-              <label className="block text-xs text-slate-400 mb-1.5 font-medium">Ukuran Label</label>
+              <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '6px', display: 'block' }}>Ukuran Kertas Label</label>
               <select
                 value={labelSize}
                 onChange={(e) => setLabelSize(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="form-input"
+                style={{ fontSize: '0.85rem', padding: '8px 12px' }}
               >
-                <option value="standard">Standar Perpusnas (3 x 4 cm)</option>
+                <option value="standard">Standar Perpusnas RI (3 x 4 cm)</option>
                 <option value="jumbo">Jumbo (3.5 x 5 cm)</option>
                 <option value="compact">Slim / Saku (2.5 x 3.8 cm)</option>
               </select>
@@ -164,27 +180,28 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
 
             {/* Copy Count Selector */}
             <div>
-              <label className="block text-xs text-slate-400 mb-1.5 font-medium">Jumlah Salinan Label</label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+              <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '6px', display: 'block' }}>Jumlah Salinan Label</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={useStockCopies}
                     onChange={(e) => setUseStockCopies(e.target.checked)}
-                    className="rounded border-slate-700 text-blue-500 focus:ring-blue-500 bg-slate-800"
+                    style={{ cursor: 'pointer' }}
                   />
-                  Sesuai Stok Buku (c.1, c.2, dst.)
+                  Sesuai Stok Fisik Buku (c.1, c.2, dst.)
                 </label>
                 {!useStockCopies && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">Salinan per buku:</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Jumlah per buku:</span>
                     <input
                       type="number"
                       min="1"
-                      max="20"
+                      max="50"
                       value={copiesPerBook}
                       onChange={(e) => setCopiesPerBook(parseInt(e.target.value) || 1)}
-                      className="w-16 bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-2.5 py-1 text-center"
+                      className="form-input"
+                      style={{ width: '70px', padding: '4px 8px', fontSize: '0.85rem', textAlign: 'center' }}
                     />
                   </div>
                 )}
@@ -192,88 +209,90 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
             </div>
 
             {/* Customization Options */}
-            <div className="space-y-2.5 pt-2 border-t border-slate-700/60">
-              <label className="block text-xs text-slate-400 font-medium mb-1">Tampilan Label</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>
+              <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '2px', display: 'block' }}>Elemen Tampilan Label</label>
               
-              <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:text-white">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={showColorBar}
                   onChange={(e) => setShowColorBar(e.target.checked)}
-                  className="rounded border-slate-700 text-blue-500 focus:ring-blue-500 bg-slate-800"
+                  style={{ cursor: 'pointer' }}
                 />
                 Pita Warna DDC (Color Bar)
               </label>
 
-              <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:text-white">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={showCategoryPrefix}
                   onChange={(e) => setShowCategoryPrefix(e.target.checked)}
-                  className="rounded border-slate-700 text-blue-500 focus:ring-blue-500 bg-slate-800"
+                  style={{ cursor: 'pointer' }}
                 />
                 Prefiks Kode Kategori (F/R/J)
               </label>
 
-              <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:text-white">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={showLogo}
                   onChange={(e) => setShowLogo(e.target.checked)}
-                  className="rounded border-slate-700 text-blue-500 focus:ring-blue-500 bg-slate-800"
+                  style={{ cursor: 'pointer' }}
                 />
-                Logo Perpustakaan
+                Logo Perpustakaan Sekolah
               </label>
 
-              <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:text-white">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={showBarcode}
                   onChange={(e) => setShowBarcode(e.target.checked)}
-                  className="rounded border-slate-700 text-blue-500 focus:ring-blue-500 bg-slate-800"
+                  style={{ cursor: 'pointer' }}
                 />
-                ID Buku / Barcode Mini
+                ID Buku / Mini Barcode
               </label>
 
-              <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer hover:text-white">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={showCutLines}
                   onChange={(e) => setShowCutLines(e.target.checked)}
-                  className="rounded border-slate-700 text-blue-500 focus:ring-blue-500 bg-slate-800"
+                  style={{ cursor: 'pointer' }}
                 />
                 Garis Bantu Potong (Cut Margins)
               </label>
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-4 border-t border-slate-700/60 space-y-2">
+            <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button
                 onClick={handlePrint}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all"
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '12px', fontSize: '0.92rem', fontWeight: 800, background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
                 <Printer size={18} />
-                Cetak Label Sekarang
+                Cetak Label Sekarang (Ctrl + P)
               </button>
               
               <button
                 onClick={onClose}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl border border-slate-700 transition-colors"
+                className="btn btn-secondary"
+                style={{ width: '100%', padding: '8px', fontSize: '0.82rem', borderRadius: '10px' }}
               >
-                Batal / Kembali
+                Tutup Window
               </button>
             </div>
+
           </div>
 
-          {/* Preview & Print Area */}
-          <div className="lg:col-span-3 bg-slate-950/60 p-4 rounded-xl border border-slate-700/50 min-h-[400px] flex flex-col justify-between print:p-0 print:border-none print:bg-white print:min-h-0">
+          {/* Preview & Printable Area */}
+          <div style={{ background: '#090d16', padding: '18px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '420px' }}>
             
-            <div className="mb-3 flex items-center justify-between no-print">
-              <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-                <FileText size={14} className="text-blue-400" />
-                Pratinjau Cetak ({currentSize.labelName})
+            <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <span style={{ fontSize: '0.82rem', color: '#60a5fa', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FileText size={15} /> Pratinjau Kertas Cetak ({currentSize.labelName})
               </span>
-              <span className="text-xs text-slate-500">
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                 Gunakan Kertas Stiker A4 atau Label Roll Printer
               </span>
             </div>
@@ -281,79 +300,84 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
             {/* Printable Container */}
             <div 
               id="book-label-print-area" 
-              className="w-full bg-slate-900/40 p-4 rounded-lg border border-slate-800 overflow-x-auto print:p-0 print:border-none print:bg-white"
+              style={{
+                width: '100%',
+                background: '#ffffff',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #cbd5e1',
+                maxHeight: '480px',
+                overflowY: 'auto'
+              }}
             >
-              <div className="flex flex-wrap gap-3 justify-start print:gap-2">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'flex-start' }}>
                 {labelItems.map((item, idx) => (
                   <div
                     key={`${item.book.id}-${item.copyIndex}-${idx}`}
-                    className={`print-label-item bg-white text-slate-900 flex flex-col justify-between overflow-hidden relative transition-all ${
-                      showCutLines ? 'border border-dashed border-slate-400 print:border-slate-400' : 'border border-slate-200'
-                    }`}
+                    className="print-label-item"
                     style={{
                       width: currentSize.widthPx,
                       height: currentSize.heightPx,
                       boxSizing: 'border-box',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      backgroundColor: '#ffffff',
+                      color: '#0f172a',
+                      border: showCutLines ? '1px dashed #94a3b8' : '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      overflow: 'hidden',
+                      position: 'relative',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.08)'
                     }}
                   >
                     {/* Top DDC Color Bar */}
                     {showColorBar && (
                       <div 
-                        className="w-full h-2 print:h-2" 
-                        style={{ backgroundColor: item.ddcColor }}
+                        style={{ width: '100%', height: '8px', backgroundColor: item.ddcColor }} 
                         title={`DDC Color: ${item.book.ddc}`}
                       />
                     )}
 
                     {/* Optional Logo & Header */}
                     {showLogo && (
-                      <div className="px-1.5 pt-1 flex items-center justify-center gap-1 text-[8px] font-bold text-slate-700 border-b border-slate-200 pb-0.5">
+                      <div style={{ padding: '2px 4px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderBottom: '1px solid #e2e8f0' }}>
                         {logoUrl && (
-                          <img src={logoUrl} alt="Logo" className="w-3.5 h-3.5 object-contain" />
+                          <img src={logoUrl} alt="Logo" style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
                         )}
-                        <span className="truncate max-w-[80px] uppercase text-[7px]">
+                        <span style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80px' }}>
                           {schoolName}
                         </span>
                       </div>
                     )}
 
                     {/* Main Call Number Content */}
-                    <div className="flex-1 flex flex-col items-center justify-center px-1 py-1 text-center font-mono font-bold leading-tight select-text">
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 800, lineHeight: 1.2 }}>
                       {/* Line 1: DDC Code */}
-                      <div 
-                        className="text-slate-950 font-black tracking-tight border-b border-slate-300 w-full pb-0.5 mb-0.5"
-                        style={{ fontSize: currentSize.fontSizeDdc }}
-                      >
+                      <div style={{ fontSize: currentSize.fontSizeDdc, color: '#020617', fontWeight: 900, borderBottom: '1px solid #cbd5e1', width: '100%', paddingBottom: '2px', marginBottom: '2px' }}>
                         {item.callNumber.ddcLine}
                       </div>
 
                       {/* Line 2: 3-Letter Author Code (Capital) */}
-                      <div 
-                        className="text-slate-900 font-extrabold uppercase tracking-wider"
-                        style={{ fontSize: currentSize.fontSizeCode }}
-                      >
+                      <div style={{ fontSize: currentSize.fontSizeCode, color: '#0f172a', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         {item.callNumber.authorLine}
                       </div>
 
                       {/* Line 3: 1-Letter Title Code (lowercase) */}
-                      <div 
-                        className="text-slate-800 font-bold lowercase my-0.5"
-                        style={{ fontSize: currentSize.fontSizeCode }}
-                      >
+                      <div style={{ fontSize: currentSize.fontSizeCode, color: '#334155', fontWeight: 800, textTransform: 'lowercase', margin: '2px 0' }}>
                         {item.callNumber.titleLine}
                       </div>
 
                       {/* Line 4: Copy / Exemplar */}
-                      <div className="text-[10px] text-slate-600 font-semibold mt-0.5">
+                      <div style={{ fontSize: '10px', color: '#475569', fontWeight: 700 }}>
                         {item.callNumber.copyLine}
                       </div>
                     </div>
 
                     {/* Optional Footer: Book ID / Mini Barcode */}
                     {showBarcode && (
-                      <div className="bg-slate-100 border-t border-slate-200 px-1 py-0.5 text-center">
-                        <div className="text-[7px] text-slate-600 font-mono truncate">
+                      <div style={{ backgroundColor: '#f1f5f9', borderTop: '1px solid #e2e8f0', padding: '2px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '7px', color: '#475569', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           ID: {item.book.id || 'BK-001'}
                         </div>
                       </div>
@@ -363,14 +387,15 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
               </div>
             </div>
 
-            {/* Footer Notice (Hidden when printing) */}
-            <div className="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between no-print">
-              <span>Tips: Saat mencetak, pastikan memilih skala <strong>100% (Actual Size)</strong> di dialog printer.</span>
+            {/* Footer Notice */}
+            <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--border-color)', fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <span>💡 Tips: Pilih skala <strong>100% (Actual Size)</strong> pada jendela printer untuk ukuran persis.</span>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 font-medium"
+                className="btn btn-emerald"
+                style={{ fontSize: '0.78rem', padding: '4px 12px' }}
               >
-                <Printer size={15} /> Cetak
+                <Printer size={14} /> Cetak
               </button>
             </div>
 
