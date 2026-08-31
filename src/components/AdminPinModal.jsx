@@ -79,15 +79,12 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
       onClick={e => {
         if (e.target === e.currentTarget) onClose();
       }}
-      onMouseDown={e => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      style={{ zIndex: 1200 }}
+      style={{ zIndex: 3000, backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
     >
       <div 
         className="modal-container" 
         onClick={handleContainerClick}
-        style={{ maxWidth: '420px', padding: '24px', borderRadius: '16px', cursor: 'text' }}
+        style={{ maxWidth: '420px', padding: '24px', borderRadius: '16px', cursor: 'text', zIndex: 3001 }}
       >
         
         {/* Header */}
