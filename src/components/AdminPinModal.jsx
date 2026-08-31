@@ -10,15 +10,42 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (isOpen && !wasOpenRef.current) {
-      wasOpenRef.current = true;
-      setPinInput('');
-      setErrorMessage('');
-      const timer = setTimeout(() => {
-        if (pinInputRef.current) pinInputRef.current.focus();
-      }, 80);
-      return () => clearTimeout(timer);
-    } else if (!isOpen) {
+    if (isOpen) {
+      if (!wasOpenRef.current) {
+        wasOpenRef.current = true;
+        setPinInput('');
+        setErrorMessage('');
+      }
+
+      const focusInput = () => {
+        if (pinInputRef.current && document.activeElement !== pinInputRef.current) {
+          pinInputRef.current.focus();
+        }
+      };
+
+      focusInput();
+      const t1 = setTimeout(focusInput, 50);
+      const t2 = setTimeout(focusInput, 150);
+      const t3 = setTimeout(focusInput, 300);
+
+      // Keyboard Listener: If user types while modal is open, auto-focus input
+      const handleGlobalKeyDown = (e) => {
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          if (pinInputRef.current) {
+            pinInputRef.current.focus();
+          }
+        }
+      };
+
+      window.addEventListener('keydown', handleGlobalKeyDown);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+        window.removeEventListener('keydown', handleGlobalKeyDown);
+      };
+    } else {
       wasOpenRef.current = false;
     }
   }, [isOpen]);
@@ -40,6 +67,12 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
     }
   };
 
+  const handleContainerClick = () => {
+    if (pinInputRef.current) {
+      pinInputRef.current.focus();
+    }
+  };
+
   return (
     <div 
       className="modal-overlay" 
@@ -53,9 +86,8 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
     >
       <div 
         className="modal-container" 
-        onClick={e => e.stopPropagation()}
-        onMouseDown={e => e.stopPropagation()}
-        style={{ maxWidth: '420px', padding: '24px', borderRadius: '16px' }}
+        onClick={handleContainerClick}
+        style={{ maxWidth: '420px', padding: '24px', borderRadius: '16px', cursor: 'text' }}
       >
         
         {/* Header */}
@@ -79,7 +111,10 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
               <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Akses Fitur Khusus Petugas</div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onClose(); }} 
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+          >
             <X size={20} />
           </button>
         </div>
@@ -95,6 +130,7 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
             <div style={{ position: 'relative' }}>
               <input 
                 ref={pinInputRef}
+                autoFocus
                 type={showPassword ? "text" : "password"} 
                 className="form-input"
                 value={pinInput}
@@ -116,7 +152,7 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={(e) => { e.stopPropagation(); setShowPassword(!showPassword); }}
                 style={{
                   position: 'absolute',
                   right: '12px',
@@ -149,10 +185,20 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
           )}
 
           <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-            <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
+            <button 
+              type="button" 
+              className="btn btn-secondary" 
+              onClick={(e) => { e.stopPropagation(); onClose(); }} 
+              style={{ flex: 1 }}
+            >
               Batal
             </button>
-            <button type="submit" className="btn btn-emerald" style={{ flex: 1, fontWeight: 800 }}>
+            <button 
+              type="submit" 
+              className="btn btn-emerald" 
+              onClick={(e) => e.stopPropagation()} 
+              style={{ flex: 1, fontWeight: 800 }}
+            >
               <ShieldCheck size={18} /> Buka Akses Admin
             </button>
           </div>
