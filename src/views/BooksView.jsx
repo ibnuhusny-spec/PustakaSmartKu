@@ -22,10 +22,12 @@ import {
   ExternalLink,
   Eye,
   Globe,
-  Smartphone
+  Smartphone,
+  Printer
 } from 'lucide-react';
 import { saveBook, deleteBook, clearSampleBooks, importBooksCSV, syncLocalToSqliteServer } from '../services/db';
 import DdcPickerModal from '../components/DdcPickerModal';
+import BookLabelPrinterModal from '../components/BookLabelPrinterModal';
 import { recommendDdcFromTitle, BOOK_CATEGORIES } from '../services/ddcData';
 
 export default function BooksView({ books, onRefreshData }) {
@@ -34,6 +36,9 @@ export default function BooksView({ books, onRefreshData }) {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDdcPickerOpen, setIsDdcPickerOpen] = useState(false);
   const [activeEbook, setActiveEbook] = useState(null);
+  const [selectedBookIds, setSelectedBookIds] = useState([]);
+  const [isLabelPrinterOpen, setIsLabelPrinterOpen] = useState(false);
+  const [booksForLabel, setBooksForLabel] = useState([]);
   const [csvText, setCsvText] = useState('');
   const [formNotice, setFormNotice] = useState('');
   const titleInputRef = useRef(null);
@@ -312,6 +317,38 @@ export default function BooksView({ books, onRefreshData }) {
     b.isbn.includes(searchTerm)
   );
 
+  const handleToggleSelectBook = (id) => {
+    setSelectedBookIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllBooks = () => {
+    if (selectedBookIds.length === filteredBooks.length && filteredBooks.length > 0) {
+      setSelectedBookIds([]);
+    } else {
+      setSelectedBookIds(filteredBooks.map(b => b.id));
+    }
+  };
+
+  const handleOpenLabelPrinterForSelected = () => {
+    const selected = books.filter(b => selectedBookIds.includes(b.id));
+    if (selected.length === 0) return;
+    setBooksForLabel(selected);
+    setIsLabelPrinterOpen(true);
+  };
+
+  const handleOpenLabelPrinterSingle = (book) => {
+    setBooksForLabel([book]);
+    setIsLabelPrinterOpen(true);
+  };
+
+  const handleOpenLabelPrinterAll = () => {
+    if (books.length === 0) return;
+    setBooksForLabel(books);
+    setIsLabelPrinterOpen(true);
+  };
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
       
@@ -365,6 +402,9 @@ export default function BooksView({ books, onRefreshData }) {
             <button onClick={() => setIsImportModalOpen(true)} className="btn btn-emerald">
               <FileSpreadsheet size={16} /> Import Data Buku (CSV/Excel)
             </button>
+            <button onClick={handleOpenLabelPrinterAll} className="btn btn-primary" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}>
+              <Printer size={16} /> Cetak Label Punggung (Semua Buku)
+            </button>
             <button onClick={() => handleOpenModal()} className="btn btn-primary">
               <Plus size={16} /> Tambah Buku / PDF E-Book Baru
             </button>
@@ -391,9 +431,21 @@ export default function BooksView({ books, onRefreshData }) {
             />
           </div>
 
-          <button onClick={handleClearAllSampleBooks} className="btn btn-rose" style={{ fontSize: '0.8rem' }}>
-            <Trash2 size={14} /> Kosongkan Data Sample Buku
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {selectedBookIds.length > 0 && (
+              <button 
+                onClick={handleOpenLabelPrinterForSelected} 
+                className="btn btn-primary"
+                style={{ backgroundColor: '#2563eb', color: '#ffffff', fontWeight: 600, fontSize: '0.82rem', padding: '8px 14px' }}
+              >
+                <Printer size={15} /> Cetak Label Terpilih ({selectedBookIds.length} Buku)
+              </button>
+            )}
+
+            <button onClick={handleClearAllSampleBooks} className="btn btn-rose" style={{ fontSize: '0.8rem' }}>
+              <Trash2 size={14} /> Kosongkan Data Sample Buku
+            </button>
+          </div>
         </div>
 
         {/* Table */}
@@ -401,6 +453,15 @@ export default function BooksView({ books, onRefreshData }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                <th style={{ padding: '12px', width: '36px', textAlign: 'center' }}>
+                  <input 
+                    type="checkbox"
+                    checked={filteredBooks.length > 0 && selectedBookIds.length === filteredBooks.length}
+                    onChange={handleSelectAllBooks}
+                    title="Pilih Semua Buku"
+                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                  />
+                </th>
                 <th style={{ padding: '12px' }}>Sampul & Judul Buku</th>
                 <th style={{ padding: '12px' }}>Penulis & Penerbit</th>
                 <th style={{ padding: '12px', color: '#fbbf24' }}>Nomor DDC</th>
@@ -423,7 +484,15 @@ export default function BooksView({ books, onRefreshData }) {
                   const hasDigitalPdf = Boolean(b.pdfUrl || b.ebookContent);
 
                   return (
-                    <tr key={b.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <tr key={b.id} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: selectedBookIds.includes(b.id) ? 'rgba(59, 130, 246, 0.08)' : 'transparent' }}>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <input 
+                          type="checkbox"
+                          checked={selectedBookIds.includes(b.id)}
+                          onChange={() => handleToggleSelectBook(b.id)}
+                          style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                        />
+                      </td>
                       <td style={{ padding: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <img src={b.coverUrl} alt={b.title} style={{ width: '40px', height: '56px', objectFit: 'cover', borderRadius: '4px' }} />
                         <div>
@@ -486,7 +555,15 @@ export default function BooksView({ books, onRefreshData }) {
                         )}
                       </td>
                       <td style={{ padding: '12px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          <button 
+                            onClick={() => handleOpenLabelPrinterSingle(b)}
+                            className="btn btn-emerald"
+                            style={{ fontSize: '0.78rem', padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            title="Cetak Label Punggung Buku"
+                          >
+                            <Printer size={14} /> Label
+                          </button>
                           <button 
                             onClick={() => handleOpenModal(b)}
                             className="btn btn-secondary"
@@ -850,9 +927,24 @@ export default function BooksView({ books, onRefreshData }) {
 
               </div>
 
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Batal</button>
-                <button type="submit" className="btn btn-primary">Simpan Buku & E-Book</button>
+              <div className="modal-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                {formData.id && (
+                  <button 
+                    type="button" 
+                    className="btn btn-emerald" 
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      handleOpenLabelPrinterSingle(formData);
+                    }}
+                    style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <Printer size={16} /> 🏷️ Cetak Label Punggung Buku Ini
+                  </button>
+                )}
+                <div style={{ display: 'flex', gap: '10px', marginLeft: 'auto' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Batal</button>
+                  <button type="submit" className="btn btn-primary">Simpan Buku & E-Book</button>
+                </div>
               </div>
             </form>
           </div>
@@ -983,6 +1075,13 @@ export default function BooksView({ books, onRefreshData }) {
           setFormData(prev => ({ ...prev, ddc: item.code, category: item.category }));
         }}
         currentCode={formData.ddc}
+      />
+
+      {/* BOOK SPINE LABEL PRINTER MODAL */}
+      <BookLabelPrinterModal
+        isOpen={isLabelPrinterOpen}
+        onClose={() => setIsLabelPrinterOpen(false)}
+        books={booksForLabel}
       />
 
     </div>

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Search, BookOpen, Layers, MapPin, Eye, FileText, CheckCircle2, X, ExternalLink, Globe, Smartphone } from 'lucide-react';
+import { Search, BookOpen, Layers, MapPin, Eye, FileText, CheckCircle2, X, ExternalLink, Globe, Smartphone, Printer } from 'lucide-react';
+import BookLabelPrinterModal from '../components/BookLabelPrinterModal';
 
 export default function CatalogView({ books }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [activeEbook, setActiveEbook] = useState(null);
   const [detailBook, setDetailBook] = useState(null);
+  const [labelBook, setLabelBook] = useState(null);
 
   const categories = ['Semua', 'Novel / Fiksi', 'Sejarah / Sastra', 'Sains & Teknologi', 'Komputer & IT', 'Pengembangan Diri', 'Agama & Keimanan'];
 
@@ -210,6 +212,13 @@ export default function CatalogView({ books }) {
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', padding: '10px', borderRadius: 'var(--radius-sm)' }}>
                   {detailBook.description || 'Kisah lengkap mengenai topik buku yang informatif dan bermanfaat bagi siswa.'}
                 </p>
+                <button 
+                  onClick={() => setLabelBook(detailBook)}
+                  className="btn btn-emerald"
+                  style={{ fontSize: '0.85rem', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '12px', width: '100%', justifyContent: 'center', fontWeight: 700 }}
+                >
+                  <Printer size={16} /> 🏷️ Cetak Label Punggung Buku Standar Perpusnas
+                </button>
               </div>
             </div>
           </div>
@@ -241,17 +250,16 @@ export default function CatalogView({ books }) {
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="btn btn-emerald"
-                      style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+                      style={{ fontSize: '0.78rem', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                     >
-                      <ExternalLink size={14} /> Buka PDF Layar Penuh / Tab Baru
+                      <ExternalLink size={14} /> Buka PDF Tab Baru ↗
                     </a>
                   </div>
 
                   <iframe 
                     src={formatPdfUrlForEmbedding(activeEbook.pdfUrl)} 
                     title={activeEbook.title}
-                    allow="autoplay"
-                    style={{ width: '100%', height: '540px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#ffffff' }}
+                    style={{ width: '100%', height: '560px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: '#1e293b' }}
                   />
 
                   <div style={{ marginTop: '10px', fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
@@ -286,6 +294,13 @@ export default function CatalogView({ books }) {
           </div>
         </div>
       )}
+
+      {/* Book Spine Label Printer Modal */}
+      <BookLabelPrinterModal 
+        isOpen={!!labelBook}
+        onClose={() => setLabelBook(null)}
+        books={labelBook ? [labelBook] : []}
+      />
 
     </div>
   );
