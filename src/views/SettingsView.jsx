@@ -26,13 +26,16 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
   const daysRemaining = getTrialDaysRemaining(formData.trialStartDate);
   const isPro = formData.licenseType === 'pro';
 
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
+
   const handleSave = async (e) => {
     e.preventDefault();
     const saved = await saveSettings(formData);
     await syncLocalToSqliteServer();
     onRefreshData();
     setFormData(saved);
-    alert('🎉 BERHASIL! Pengaturan sekolah, Email Resmi, PIN Admin Baru, logo instansi, & sistem perpustakaan tersimpan permanen di Database SQLite!');
+    setSaveSuccessMsg('🎉 BERHASIL! Pengaturan sekolah, Email Resmi, PIN Admin Baru, logo instansi, & sistem perpustakaan tersimpan permanen!');
+    setTimeout(() => setSaveSuccessMsg(''), 5000);
   };
 
   const handleSaveServerUrl = (e) => {
@@ -621,6 +624,28 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
             </div>
 
           </div>
+
+          {saveSuccessMsg && (
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))',
+              border: '1.5px solid #10b981',
+              color: '#34d399',
+              padding: '12px 18px',
+              borderRadius: '12px',
+              fontSize: '0.92rem',
+              fontWeight: 800,
+              marginTop: '20px',
+              textAlign: 'center',
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}>
+              <CheckCircle2 size={20} />
+              <span>{saveSuccessMsg}</span>
+            </div>
+          )}
 
           <div style={{ marginTop: '20px', textAlign: 'right' }}>
             <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px' }}>

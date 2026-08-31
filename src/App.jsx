@@ -356,13 +356,16 @@ export default function App() {
       </main>
 
       {/* Modals & Floating Banners */}
-      <AdminPinModal 
-        isOpen={isAdminPinModalOpen}
-        onClose={() => setIsAdminPinModalOpen(false)}
-        onSuccess={handleAdminPinSuccess}
-        adminPin={settings?.adminPin || 'PustakaSmart2026'}
-        targetTabName="Portal Petugas Admin"
-      />
+      {isAdminPinModalOpen && (
+        <AdminPinModal 
+          key={`pin-modal-${settings?.adminPin || ''}-${Date.now()}`}
+          isOpen={isAdminPinModalOpen}
+          onClose={() => setIsAdminPinModalOpen(false)}
+          onSuccess={handleAdminPinSuccess}
+          adminPin={settings?.adminPin || 'PustakaSmart2026'}
+          targetTabName="Portal Petugas Admin"
+        />
+      )}
 
       <LicenseModal 
         isOpen={isLicenseModalOpen}
