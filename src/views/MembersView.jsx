@@ -329,17 +329,21 @@ export default function MembersView({
   };
 
   const handleOpenTopUp = (member) => {
-    setTopUpData({ memberId: member.id, name: member.name, amount: 10000 });
+    setTopUpData({ memberId: member.id, name: member.name, rfidUid: member.rfidUid, amount: '10000' });
     setIsTopUpOpen(true);
   };
 
   const handleSaveTopUp = (e) => {
     e.preventDefault();
-    if (topUpData.amount <= 0) return;
-    updateMemberBalance(topUpData.memberId, topUpData.amount);
+    const parsedAmount = parseInt(String(topUpData.amount).replace(/[^0-9]/g, ''), 10);
+    if (!parsedAmount || parsedAmount <= 0) {
+      alert('Masukkan nominal top up yang valid (minimal Rp 500)!');
+      return;
+    }
+    updateMemberBalance(topUpData.memberId || topUpData.rfidUid, parsedAmount);
     onRefreshData();
     setIsTopUpOpen(false);
-    alert(`Isi ulang saldo kartu Rp ${topUpData.amount.toLocaleString('id-ID')} untuk ${topUpData.name} BERHASIL!`);
+    alert(`Isi ulang saldo kartu Rp ${parsedAmount.toLocaleString('id-ID')} untuk ${topUpData.name} BERHASIL!`);
   };
 
   const handleFileUpload = (e) => {
@@ -603,24 +607,32 @@ export default function MembersView({
                 <div className="form-group">
                   <label className="form-label">Nominal Top Up (Rp) *</label>
                   <input 
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     className="form-input"
-                    value={topUpData.amount}
-                    onChange={e => setTopUpData({ ...topUpData, amount: Number(e.target.value) })}
-                    step="5000"
-                    min="1000"
+                    placeholder="Ketik nominal bebas (contoh: 2000, 5000, 12000)..."
+                    value={topUpData.amount ? String(topUpData.amount).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                    onChange={e => {
+                      const rawDigits = e.target.value.replace(/\D/g, '');
+                      setTopUpData({ ...topUpData, amount: rawDigits });
+                    }}
+                    style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '0.5px', color: '#10b981' }}
+                    autoFocus
                     required
                   />
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    💡 <strong>Bisa ngetik bebas:</strong> Hapus & ketik nominal berapa saja (misal: 2.000, 5.000, 12.000, 15.000, dsb).
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {[10000, 20000, 50000, 100000].map(amt => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginTop: '12px' }}>
+                  {[2000, 5000, 10000, 20000, 50000, 100000].map(amt => (
                     <button 
                       key={amt} 
                       type="button" 
-                      onClick={() => setTopUpData({ ...topUpData, amount: amt })}
+                      onClick={() => setTopUpData({ ...topUpData, amount: String(amt) })}
                       className="btn btn-secondary"
-                      style={{ fontSize: '0.78rem', flex: 1 }}
+                      style={{ fontSize: '0.78rem', padding: '8px 4px', textAlign: 'center' }}
                     >
                       +Rp {amt.toLocaleString('id-ID')}
                     </button>
