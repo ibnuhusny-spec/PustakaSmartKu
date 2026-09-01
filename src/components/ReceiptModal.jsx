@@ -6,7 +6,17 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
   if (!isOpen || !transaction) return null;
 
   const handlePrint = () => {
+    const oldTitle = document.title;
+    try {
+      const cleanMember = (transaction?.memberName || 'Anggota').replace(/[^a-zA-Z0-9]/g, '_');
+      document.title = `Struk_Peminjaman_${cleanMember}_${transaction?.id || 'TX'}`;
+    } catch (e) {}
+
     window.print();
+
+    setTimeout(() => {
+      document.title = oldTitle;
+    }, 1200);
   };
 
   const activeSchoolLogo = (settings?.schoolLogoUrl && settings.schoolLogoUrl.trim()) 
@@ -104,13 +114,18 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
           </div>
         </div>
 
-        <div className="modal-footer no-print" style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-          <button onClick={onClose} className="btn btn-secondary">
-            Tutup
-          </button>
-          <button onClick={handlePrint} className="btn btn-emerald">
-            <Printer size={16} /> Cetak Struk Peminjaman
-          </button>
+        <div className="modal-footer no-print" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: '1.4' }}>
+            💡 <strong>Info:</strong> Nama file struk kini otomatis terisi. Jika menyimpan ke PDF, tombol <strong>Save</strong> di Windows langsung aktif!
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+            <button onClick={onClose} className="btn btn-secondary">
+              Tutup
+            </button>
+            <button onClick={handlePrint} className="btn btn-emerald">
+              <Printer size={16} /> Cetak Struk Peminjaman
+            </button>
+          </div>
         </div>
 
       </div>
