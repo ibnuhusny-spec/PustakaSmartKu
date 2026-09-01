@@ -104,7 +104,7 @@ export default function ImageCropModal({
     <div 
       className="modal-overlay" 
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ zIndex: 1400 }}
+      style={{ zIndex: 4500 }}
     >
       <div 
         className="modal-container glass-card" 

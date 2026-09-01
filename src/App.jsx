@@ -67,24 +67,33 @@ export default function App() {
 
   const refreshData = () => {
     const s = getSettings();
+    let hasChanged = false;
+
     if (!s.logoUrl) {
       s.logoUrl = '/perpustakaansmart.png';
-      saveSettings(s);
+      hasChanged = true;
     }
-    if (!s.adminPin || s.adminPin === '1234') {
+    if (!s.adminPin) {
       s.adminPin = 'PustakaSmart2026';
-      saveSettings(s);
+      hasChanged = true;
     }
     if (!s.schoolEmail) {
       s.schoolEmail = 'perpustakaan@sditqurratuayun.sch.id';
-      saveSettings(s);
+      hasChanged = true;
     }
-    if (!s.maxLoanDays || s.maxLoanDays === 7) {
+    if (!s.maxLoanDays) {
       s.maxLoanDays = 3;
+      hasChanged = true;
+    }
+    if (s.enableAdminPin === undefined) {
+      s.enableAdminPin = true;
+      hasChanged = true;
+    }
+
+    if (hasChanged) {
       saveSettings(s);
     }
-    s.enableAdminPin = true;
-    saveSettings(s);
+
     setSettings(s);
     setBooks(getBooks());
     setMembers(getMembers());

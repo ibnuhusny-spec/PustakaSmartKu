@@ -232,6 +232,13 @@ app.get('/api/settings', async (req, res) => {
     const settings = {};
     rows.forEach(r => {
       let val = r.value;
+      if (r.key === 'adminPin') {
+        if (typeof val === 'string') {
+          val = val.trim().replace(/^["']|["']$/g, '');
+        }
+        settings[r.key] = String(val || 'PustakaSmart2026');
+        return;
+      }
       if (typeof val === 'string') {
         try {
           val = JSON.parse(val);
@@ -257,7 +264,10 @@ app.post('/api/settings', async (req, res) => {
   try {
     const newSettings = req.body;
     for (const key in newSettings) {
-      const val = newSettings[key];
+      let val = newSettings[key];
+      if (key === 'adminPin') {
+        val = String(val || 'PustakaSmart2026').trim().replace(/^["']|["']$/g, '');
+      }
       const valStr = typeof val === 'string' ? val : JSON.stringify(val);
       await dbRun(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, [key, valStr]);
     }
@@ -593,7 +603,11 @@ app.post('/api/sync-bulk', async (req, res) => {
 
     if (settings) {
       for (const key in settings) {
-        const valStr = JSON.stringify(settings[key]);
+        let val = settings[key];
+        if (key === 'adminPin') {
+          val = String(val || 'PustakaSmart2026').trim().replace(/^["']|["']$/g, '');
+        }
+        const valStr = typeof val === 'string' ? val : JSON.stringify(val);
         await dbRun(`INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`, [key, valStr]);
       }
     }

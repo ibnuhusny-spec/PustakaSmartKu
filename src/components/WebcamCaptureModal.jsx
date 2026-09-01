@@ -195,7 +195,7 @@ export default function WebcamCaptureModal({
     <div 
       className="modal-overlay" 
       onClick={e => { if (e.target === e.currentTarget) { stopCameraStream(); onClose(); } }}
-      style={{ zIndex: 1300 }}
+      style={{ zIndex: 4000 }}
     >
       <div 
         className="modal-container glass-card" 
