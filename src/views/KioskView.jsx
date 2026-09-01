@@ -133,7 +133,13 @@ export default function KioskView({
 
   const handleReturn = (tx, payWithWallet) => {
     try {
-      const updatedTx = returnBookTransaction(tx.id, payWithWallet);
+      const res = returnBookTransaction(tx.id, payWithWallet);
+      if (res && res.success === false) {
+        throw new Error(res.message || 'Gagal melakukan pengembalian');
+      }
+
+      const updatedTx = res.transaction || res;
+
       onRefreshData();
       playSoundEffect('success');
       confetti({ particleCount: 60, spread: 80 });

@@ -5,19 +5,22 @@ import defaultLogo from '../assets/logo.png';
 export default function ReceiptModal({ isOpen, onClose, transaction, member, settings }) {
   if (!isOpen || !transaction) return null;
 
+  // Safely extract actual transaction object if wrapped in { transaction: tx }
+  const actualTx = transaction?.transaction || transaction;
+
   // Detect whether this is a Return or Loan receipt
-  const isReturn = transaction.status === 'Dikembalikan' || !!transaction.returnDate;
+  const isReturn = actualTx.status === 'Dikembalikan' || !!actualTx.returnDate;
 
   // Robust data fallbacks so fields are NEVER blank
-  const notaNo = transaction.id || transaction.txId || 'TX-273131';
-  const issueDate = transaction.issueDate || transaction.date || new Date().toISOString().split('T')[0];
-  const returnDate = transaction.returnDate || new Date().toISOString().split('T')[0];
-  const dueDate = transaction.dueDate || '-';
+  const notaNo = actualTx.id || actualTx.txId || 'TX-273131';
+  const issueDate = actualTx.issueDate || actualTx.date || new Date().toISOString().split('T')[0];
+  const returnDate = actualTx.returnDate || new Date().toISOString().split('T')[0];
+  const dueDate = actualTx.dueDate || '-';
   
-  const borrowerName = transaction.memberName || member?.name || 'Siswa / Anggota';
-  const borrowerClass = member?.classGrade || member?.role || transaction.classGrade || 'Siswa';
-  const rfidUid = transaction.rfidUid || member?.rfidUid || '-';
-  const bookTitle = transaction.bookTitle || 'Buku Perpustakaan';
+  const borrowerName = actualTx.memberName || member?.name || 'Siswa / Anggota';
+  const borrowerClass = member?.classGrade || member?.role || actualTx.classGrade || 'Siswa';
+  const rfidUid = actualTx.rfidUid || member?.rfidUid || '-';
+  const bookTitle = actualTx.bookTitle || 'Buku Perpustakaan';
 
   const handlePrint = () => {
     const oldTitle = document.title;
@@ -126,8 +129,8 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
                 ) : (
                   <>
                     <span>Batas Pinjam: {dueDate}</span>
-                    <span style={{ fontWeight: 700, color: transaction.status === 'Terlambat' ? '#ef4444' : '#10b981' }}>
-                      [{transaction.status || 'Dipinjam'}]
+                    <span style={{ fontWeight: 700, color: actualTx.status === 'Terlambat' ? '#ef4444' : '#10b981' }}>
+                      [{actualTx.status || 'Dipinjam'}]
                     </span>
                   </>
                 )}
@@ -135,14 +138,14 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
             </div>
 
             {/* Fine Section */}
-            {transaction.fineAmount > 0 && (
+            {actualTx.fineAmount > 0 && (
               <div style={{ background: '#fef2f2', padding: '10px 12px', borderRadius: '6px', border: '1px solid #fecaca', marginBottom: '14px', color: '#991b1b' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}>
                   <span>Denda Keterlambatan:</span>
-                  <span>Rp {Number(transaction.fineAmount).toLocaleString('id-ID')}</span>
+                  <span>Rp {Number(actualTx.fineAmount).toLocaleString('id-ID')}</span>
                 </div>
                 <div style={{ fontSize: '0.72rem', marginTop: '2px', color: '#b91c1c' }}>
-                  Status Pelunasan: {transaction.finePaid ? 'LUNAS (E-Wallet RFID)' : 'BELUM LUNAS'}
+                  Status Pelunasan: {actualTx.finePaid ? 'LUNAS (E-Wallet RFID)' : 'BELUM LUNAS'}
                 </div>
               </div>
             )}
