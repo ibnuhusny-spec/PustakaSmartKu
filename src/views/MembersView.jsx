@@ -333,17 +333,23 @@ export default function MembersView({
     setIsTopUpOpen(true);
   };
 
-  const handleSaveTopUp = (e) => {
+  const handleSaveTopUp = async (e) => {
     e.preventDefault();
     const parsedAmount = parseInt(String(topUpData.amount).replace(/[^0-9]/g, ''), 10);
     if (!parsedAmount || parsedAmount <= 0) {
       alert('Masukkan nominal top up yang valid (minimal Rp 500)!');
       return;
     }
-    updateMemberBalance(topUpData.memberId || topUpData.rfidUid, parsedAmount);
-    onRefreshData();
+    const targetKey = topUpData.memberId || topUpData.rfidUid;
+    const res = updateMemberBalance(targetKey, parsedAmount);
+    if (res && res.success === false) {
+      alert(`GAGAL: ${res.message || 'Gagal mengupdate saldo anggota'}`);
+      return;
+    }
+    await onRefreshData();
     setIsTopUpOpen(false);
-    alert(`Isi ulang saldo kartu Rp ${parsedAmount.toLocaleString('id-ID')} untuk ${topUpData.name} BERHASIL!`);
+    const newTotal = res?.member?.balance !== undefined ? res.member.balance : 'terupdate';
+    alert(`BERHASIL! Top up saldo Rp ${parsedAmount.toLocaleString('id-ID')} untuk ${topUpData.name} telah disimpan.\n\nTotal Saldo RFID Sekarang: Rp ${typeof newTotal === 'number' ? newTotal.toLocaleString('id-ID') : newTotal}`);
   };
 
   const handleFileUpload = (e) => {

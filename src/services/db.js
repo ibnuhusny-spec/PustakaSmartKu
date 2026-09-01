@@ -600,11 +600,26 @@ export const returnBookTransaction = (txId, payFineViaRfid = false) => {
   return { success: true, transaction: tx, fine, member };
 };
 
-export const updateMemberBalance = (rfidUid, amountToAdd) => {
-  const member = getMemberByRfid(rfidUid);
-  if (!member) return { success: false, message: 'Anggota tidak ditemukan' };
+export const updateMemberBalance = (memberIdOrRfid, amountToAdd) => {
+  if (!memberIdOrRfid) return { success: false, message: 'ID Anggota / RFID tidak valid' };
 
-  member.balance = (member.balance || 0) + amountToAdd;
+  const members = getMembers();
+  const cleanId = String(memberIdOrRfid).trim().toLowerCase();
+
+  const member = members.find(m => 
+    m && (
+      (m.id && String(m.id).trim().toLowerCase() === cleanId) ||
+      (m.rfidUid && String(m.rfidUid).trim().toLowerCase() === cleanId)
+    )
+  );
+
+  if (!member) {
+    console.warn('updateMemberBalance: Anggota tidak ditemukan untuk ID/RFID:', memberIdOrRfid);
+    return { success: false, message: 'Anggota tidak ditemukan' };
+  }
+
+  const numericAmount = Number(amountToAdd) || 0;
+  member.balance = (Number(member.balance) || 0) + numericAmount;
   updateMember(member);
   return { success: true, member };
 };
