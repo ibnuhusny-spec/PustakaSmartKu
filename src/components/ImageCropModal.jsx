@@ -108,6 +108,8 @@ export default function ImageCropModal({
     >
       <div 
         className="modal-container glass-card" 
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         style={{ maxWidth: mode === 'avatar' ? '460px' : '620px', width: '94%', padding: '22px', borderRadius: '20px' }}
       >
         

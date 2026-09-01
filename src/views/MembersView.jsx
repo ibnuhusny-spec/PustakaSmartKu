@@ -45,6 +45,17 @@ export default function MembersView({
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, memberId: null, memberName: '', isAll: false });
   const nameInputRef = useRef(null);
   const rfidInputRef = useRef(null);
+  const backdropMouseDownRef = useRef(null);
+
+  const handleBackdropMouseDown = (e) => {
+    backdropMouseDownRef.current = e.target;
+  };
+
+  const handleBackdropClick = (e, closeFn) => {
+    if (e.target === e.currentTarget && backdropMouseDownRef.current === e.currentTarget) {
+      closeFn();
+    }
+  };
 
   const handleClearAllMembers = () => {
     setDeleteConfirm({
@@ -596,8 +607,17 @@ export default function MembersView({
 
       {/* TOP UP BALANCE MODAL */}
       {isTopUpOpen && (
-        <div className="modal-overlay" onClick={() => setIsTopUpOpen(false)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+        <div 
+          className="modal-overlay" 
+          onMouseDown={handleBackdropMouseDown} 
+          onClick={e => handleBackdropClick(e, () => setIsTopUpOpen(false))}
+        >
+          <div 
+            className="modal-container" 
+            onMouseDown={e => e.stopPropagation()} 
+            onClick={e => e.stopPropagation()} 
+            style={{ maxWidth: '420px' }}
+          >
             <div className="modal-header">
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CreditCard color="#3b82f6" /> Top Up Saldo Kartu RFID
@@ -656,8 +676,17 @@ export default function MembersView({
 
       {/* IMPORT MEMBERS CSV MODAL */}
       {isImportModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsImportModalOpen(false)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+        <div 
+          className="modal-overlay" 
+          onMouseDown={handleBackdropMouseDown} 
+          onClick={e => handleBackdropClick(e, () => setIsImportModalOpen(false))}
+        >
+          <div 
+            className="modal-container" 
+            onMouseDown={e => e.stopPropagation()} 
+            onClick={e => e.stopPropagation()} 
+            style={{ maxWidth: '600px' }}
+          >
             <div className="modal-header">
               <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FileSpreadsheet color="#10b981" /> Import Data Anggota dari CSV / Excel
@@ -711,7 +740,11 @@ export default function MembersView({
 
       {/* ADD / EDIT MEMBER MODAL WITH REAL STUDENT PHOTO UPLOAD */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
+        <div 
+          className="modal-overlay" 
+          onMouseDown={handleBackdropMouseDown} 
+          onClick={e => handleBackdropClick(e, handleCloseModal)}
+        >
           <div 
             className="modal-container" 
             onClick={e => e.stopPropagation()} 
@@ -1047,8 +1080,17 @@ export default function MembersView({
 
       {/* DELETE CONFIRMATION REACT MODAL (NO NATIVE BROWSER DIALOG FREEZE) */}
       {deleteConfirm.isOpen && (
-        <div className="modal-overlay" onClick={() => setDeleteConfirm({ isOpen: false, memberId: null, memberName: '', isAll: false })}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', textAlign: 'center', padding: '28px 24px' }}>
+        <div 
+          className="modal-overlay" 
+          onMouseDown={handleBackdropMouseDown} 
+          onClick={e => handleBackdropClick(e, () => setDeleteConfirm({ isOpen: false, memberId: null, memberName: '', isAll: false }))}
+        >
+          <div 
+            className="modal-container" 
+            onMouseDown={e => e.stopPropagation()} 
+            onClick={e => e.stopPropagation()} 
+            style={{ maxWidth: '440px', textAlign: 'center', padding: '28px 24px' }}
+          >
             <div style={{
               width: '56px',
               height: '56px',

@@ -42,6 +42,17 @@ export default function BooksView({ books, settings, onRefreshData }) {
   const [csvText, setCsvText] = useState('');
   const [formNotice, setFormNotice] = useState('');
   const titleInputRef = useRef(null);
+  const backdropMouseDownRef = useRef(null);
+
+  const handleBackdropMouseDown = (e) => {
+    backdropMouseDownRef.current = e.target;
+  };
+
+  const handleBackdropClick = (e, closeFn) => {
+    if (e.target === e.currentTarget && backdropMouseDownRef.current === e.currentTarget) {
+      closeFn();
+    }
+  };
 
   const [formData, setFormData] = useState({
     id: '',
@@ -594,12 +605,8 @@ export default function BooksView({ books, settings, onRefreshData }) {
       {isModalOpen && (
         <div 
           className="modal-overlay" 
-          onClick={e => {
-            if (e.target === e.currentTarget) setIsModalOpen(false);
-          }}
-          onMouseDown={e => {
-            if (e.target === e.currentTarget) setIsModalOpen(false);
-          }}
+          onMouseDown={handleBackdropMouseDown} 
+          onClick={e => handleBackdropClick(e, () => setIsModalOpen(false))}
         >
           <div 
             className="modal-container" 
@@ -963,13 +970,13 @@ export default function BooksView({ books, settings, onRefreshData }) {
               <button onClick={() => setActiveEbook(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={20}/></button>
             </div>
             
-            <div className="modal-body" style={{ padding: '16px' }}>
+            <div className="modal-body" style={{ padding: '20px 24px' }}>
               
               {activeEbook.pdfUrl ? (
                 <div>
-                  <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                    <span style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Globe size={16} /> File PDF E-Book Universal Online
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+                    <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                      Dokumen PDF Digital: <strong>{activeEbook.title}</strong> ({activeEbook.author})
                     </span>
                     
                     <a 
@@ -1026,8 +1033,17 @@ export default function BooksView({ books, settings, onRefreshData }) {
 
       {/* MODAL IMPORT BUKU DARI CSV/EXCEL */}
       {isImportModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsImportModalOpen(false)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} style={{ maxWidth: '650px' }}>
+        <div 
+          className="modal-overlay" 
+          onMouseDown={handleBackdropMouseDown} 
+          onClick={e => handleBackdropClick(e, () => setIsImportModalOpen(false))}
+        >
+          <div 
+            className="modal-container" 
+            onClick={e => e.stopPropagation()} 
+            onMouseDown={e => e.stopPropagation()} 
+            style={{ maxWidth: '650px' }}
+          >
             <div className="modal-header">
               <h3 style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FileSpreadsheet color="#10b981" /> Impor Data Buku Massal (CSV / Excel)

@@ -43,8 +43,8 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
     : ((settings?.logoUrl && settings.logoUrl.trim() && settings.logoUrl.startsWith('data:')) ? settings.logoUrl : defaultLogo);
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 3500 }}>
-      <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }} style={{ zIndex: 3500 }}>
+      <div className="modal-container" onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
         
         <div className="modal-header no-print">
           <h3 style={{ margin: 0, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '8px' }}>

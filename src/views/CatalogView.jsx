@@ -8,6 +8,17 @@ export default function CatalogView({ books, settings }) {
   const [activeEbook, setActiveEbook] = useState(null);
   const [detailBook, setDetailBook] = useState(null);
   const [labelBook, setLabelBook] = useState(null);
+  const backdropMouseDownRef = React.useRef(null);
+
+  const handleBackdropMouseDown = (e) => {
+    backdropMouseDownRef.current = e.target;
+  };
+
+  const handleBackdropClick = (e, closeFn) => {
+    if (e.target === e.currentTarget && backdropMouseDownRef.current === e.currentTarget) {
+      closeFn();
+    }
+  };
 
   const categories = ['Semua', 'Novel / Fiksi', 'Sejarah / Sastra', 'Sains & Teknologi', 'Komputer & IT', 'Pengembangan Diri', 'Agama & Keimanan'];
 
@@ -185,8 +196,17 @@ export default function CatalogView({ books, settings }) {
 
       {/* DETAIL MODAL */}
       {detailBook && (
-        <div className="modal-overlay" onClick={() => setDetailBook(null)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+        <div 
+          className="modal-overlay" 
+          onMouseDown={handleBackdropMouseDown} 
+          onClick={e => handleBackdropClick(e, () => setDetailBook(null))}
+        >
+          <div 
+            className="modal-container" 
+            onClick={e => e.stopPropagation()} 
+            onMouseDown={e => e.stopPropagation()} 
+            style={{ maxWidth: '600px' }}
+          >
             <div className="modal-header">
               <h3 style={{ margin: 0 }}>Detail Informasi Buku</h3>
               <button onClick={() => setDetailBook(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}><X size={18}/></button>
@@ -227,8 +247,17 @@ export default function CatalogView({ books, settings }) {
 
       {/* UNIVERSAL E-BOOK DIGITAL READER PREVIEW MODAL */}
       {activeEbook && (
-        <div className="modal-overlay" onClick={() => setActiveEbook(null)}>
-          <div className="modal-container" onClick={e => e.stopPropagation()} style={{ maxWidth: '880px', width: '92%' }}>
+        <div 
+          className="modal-overlay" 
+          onMouseDown={handleBackdropMouseDown} 
+          onClick={e => handleBackdropClick(e, () => setActiveEbook(null))}
+        >
+          <div 
+            className="modal-container" 
+            onClick={e => e.stopPropagation()} 
+            onMouseDown={e => e.stopPropagation()} 
+            style={{ maxWidth: '880px', width: '92%' }}
+          >
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <FileText color="#10b981" size={22} />

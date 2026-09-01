@@ -199,6 +199,8 @@ export default function WebcamCaptureModal({
     >
       <div 
         className="modal-container glass-card" 
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         style={{ maxWidth: mode === 'avatar' ? '480px' : '620px', width: '92%', padding: '24px', borderRadius: '20px' }}
       >
         

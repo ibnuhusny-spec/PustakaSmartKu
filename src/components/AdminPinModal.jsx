@@ -99,7 +99,8 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
     }
   };
 
-  const handleContainerClick = () => {
+  const handleContainerClick = (e) => {
+    e.stopPropagation();
     if (pinInputRef.current) {
       pinInputRef.current.focus();
     }
@@ -115,6 +116,7 @@ export default function AdminPinModal({ isOpen, onClose, onSuccess, adminPin = '
     >
       <div 
         className="modal-container" 
+        onMouseDown={e => e.stopPropagation()}
         onClick={handleContainerClick}
         style={{ maxWidth: '420px', padding: '24px', borderRadius: '16px', cursor: 'text', zIndex: 3001 }}
       >
