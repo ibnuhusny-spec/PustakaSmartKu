@@ -34,7 +34,8 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
 
     setTimeout(() => {
       document.title = oldTitle;
-    }, 1200);
+      if (onClose) onClose();
+    }, 400);
   };
 
   const activeSchoolLogo = (settings?.schoolLogoUrl && settings.schoolLogoUrl.trim()) 

@@ -18,6 +18,7 @@ export default function CardPrinterModal({ isOpen, onClose, member, settings }) 
 
   const handlePrint = () => {
     window.print();
+    setTimeout(() => { if (onClose) onClose(); }, 400);
   };
 
   const idLabelText = settings?.idFieldLabel || 'NISN / NIP';

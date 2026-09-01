@@ -89,11 +89,13 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
           </html>
         `);
         printWindow.document.close();
+        setTimeout(() => { if (onClose) onClose(); }, 500);
         return;
       }
     } catch (e) {}
 
     window.print();
+    setTimeout(() => { if (onClose) onClose(); }, 400);
   };
 
   const logoUrl = settings?.schoolLogoUrl || settings?.logoUrl || defaultLogo;
