@@ -5,6 +5,7 @@ import {
   INITIAL_TRANSACTIONS,
   INITIAL_ATTENDANCE
 } from './initialData';
+import { validateDynamicLicenseKey } from './licenseService';
 
 const KEYS = {
   SETTINGS: 'pustakasmart_settings',
@@ -273,7 +274,7 @@ export const initDB = () => {
   syncLocalToSqliteServer();
 };
 
-// SETTINGS API - Always enforce default logo and Pro License
+// SETTINGS API
 export const getSettings = () => {
   try {
     const data = localStorage.getItem(KEYS.SETTINGS);
@@ -288,12 +289,17 @@ export const getSettings = () => {
     if (!merged.logoUrl || merged.logoUrl === '' || merged.logoUrl.includes('placeholder')) {
       merged.logoUrl = '/perpustakaansmart.png';
     }
-    // Enforce Pro License System-Wide
-    merged.licenseType = 'pro';
-    merged.licenseKey = merged.licenseKey || 'PUSTAKASMART-PRO-FULL';
+
+    // Dynamic Pro vs Trial License System Validation
+    const key = (merged.licenseKey || '').trim().toUpperCase();
+    const isProValid = key === 'PUSTAKASMART-PRO-FULL' ||
+                       key === 'PUSTAKASMART-FULL-MASTER-KEY-2026' ||
+                       validateDynamicLicenseKey(key, merged.schoolName, merged.schoolEmail);
+
+    merged.licenseType = isProValid ? 'pro' : 'trial';
     return merged;
   } catch (e) {
-    return { ...DEFAULT_SETTINGS, licenseType: 'pro' };
+    return { ...DEFAULT_SETTINGS, licenseType: 'trial' };
   }
 };
 

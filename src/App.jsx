@@ -231,19 +231,23 @@ export default function App() {
 
   // Global RFID Scan Listener
   useEffect(() => {
-    const handleRfidScan = (e) => {
+    const handleRfidScan = async (e) => {
       const scanData = e.detail;
       if (!scanData || !scanData.rfidUid) return;
       setRfidScanEvent(scanData);
 
       const member = getMemberByRfid(scanData.rfidUid);
-      // Auto attendance voice ONLY triggers on Attendance View tab!
+      // Auto attendance recording triggers when autoAttendanceOnTap is enabled and on Attendance tab!
       if (member && settings.autoAttendanceOnTap && activeTab === 'attendance') {
-        const result = recordAttendance(scanData.rfidUid, 'Presensi Tap Mandiri');
-        if (result.success) {
+        const result = await recordAttendance(scanData.rfidUid, 'Presensi Tap Mandiri');
+        if (result && result.success) {
           setActiveAttendanceToast(result.attendance);
           if (settings.enableVoice) {
-            speakText(`Selamat datang di perpustakaan, ${member.name}!`);
+            if (result.isFirstToday) {
+              speakText(`Selamat datang di perpustakaan, ${member.name}!`);
+            } else {
+              speakText(`Presensi ${member.name} untuk hari ini sudah tercatat sebelumnya.`);
+            }
           }
           refreshData();
         }
