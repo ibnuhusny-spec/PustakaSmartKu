@@ -40,6 +40,7 @@ export default function AdminPortalView({
   prefilledUidToRegister,
   onClearPrefilledUid,
   onLockAdminSession,
+  onToggleAdminPin,
   onReplaySplash
 }) {
   const [adminSubTab, setAdminSubTab] = useState('overview');
@@ -148,14 +149,30 @@ export default function AdminPortalView({
 
         </div>
 
-        {/* Lock Session Action */}
-        <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+        {/* Lock Session & PIN Mode Controls */}
+        <div style={{ marginTop: '20px', paddingTop: '14px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          
           <button
+            type="button"
+            onClick={onToggleAdminPin}
+            className={`btn ${settings?.enableAdminPin === false ? 'btn-emerald' : 'btn-secondary'}`}
+            style={{ width: '100%', justifyContent: 'center', padding: '9px 8px', fontSize: '0.78rem', fontWeight: 800 }}
+            title="Klik untuk mengubah mode proteksi PIN"
+          >
+            {settings?.enableAdminPin === false ? (
+              <>🔓 Mode Bebas (PIN Nonaktif)</>
+            ) : (
+              <>🔒 Mode Terkunci (PIN Aktif)</>
+            )}
+          </button>
+
+          <button
+            type="button"
             onClick={onLockAdminSession}
             className="btn btn-rose"
-            style={{ width: '100%', justifyContent: 'center', padding: '10px', fontSize: '0.82rem' }}
+            style={{ width: '100%', justifyContent: 'center', padding: '9px 8px', fontSize: '0.78rem', fontWeight: 800 }}
           >
-            <LogOut size={16} /> Keluar / Kunci Admin
+            <LogOut size={15} /> Kunci Portal Admin Sekarang
           </button>
         </div>
 

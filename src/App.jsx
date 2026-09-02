@@ -182,18 +182,13 @@ export default function App() {
     };
   }, [settings]);
 
-  // Tab Navigation Switcher: Auto-lock Admin session when navigating away from Admin Portal
+  // Tab Navigation Switcher: Seamless navigation without repetitive PIN prompts
   const handleTabChange = (newTab) => {
     stopSpeech();
-    if (activeTab === 'admin_portal' && newTab !== 'admin_portal') {
-      // Auto-lock Admin Portal session as soon as librarian leaves to a public tab!
-      setIsAdminAuthed(false);
-      sessionStorage.removeItem('pustakasmart_admin_authed');
-    }
     setActiveTab(newTab);
   };
 
-  // Open Admin Portal (ALWAYS mandate PIN verification if not currently authed)
+  // Open Admin Portal (PIN required only if enabled and not currently authed)
   const handleOpenAdminPortal = () => {
     stopSpeech();
     if (isAdminAuthed || settings?.enableAdminPin === false) {
@@ -209,6 +204,18 @@ export default function App() {
     sessionStorage.setItem('pustakasmart_admin_authed', 'true');
     setIsAdminPinModalOpen(false);
     setActiveTab('admin_portal');
+  };
+
+  const handleToggleAdminPin = async () => {
+    const nextState = settings?.enableAdminPin === false ? true : false;
+    const updated = { ...settings, enableAdminPin: nextState };
+    setSettings(updated);
+    await saveSettings(updated);
+    await syncLocalToSqliteServer();
+    if (nextState === false) {
+      setIsAdminAuthed(true);
+    }
+    refreshData();
   };
 
   const handleLockAdminSession = () => {
@@ -372,6 +379,7 @@ export default function App() {
             prefilledUidToRegister={prefilledUidToRegister}
             onClearPrefilledUid={() => setPrefilledUidToRegister(null)}
             onLockAdminSession={handleLockAdminSession}
+            onToggleAdminPin={handleToggleAdminPin}
             onReplaySplash={() => setShowSplash(true)}
           />
         )}
