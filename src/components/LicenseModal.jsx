@@ -40,7 +40,7 @@ export default function LicenseModal({
 
   if (!isOpen) return null;
 
-  const regId = generateSchoolRegistrationId(schoolName, schoolEmail, hddSerial);
+  const regId = generateSchoolRegistrationId(schoolName, schoolEmail);
 
   const handleCopyRegId = () => {
     navigator.clipboard.writeText(regId);
@@ -63,7 +63,7 @@ export default function LicenseModal({
       onActivateSuccess(keyInput.trim().toUpperCase());
       alert(`🎉 SELAMAT! Lisensi Resmi PustakaSmart RFID Pro Aktif Selamanya Khusus Untuk "${schoolName}" (${schoolEmail})!`);
     } else {
-      setErrorMessage(`❌ Kode Lisensi tidak cocok! Kode lisensi terikat khusus pada Serial Harddisk Physical Laptop (${hddSerial || 'HID'}), Email (${schoolEmail}) & Nama Sekolah (${schoolName}).`);
+      setErrorMessage(`❌ Kode Lisensi tidak cocok! Kode lisensi terikat khusus pada Email (${schoolEmail}) & Nama Resmi Sekolah (${schoolName}).`);
     }
   };
 

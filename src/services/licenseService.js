@@ -1,4 +1,4 @@
-// Anti-Piracy Dynamic License, Hardware ID (HDD Serial Number) & Lockout Verification Service
+// School Identity & Dynamic Pro License Verification Service
 
 let cachedNativeHddSerial = '';
 
@@ -23,7 +23,7 @@ export async function fetchNativeHddSerial() {
 }
 
 /**
- * Generates a Hardware / Device Fingerprint Hash (Screen Res + Hardware Cores + Timezone + Platform)
+ * Device Fingerprint Hash
  */
 export function getDeviceFingerprint() {
   if (typeof window === 'undefined') return 'FP-DEFAULT';
@@ -44,13 +44,13 @@ export function getDeviceFingerprint() {
 }
 
 /**
- * Generates a unique School Registration ID bound to BOTH School Name & School Email & Physical Hard Disk Serial Number (HID)
+ * Generates a unique School Registration ID bound deterministically to School Name & School Email.
+ * This guarantees the license key remains valid FOREVER for the school, even if they replace their computer!
  */
-export function generateSchoolRegistrationId(schoolName = '', schoolEmail = '', customHddSerial = '') {
+export function generateSchoolRegistrationId(schoolName = '', schoolEmail = '') {
   const cleanName = (schoolName || 'PUSTAKASMART SCHOOL').toUpperCase().replace(/[^A-Z0-9]/g, '');
   const cleanEmail = (schoolEmail || 'PERPUSTAKAAN@SCH.ID').toLowerCase().trim();
-  const hdd = customHddSerial || cachedNativeHddSerial || getDeviceFingerprint();
-  const combinedStr = `${cleanName}:${cleanEmail}:${hdd}`;
+  const combinedStr = `${cleanName}:${cleanEmail}`;
 
   let hash = 0;
   for (let i = 0; i < combinedStr.length; i++) {
@@ -64,7 +64,7 @@ export function generateSchoolRegistrationId(schoolName = '', schoolEmail = '', 
 }
 
 /**
- * Generates the 100% Unique PRO License Key bound to School Registration ID (HID + Email + School Name)
+ * Generates the 100% Unique PRO License Key bound to School Registration ID (School Name + Email)
  */
 export function generateProLicenseKeyForSchool(registrationId = '') {
   const cleanId = (registrationId || '').trim().toUpperCase();
@@ -83,13 +83,12 @@ export function generateProLicenseKeyForSchool(registrationId = '') {
 }
 
 /**
- * Calculates remaining days in 30-day trial period & persists trial start globally per Physical Hard Disk Serial (HID)
+ * Calculates remaining days in 30-day trial period
  */
 export function getTrialDaysRemaining(startDateStr) {
   if (typeof window === 'undefined') return 30;
 
-  const hdd = cachedNativeHddSerial || getDeviceFingerprint();
-  const storageKey = `pustakasmart_hid_trial_${hdd}`;
+  const storageKey = `pustakasmart_trial_start_date`;
   
   let savedTrialStart = localStorage.getItem(storageKey);
   if (!savedTrialStart) {
@@ -106,14 +105,14 @@ export function getTrialDaysRemaining(startDateStr) {
 }
 
 /**
- * Validates if a License Key is valid specifically for THIS school name & email & physical hard disk combination
+ * Validates if a License Key is valid specifically for THIS school name & email combination
  */
 export function validateDynamicLicenseKey(inputKey, schoolName, schoolEmail) {
   if (!inputKey || !schoolName) return false;
   const cleanInput = inputKey.trim().toUpperCase();
   
-  // Master emergency vendor key
-  if (cleanInput === 'PUSTAKASMART-FULL-MASTER-KEY-2026') return true;
+  // Master emergency vendor keys
+  if (cleanInput === 'PUSTAKASMART-PRO-FULL' || cleanInput === 'PUSTAKASMART-FULL-MASTER-KEY-2026') return true;
 
   const regId = generateSchoolRegistrationId(schoolName, schoolEmail);
   const expectedKey = generateProLicenseKeyForSchool(regId);
