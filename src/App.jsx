@@ -230,6 +230,7 @@ export default function App() {
   };
 
   // Global RFID Scan Listener
+  // Global RFID Scan Listener: Automatically records attendance & syncs state across ALL views instantly on tap!
   useEffect(() => {
     const handleRfidScan = async (e) => {
       const scanData = e.detail;
@@ -237,10 +238,19 @@ export default function App() {
       setRfidScanEvent(scanData);
 
       const member = getMemberByRfid(scanData.rfidUid);
-      // Auto attendance recording triggers when autoAttendanceOnTap is enabled and on Attendance tab!
-      if (member && settings.autoAttendanceOnTap && activeTab === 'attendance') {
-        const result = await recordAttendance(scanData.rfidUid, 'Presensi Tap Mandiri');
-        if (result && result.success) {
+      if (member && settings.autoAttendanceOnTap) {
+        let purpose = 'Presensi Tap Mandiri';
+        if (activeTab === 'leaderboard') purpose = 'Partisipasi Kuis Literasi';
+        else if (activeTab === 'kiosk') purpose = 'Layanan Mandiri Kios';
+        else if (activeTab === 'catalog') purpose = 'Kunjungan Katalog Digital';
+
+        const result = await recordAttendance(scanData.rfidUid, purpose);
+        
+        // Refresh state across all views immediately!
+        await refreshData();
+
+        // Toast and voice feedback on Attendance tab
+        if (activeTab === 'attendance' && result && result.success) {
           setActiveAttendanceToast(result.attendance);
           if (settings.enableVoice) {
             if (result.isFirstToday) {
@@ -249,7 +259,6 @@ export default function App() {
               speakText(`Presensi ${member.name} untuk hari ini sudah tercatat sebelumnya.`);
             }
           }
-          refreshData();
         }
       }
     };
