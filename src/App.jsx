@@ -182,20 +182,33 @@ export default function App() {
     };
   }, [settings]);
 
-  // Tab Navigation Switcher: Seamless navigation without repetitive PIN prompts
+  // Tab Navigation Switcher
   const handleTabChange = (newTab) => {
     stopSpeech();
+    if (activeTab === 'admin_portal' && newTab !== 'admin_portal') {
+      if (settings?.enableAdminPin !== false) {
+        // When PIN mode is ENABLED, leaving admin portal locks the session so students cannot open it without PIN
+        setIsAdminAuthed(false);
+        sessionStorage.removeItem('pustakasmart_admin_authed');
+      }
+    }
     setActiveTab(newTab);
   };
 
-  // Open Admin Portal (PIN required only if enabled and not currently authed)
+  // Open Admin Portal
   const handleOpenAdminPortal = () => {
     stopSpeech();
-    if (isAdminAuthed || settings?.enableAdminPin === false) {
+    if (settings?.enableAdminPin === false) {
+      // PIN Mode OFF: Always allow free access directly!
       setIsAdminAuthed(true);
       setActiveTab('admin_portal');
     } else {
-      setIsAdminPinModalOpen(true);
+      // PIN Mode ON: Check if session is authed, otherwise prompt for PIN
+      if (isAdminAuthed) {
+        setActiveTab('admin_portal');
+      } else {
+        setIsAdminPinModalOpen(true);
+      }
     }
   };
 
@@ -212,8 +225,17 @@ export default function App() {
     setSettings(updated);
     await saveSettings(updated);
     await syncLocalToSqliteServer();
-    if (nextState === false) {
+
+    if (nextState === true) {
+      // Switched to TERKUNCI (PIN AKTIF)
+      setIsAdminAuthed(false);
+      sessionStorage.removeItem('pustakasmart_admin_authed');
+      alert("🔒 MODE TERKUNCI AKTIF!\n\nProteksi PIN Admin diaktifkan. Setiap kali membuka Portal Admin dari tab publik, aplikasi WAJIB meminta Password/PIN Admin.");
+    } else {
+      // Switched to BEBAS (PIN NONAKTIF)
       setIsAdminAuthed(true);
+      sessionStorage.setItem('pustakasmart_admin_authed', 'true');
+      alert("🔓 MODE BEBAS AKTIF!\n\nProteksi PIN Admin dinonaktifkan. Anda kini bebas keluar masuk Portal Admin tanpa perlu memasukkan password.");
     }
     refreshData();
   };
