@@ -306,17 +306,17 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
 
             {/* Custom Header Title Input */}
             <div>
-              <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '6px', display: 'block' }}>Teks Nama Perpustakaan / Sekolah di Label</label>
+              <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '6px', display: 'block' }}>Teks Nama Perpustakaan / Instansi di Label</label>
               <input
                 type="text"
                 className="form-input"
                 value={headerTitle}
                 onChange={(e) => setHeaderTitle(e.target.value)}
-                placeholder="Contoh: PERPUSTAKAAN SMA... / MAKTABAH..."
+                placeholder="Contoh: PERPUSTAKAAN UTAMA / MAKTABAH..."
                 style={{ fontSize: '0.82rem', padding: '6px 10px' }}
               />
               <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                Otomatis terisi dari Nama Perpustakaan / Sekolah di Pengaturan Admin.
+                Otomatis terisi dari Nama Perpustakaan / Instansi di Pengaturan Admin.
               </div>
             </div>
 
@@ -351,7 +351,7 @@ export default function BookLabelPrinterModal({ isOpen, onClose, books = [], set
                   onChange={(e) => setShowLogo(e.target.checked)}
                   style={{ cursor: 'pointer' }}
                 />
-                Logo Perpustakaan Sekolah
+                Logo Perpustakaan / Instansi
               </label>
 
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>

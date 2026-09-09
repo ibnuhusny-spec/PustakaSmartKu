@@ -25,7 +25,7 @@ export default function IdCardViewerModal({ isOpen, onClose, member }) {
         <body>
           <div class="card">
             <h2>MAKTABAH AL-QIRO'AH - BERKAS DOKUMEN IDENTITAS ANGGOTA</h2>
-            <p>Verifikasi Resmi Anggota Perpustakaan RFID Sekolah</p>
+            <p>Verifikasi Resmi Anggota Perpustakaan RFID</p>
             <img src="${member.idCardUrl}" alt="KTP / Kartu Identitas ${member.name}" />
             <div class="meta">
               <div>

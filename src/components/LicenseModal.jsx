@@ -111,10 +111,10 @@ export default function LicenseModal({
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)' }}>
-                {isExpiredLockout ? '🔒 Masa Percobaan 30 Hari Telah Berakhir' : 'Aktivasi Lisensi Resmi Sekolah'}
+                {isExpiredLockout ? '🔒 Masa Percobaan 30 Hari Telah Berakhir' : 'Aktivasi Lisensi Resmi Instansi / Sekolah'}
               </h3>
               <div style={{ fontSize: '0.78rem', color: isExpiredLockout ? '#fb7185' : '#10b981', fontWeight: 700 }}>
-                PustakaSmart RFID - Lifetime School Identity License
+                PustakaSmart RFID - Lifetime Identity License
               </div>
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function LicenseModal({
           )}
         </div>
 
-        {/* 📥 BAGIAN 1: KHUSUS SEKOLAH / PEMBELI (INPUT KODE LISENSI) */}
+        {/* 📥 BAGIAN 1: KHUSUS PEMBELI (INPUT KODE LISENSI) */}
         <form onSubmit={handleSubmit} style={{ marginTop: '16px' }}>
           
           {isExpiredLockout ? (
@@ -168,7 +168,7 @@ export default function LicenseModal({
               marginBottom: '16px'
             }}>
               <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 size={16} /> Lisensi Resmi Sekolah Aktif Selamanya (Full Version)
+                <CheckCircle2 size={16} /> Lisensi Resmi Instansi / Sekolah Aktif Selamanya (Full Version)
               </div>
               <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '2px' }}>
                 Terdaftar Resmi Khusus Untuk: <strong>{schoolName}</strong> ({schoolEmail})
@@ -185,7 +185,7 @@ export default function LicenseModal({
             marginBottom: '16px'
           }}>
             <div style={{ fontSize: '0.78rem', color: '#60a5fa', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              🏫 STEP 1: ID REGISTRASI IDENTITAS SEKOLAH ANDA:
+              🏢 STEP 1: ID REGISTRASI IDENTITAS INSTANSI / SEKOLAH ANDA:
             </div>
             
             <div style={{ fontSize: '0.75rem', color: '#cbd5e1', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -220,7 +220,7 @@ export default function LicenseModal({
                 setKeyInput(e.target.value);
                 if (errorMessage) setErrorMessage('');
               }}
-              placeholder="Tempelkan Kode Lisensi Pro di sini (Contoh: PRO-SDIT-...)..."
+              placeholder="Tempelkan Kode Lisensi Pro di sini (Contoh: PRO-ID-...)..."
               style={{
                 fontSize: '0.92rem',
                 fontWeight: 800,
@@ -313,7 +313,7 @@ export default function LicenseModal({
                     <ShieldCheck size={16} /> TOOL MEMBUAT KODE LISENSI BERSAMA (PEMILIK SOFTWARE)
                   </div>
                   <p style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: '0 0 8px 0' }}>
-                    Paste <strong>ID Registrasi Sekolah Pembeli</strong> (ID di STEP 1 milik sekolah pembeli) di bawah ini untuk membuat Kode Lisensi Pro mereka:
+                    Paste <strong>ID Registrasi Instansi/Sekolah Pembeli</strong> di bawah ini untuk membuat Kode Lisensi Pro mereka:
                   </p>
 
                   <form onSubmit={handleGenerateVendorKey} style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
@@ -331,9 +331,9 @@ export default function LicenseModal({
                       onClick={() => setVendorSchoolIdInput(regId)} 
                       className="btn btn-secondary" 
                       style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}
-                      title="Isi otomatis dengan ID Registrasi Sekolah ini"
+                      title="Isi otomatis dengan ID Registrasi ini"
                     >
-                      🎯 Pakai ID Sekolah Ini
+                      🎯 Pakai ID Ini
                     </button>
                     <button type="submit" className="btn btn-emerald" style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
                       Bikin Kode Lisensi

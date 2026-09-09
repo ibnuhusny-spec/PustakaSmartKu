@@ -74,7 +74,7 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
               {activeSchoolLogo && (
                 <img 
                   src={activeSchoolLogo} 
-                  alt="Logo Sekolah" 
+                  alt="Logo Instansi" 
                   style={{ width: '50px', height: '50px', objectFit: 'contain', marginBottom: '6px' }} 
                   onError={e => { e.target.src = defaultLogo; }}
                 />

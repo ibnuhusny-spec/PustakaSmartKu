@@ -374,7 +374,7 @@ export default function KioskView({
       {activeStep === 'borrow' && (
         <div className="glass-card" style={{ padding: '24px' }}>
           <h3 style={{ fontSize: '1.2rem', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BookOpen size={20} color="#3b82f6" /> Peminjaman Buku Sekolah
+            <BookOpen size={20} color="#3b82f6" /> Peminjaman Buku Perpustakaan
           </h3>
 
           {!selectedMember ? (

@@ -168,7 +168,7 @@ export default function SplashScreen({ onFinish, settings }) {
           marginBottom: '28px',
           fontStyle: 'italic'
         }}>
-          Sistem Perpustakaan Sekolah Digital, E-Book PDF & RFID Klien-Server
+          Sistem Perpustakaan Digital, E-Book PDF & RFID Klien-Server
         </div>
 
         {/* Progress Bar Container */}

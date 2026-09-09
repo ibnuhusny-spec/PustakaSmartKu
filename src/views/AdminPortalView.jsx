@@ -142,7 +142,7 @@ export default function AdminPortalView({
               style={{ justifyContent: 'flex-start', padding: '10px 14px', fontSize: '0.85rem' }}
             >
               <Settings size={18} />
-              <span>Pengaturan Sekolah</span>
+              <span>Pengaturan Instansi</span>
             </button>
 
           </nav>
@@ -190,7 +190,7 @@ export default function AdminPortalView({
                 <LayoutDashboard color="#3b82f6" /> Welcome to Admin Dashboard Perpustakaan
               </h2>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Pusat kendali sirkulasi, manajemen buku, pencetakan kartu pelajar RFID, dan pengaturan sekolah.
+                Pusat kendali sirkulasi, manajemen buku, pencetakan kartu anggota RFID, dan pengaturan instansi.
               </p>
             </div>
 
@@ -207,7 +207,7 @@ export default function AdminPortalView({
               <div className="glass-card" style={{ padding: '20px' }}>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ANGGOTA TERDAFTAR</div>
                 <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>
-                  {totalMembers} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Siswa/Guru</span>
+                  {totalMembers} <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Anggota</span>
                 </div>
               </div>
 
@@ -254,7 +254,7 @@ export default function AdminPortalView({
                 >
                   <Users color="#10b981" size={24} style={{ marginBottom: '8px' }} />
                   <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Anggota & Cetak Kartu</div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Kelola siswa & cetak kartu RFID Ultra HD.</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Kelola anggota & cetak kartu RFID Ultra HD.</div>
                 </button>
 
                 <button
@@ -273,7 +273,7 @@ export default function AdminPortalView({
                   style={{ padding: '16px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s', border: '1px solid rgba(236, 72, 153, 0.3)' }}
                 >
                   <Settings color="#ec4899" size={24} style={{ marginBottom: '8px' }} />
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Pengaturan Sekolah</div>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>Pengaturan Instansi</div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Ubah PIN Admin, Logo, & Backup JSON.</div>
                 </button>
 

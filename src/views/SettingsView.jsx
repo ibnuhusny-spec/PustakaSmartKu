@@ -8,12 +8,20 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
   const [showAdminPinText, setShowAdminPinText] = useState(false);
   const [licenseInput, setLicenseInput] = useState('');
   
-  // Keep form data in sync if settings prop updates externally
+  // Keep form data in sync if settings prop updates externally (e.g. after save/reset)
   useEffect(() => {
     if (settings) {
-      setFormData(prev => ({ ...settings, ...prev }));
+      setFormData({ ...settings });
     }
-  }, [settings]);
+  }, [settings?.schoolName, settings?.schoolEmail, settings?.adminPin, settings?.libraryName]);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : (type === 'number' ? (value === '' ? '' : Number(value)) : value)
+    }));
+  };
   
   // Server State
   const [serverUrlInput, setServerUrlInput] = useState(getServerUrl());
@@ -34,7 +42,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
     await syncLocalToSqliteServer();
     onRefreshData();
     setFormData(saved);
-    setSaveSuccessMsg('🎉 BERHASIL! Pengaturan sekolah, Email Resmi, PIN Admin Baru, logo instansi, & sistem perpustakaan tersimpan permanen!');
+    setSaveSuccessMsg('🎉 BERHASIL! Pengaturan instansi, Email Resmi, PIN Admin Baru, logo instansi, & sistem perpustakaan tersimpan permanen!');
     setTimeout(() => setSaveSuccessMsg(''), 5000);
   };
 
@@ -67,7 +75,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
       setLicenseInput('');
       alert('🎉 SELAMAT! Aplikasi Berhasil Diaktivasi Menjadi PustakaSmart RFID Pro Full Version!');
     } else {
-      alert('❌ Kode Lisensi tidak cocok. Pastikan Kode Lisensi dibuat khusus untuk Email & Nama Sekolah Anda.');
+      alert('❌ Kode Lisensi tidak cocok. Pastikan Kode Lisensi dibuat khusus untuk Email & Nama Instansi / Sekolah Anda.');
     }
   };
 
@@ -247,7 +255,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Settings color="#3b82f6" /> Pengaturan Identitas Sekolah, Logo, & Keamanan Admin
+              <Settings color="#3b82f6" /> Pengaturan Identitas Instansi / Sekolah, Logo, & Keamanan Admin
             </h2>
 
             {onReplaySplash && (
@@ -278,8 +286,9 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#1e293b', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
                 <input 
                   type="checkbox"
+                  name="enableAdminPin"
                   checked={formData.enableAdminPin || false}
-                  onChange={e => setFormData({ ...formData, enableAdminPin: e.target.checked })}
+                  onChange={handleChange}
                 />
                 <span style={{ fontSize: '0.82rem', fontWeight: 800, color: formData.enableAdminPin ? '#fb7185' : '#cbd5e1' }}>
                   {formData.enableAdminPin ? '🔒 PIN Aktif (Minta PIN Saat Masuk Admin)' : '🔓 PIN Nonaktif (Buka Admin Tanpa PIN)'}
@@ -289,7 +298,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
 
             <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: '8px 0 14px 0' }}>
               {formData.enableAdminPin ? (
-                <span>PIN ini digunakan untuk memproteksi tab Admin saat link web dibagikan ke siswa/umum.</span>
+                <span>PIN ini digunakan untuk memproteksi tab Admin saat link web dibagikan ke siswa/umum/staf.</span>
               ) : (
                 <span style={{ color: '#34d399', fontWeight: 700 }}>✨ Bebas Masuk! Tab Portal Admin dapat dibuka langsung tanpa meminta PIN lagi.</span>
               )}
@@ -303,11 +312,8 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                     name="adminPin"
                     type={showAdminPinText ? "text" : "password"} 
                     className="form-input" 
-                    value={formData.adminPin ?? 'PustakaSmart2026'}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setFormData(prev => ({ ...prev, adminPin: val }));
-                    }}
+                    value={formData.adminPin ?? ''}
+                    onChange={handleChange}
                     placeholder="Ketik PIN / Password Admin Baru..."
                     style={{
                       fontSize: '1.05rem',
@@ -344,13 +350,13 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                   </button>
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px' }}>
-                  💡 <em>PIN Bawaan Pabrik:</em> <strong>PustakaSmart2026</strong>. Ubah PIN ini lalu klik <strong>Simpan Pengaturan Sekolah</strong> di bawah!
+                  💡 <em>PIN Bawaan Pabrik:</em> <strong>PustakaSmart2026</strong>. Ubah PIN ini lalu klik <strong>Simpan Pengaturan Instansi</strong> di bawah!
                 </div>
               </div>
             )}
           </div>
 
-          {/* DEDICATED SCHOOL LOGO UPLOAD SECTION */}
+          {/* DEDICATED INSTITUTION LOGO UPLOAD SECTION */}
           <div style={{
             background: 'rgba(245, 158, 11, 0.12)',
             padding: '20px',
@@ -359,10 +365,10 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
             marginBottom: '20px'
           }}>
             <label className="form-label" style={{ color: '#fbbf24', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', margin: 0 }}>
-              <Building2 size={20} /> Upload Logo Resmi Sekolah / Yayasan Anda *
+              <Building2 size={20} /> Upload Logo Resmi Instansi / Sekolah / Yayasan Anda *
             </label>
             <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: '4px 0 14px 0' }}>
-              Upload logo sekolah Anda (misal Logo SDIT Qurratu A'yun Al-Islami / Logo Sekolah Anda). Logo sekolah ini akan <strong>dicetak otomatis pada Kop Kartu Pelajar RFID & Struk Peminjaman Buku!</strong>
+              Upload logo instansi Anda (misal Logo Sekolah / Yayasan / Perusahaan / Dinas). Logo ini akan <strong>dicetak otomatis pada Kop Kartu RFID & Struk Peminjaman Buku!</strong>
             </p>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -381,7 +387,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                 flexShrink: 0
               }}>
                 {formData.schoolLogoUrl || formData.logoUrl ? (
-                  <img src={formData.schoolLogoUrl || formData.logoUrl} alt="Logo Sekolah" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
+                  <img src={formData.schoolLogoUrl || formData.logoUrl} alt="Logo Instansi" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
                 ) : (
                   <ImageIcon size={32} color="#fbbf24" />
                 )}
@@ -393,7 +399,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                   style={{ cursor: 'pointer', fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '10px', padding: '10px 18px' }}
                 >
                   <FolderOpen size={18} />
-                  <span>Pilih & Upload File Logo Sekolah dari Komputer/HP...</span>
+                  <span>Pilih & Upload File Logo Instansi dari Komputer/HP...</span>
                   <input 
                     type="file" 
                     accept="image/*"
@@ -405,16 +411,17 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input 
                     type="text" 
+                    name="schoolLogoUrl"
                     className="form-input" 
-                    value={formData.schoolLogoUrl || ''}
-                    onChange={e => setFormData({ ...formData, schoolLogoUrl: e.target.value, logoUrl: e.target.value })}
-                    placeholder="Atau paste link URL gambar logo sekolah..."
+                    value={formData.schoolLogoUrl ?? ''}
+                    onChange={e => setFormData(prev => ({ ...prev, schoolLogoUrl: e.target.value, logoUrl: e.target.value }))}
+                    placeholder="Atau paste link URL gambar logo instansi..."
                     style={{ fontSize: '0.82rem' }}
                   />
                   {formData.schoolLogoUrl && (
                     <button 
                       type="button"
-                      onClick={() => setFormData({ ...formData, schoolLogoUrl: '', logoUrl: '/perpustakaansmart.png' })}
+                      onClick={() => setFormData(prev => ({ ...prev, schoolLogoUrl: '', logoUrl: '/perpustakaansmart.png' }))}
                       className="btn btn-rose"
                       style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}
                     >
@@ -444,35 +451,38 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
               <div className="form-group">
                 <label className="form-label" style={{ color: '#60a5fa' }}>Pilihan Desain Arsitektur Template Kartu</label>
                 <select
+                  name="cardTemplate"
                   className="form-select"
                   value={formData.cardTemplate || 'clean_corporate'}
-                  onChange={e => setFormData({ ...formData, cardTemplate: e.target.value })}
+                  onChange={handleChange}
                 >
                   <option value="clean_corporate">⚪ Pristine White Corporate (Nuansa Putih Dominan Kontras Tinggi)</option>
-                  <option value="school_luxury">🏫 Gedung Sekolah Luxury (Kop Horisontal + Background Gedung + Emas)</option>
+                  <option value="school_luxury">🏢 Gedung Instansi Luxury (Kop Horisontal + Background Gedung + Emas)</option>
                   <option value="royal_gold">👑 Royal Gold Emblem (Bingkai Emas & Segel Sertifikat)</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ color: '#60a5fa' }}>Label Item Biodata ID (Contoh: NISN / NIP / NIS / NIK / ID PEGAWAI)</label>
+                <label className="form-label" style={{ color: '#60a5fa' }}>Label Item Biodata ID (Contoh: NISN / NIP / NIK / ID PEGAWAI)</label>
                 <input 
                   type="text"
+                  name="idFieldLabel"
                   className="form-input"
-                  value={formData.idFieldLabel || 'NISN / NIP'}
-                  onChange={e => setFormData({ ...formData, idFieldLabel: e.target.value })}
-                  placeholder="Contoh: NISN / NIP atau NIS atau ID PEGAWAI..."
+                  value={formData.idFieldLabel ?? ''}
+                  onChange={handleChange}
+                  placeholder="Contoh: NISN / NIP / NIK / ID PEGAWAI..."
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ color: '#60a5fa' }}>Label Item Peran / Kelas (Contoh: Peran / Kelas / Divisi)</label>
+                <label className="form-label" style={{ color: '#60a5fa' }}>Label Item Peran / Kelas / Divisi (Contoh: Peran / Kelas / Divisi)</label>
                 <input 
                   type="text"
+                  name="classFieldLabel"
                   className="form-input"
-                  value={formData.classFieldLabel || 'Peran / Kelas'}
-                  onChange={e => setFormData({ ...formData, classFieldLabel: e.target.value })}
-                  placeholder="Contoh: Peran / Kelas atau Jabatan / Divisi..."
+                  value={formData.classFieldLabel ?? ''}
+                  onChange={handleChange}
+                  placeholder="Contoh: Peran / Kelas / Divisi / Jabatan..."
                 />
               </div>
 
@@ -482,27 +492,29 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
             
             <div className="form-group">
-              <label className="form-label">Nama Sekolah *</label>
+              <label className="form-label">Nama Instansi / Sekolah *</label>
               <input 
                 type="text"
+                name="schoolName"
                 className="form-input"
-                value={formData.schoolName}
-                onChange={e => setFormData({ ...formData, schoolName: e.target.value })}
-                placeholder="Contoh: SDIT Qurratu A'yun Al-Islami"
+                value={formData.schoolName ?? ''}
+                onChange={handleChange}
+                placeholder="Contoh: SDIT Qurratu A'yun / PT Pustaka Indonesia / Dinas Perpustakaan"
                 required
               />
             </div>
 
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8' }}>
-                <Mail size={16} /> Email Resmi Perpustakaan / Sekolah (Pengikat Lisensi Unik) *
+                <Mail size={16} /> Email Resmi Instansi / Sekolah (Pengikat Lisensi Unik) *
               </label>
               <input 
                 type="email"
+                name="schoolEmail"
                 className="form-input"
-                value={formData.schoolEmail || ''}
-                onChange={e => setFormData({ ...formData, schoolEmail: e.target.value })}
-                placeholder="Contoh: perpustakaan@sditqurratuayun.sch.id"
+                value={formData.schoolEmail ?? ''}
+                onChange={handleChange}
+                placeholder="Contoh: perpustakaan@instansi.go.id / admin@sekolah.sch.id"
                 required
               />
             </div>
@@ -511,23 +523,25 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
               <label className="form-label">Nama Perpustakaan *</label>
               <input 
                 type="text"
+                name="libraryName"
                 className="form-input"
-                value={formData.libraryName}
-                onChange={e => setFormData({ ...formData, libraryName: e.target.value })}
-                placeholder="Contoh: Maktabah Al-Qiro'ah"
+                value={formData.libraryName ?? ''}
+                onChange={handleChange}
+                placeholder="Contoh: Maktabah Al-Qiro'ah / Perpustakaan Utama"
                 required
               />
             </div>
 
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <MapPin size={16} color="#f59e0b" /> Alamat Sekolah (Baris 1: Jalan / Dusun / Kelurahan) *
+                <MapPin size={16} color="#f59e0b" /> Alamat Instansi / Sekolah (Baris 1: Jalan / Kelurahan) *
               </label>
               <input 
                 type="text"
+                name="address"
                 className="form-input"
-                value={formData.address}
-                onChange={e => setFormData({ ...formData, address: e.target.value })}
+                value={formData.address ?? ''}
+                onChange={handleChange}
                 placeholder="Contoh: Jalan Poros Makassar - Maros Km. 26 Maccopa"
                 required
               />
@@ -535,13 +549,14 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
 
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#60a5fa' }}>
-                <MapPin size={16} /> Alamat Sekolah (Baris 2: Kota / Kabupaten / Provinsi)
+                <MapPin size={16} /> Alamat Instansi / Sekolah (Baris 2: Kota / Kabupaten / Provinsi)
               </label>
               <input 
                 type="text"
+                name="cityAddress"
                 className="form-input"
-                value={formData.cityAddress || ''}
-                onChange={e => setFormData({ ...formData, cityAddress: e.target.value })}
+                value={formData.cityAddress ?? ''}
+                onChange={handleChange}
                 placeholder="Contoh: Kabupaten Maros, Sulawesi Selatan"
               />
             </div>
@@ -550,9 +565,10 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
               <label className="form-label">Tarif Denda Per Hari (Rp)</label>
               <input 
                 type="number"
+                name="finePerDay"
                 className="form-input"
-                value={formData.finePerDay}
-                onChange={e => setFormData({ ...formData, finePerDay: Number(e.target.value) })}
+                value={formData.finePerDay ?? 1000}
+                onChange={handleChange}
                 step="500"
               />
             </div>
@@ -561,19 +577,21 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
               <label className="form-label">Durasi Peminjaman Standar (Hari)</label>
               <input 
                 type="number"
+                name="maxLoanDays"
                 className="form-input"
-                value={formData.maxLoanDays}
-                onChange={e => setFormData({ ...formData, maxLoanDays: Number(e.target.value) })}
+                value={formData.maxLoanDays ?? 3}
+                onChange={handleChange}
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Maksimal Pinjam Buku Per Siswa</label>
+              <label className="form-label">Maksimal Pinjam Buku Per Anggota</label>
               <input 
                 type="number"
+                name="maxBooksPerStudent"
                 className="form-input"
-                value={formData.maxBooksPerStudent}
-                onChange={e => setFormData({ ...formData, maxBooksPerStudent: Number(e.target.value) })}
+                value={formData.maxBooksPerStudent ?? 3}
+                onChange={handleChange}
               />
             </div>
 
@@ -582,9 +600,10 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                 <Award size={16} /> Batas Maksimal Presensi Berpoin Per Hari (Poin Anti-Spam)
               </label>
               <select 
+                name="maxDailyAttendancePoints"
                 className="form-select"
                 value={formData.maxDailyAttendancePoints || 1}
-                onChange={e => setFormData({ ...formData, maxDailyAttendancePoints: Number(e.target.value) })}
+                onChange={handleChange}
               >
                 <option value={1}>1 Kali Per Hari (+5 Poin Maksimal / Hari)</option>
                 <option value={2}>2 Kali Per Hari (+10 Poin Maksimal / Hari)</option>
@@ -599,24 +618,27 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem' }}>
                   <input 
                     type="checkbox"
-                    checked={formData.autoAttendanceOnTap}
-                    onChange={e => setFormData({ ...formData, autoAttendanceOnTap: e.target.checked })}
+                    name="autoAttendanceOnTap"
+                    checked={formData.autoAttendanceOnTap || false}
+                    onChange={handleChange}
                   />
                   <span>Presensi Otomatis Saat Tap Kartu di Tab Mana Saja (Auto Attendance)</span>
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem' }}>
                   <input 
                     type="checkbox"
-                    checked={formData.enableVoice}
-                    onChange={e => setFormData({ ...formData, enableVoice: e.target.checked })}
+                    name="enableVoice"
+                    checked={formData.enableVoice || false}
+                    onChange={handleChange}
                   />
                   <span>Indonesian Voice TTS (Suara Sambutan)</span>
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.88rem' }}>
                   <input 
                     type="checkbox"
-                    checked={formData.enableSoundFX}
-                    onChange={e => setFormData({ ...formData, enableSoundFX: e.target.checked })}
+                    name="enableSoundFX"
+                    checked={formData.enableSoundFX || false}
+                    onChange={handleChange}
                   />
                   <span>Sound FX Beep</span>
                 </label>
@@ -649,7 +671,7 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
 
           <div style={{ marginTop: '20px', textAlign: 'right' }}>
             <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px' }}>
-              <Save size={16} /> Simpan Pengaturan Sekolah
+              <Save size={16} /> Simpan Pengaturan Instansi
             </button>
           </div>
 

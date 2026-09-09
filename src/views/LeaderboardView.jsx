@@ -200,7 +200,7 @@ export default function LeaderboardView({ members, onRefreshData }) {
         </div>
 
         <h2 style={{ fontSize: '1.8rem', fontWeight: 800, margin: '0 0 6px 0', color: '#fbbf24' }}>
-          Papan Peringkat Duta Baca Sekolah
+          Papan Peringkat Duta Baca Instansi / Sekolah
         </h2>
         <p style={{ color: '#e2e8f0', maxWidth: '600px', margin: '0 auto 24px auto', fontSize: '0.92rem' }}>
           Penghargaan untuk siswa paling rajin membaca buku, presensi di perpustakaan, & pemenang kuis literasi!

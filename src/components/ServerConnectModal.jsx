@@ -75,7 +75,7 @@ export default function ServerConnectModal({ isOpen, onClose, onRefreshData }) {
             <div>
               <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>📡 Hubungkan Ke Laptop Server Utama</h3>
               <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                Sinkronkan HP / Tablet Anda ke database Laptop Utama di Wi-Fi Sekolah (Tanpa PIN Admin).
+                Sinkronkan HP / Tablet Anda ke database Laptop Utama di Wi-Fi Instansi / Lokasi (Tanpa PIN Admin).
               </p>
             </div>
           </div>
