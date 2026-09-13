@@ -686,7 +686,7 @@ export const recordAttendance = async (memberOrRfid, purpose = 'Presensi Mandiri
     return {
       success: true,
       isFirstToday: false,
-      attendance: alreadyRecordedToday,
+      attendance: { ...alreadyRecordedToday, isFirstToday: false },
       member,
       message: `Kehadiran ${member.name} untuk hari ini sudah tercatat sebelumnya.`
     };
@@ -711,7 +711,7 @@ export const recordAttendance = async (memberOrRfid, purpose = 'Presensi Mandiri
 
   await saveAttendance([newRecord, ...records]);
   await syncLocalToSqliteServer();
-  return { success: true, isFirstToday: true, attendance: newRecord, member };
+  return { success: true, isFirstToday: true, attendance: { ...newRecord, isFirstToday: true }, member };
 };
 
 // QUIZ API

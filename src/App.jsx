@@ -281,12 +281,9 @@ export default function App() {
         // Toast and voice feedback across ALL tabs on card tap!
         if (result && result.success) {
           setActiveAttendanceToast(result.attendance);
-          if (settings.enableVoice !== false) {
-            if (result.isFirstToday) {
-              speakText(`Selamat datang di perpustakaan, ${member.name}!`);
-            } else {
-              speakText(`Selamat datang kembali ${member.name}, presensi Anda hari ini sudah tercatat.`);
-            }
+          // Voice sapaan ONLY plays on the FIRST scan of the day!
+          if (settings.enableVoice !== false && result.isFirstToday) {
+            speakText(`Selamat datang di perpustakaan, ${member.name}!`);
           }
         }
       }

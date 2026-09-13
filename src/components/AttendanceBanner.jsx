@@ -19,11 +19,15 @@ export default function AttendanceBanner({ attendance, onClose }) {
       zIndex: 9999,
       maxWidth: '420px',
       width: '100%',
-      background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95))',
+      background: attendance.isFirstToday === false
+        ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95))'
+        : 'linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95))',
       color: '#ffffff',
       borderRadius: 'var(--radius-lg)',
       padding: '16px 20px',
-      boxShadow: '0 15px 35px rgba(16, 185, 129, 0.5)',
+      boxShadow: attendance.isFirstToday === false
+        ? '0 15px 35px rgba(245, 158, 11, 0.4)'
+        : '0 15px 35px rgba(16, 185, 129, 0.5)',
       backdropFilter: 'blur(12px)',
       animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
       border: '1px solid rgba(255, 255, 255, 0.3)'
@@ -46,7 +50,7 @@ export default function AttendanceBanner({ attendance, onClose }) {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', opacity: 0.9 }}>
-              <UserCheck size={14} /> Presensi RFID Berhasil
+              <UserCheck size={14} /> {attendance.isFirstToday === false ? 'Informasi Presensi RFID' : 'Presensi RFID Berhasil'}
             </div>
             <h4 style={{ margin: '2px 0 0 0', fontSize: '1.05rem', fontWeight: 800 }}>
               {attendance.memberName}
@@ -73,8 +77,8 @@ export default function AttendanceBanner({ attendance, onClose }) {
         justifyContent: 'space-between',
         fontSize: '0.78rem'
       }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <Sparkles size={14} /> Kehadiran dicatat & +5 Poin Membaca
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
+          <Sparkles size={14} /> {attendance.isFirstToday === false ? 'Kehadiran sudah tercatat sebelumnya. Selamat membaca!' : 'Kehadiran dicatat & +5 Poin Membaca'}
         </span>
         <span style={{ fontFamily: 'var(--font-mono)', opacity: 0.9 }}>
           {attendance.rfidUid}
