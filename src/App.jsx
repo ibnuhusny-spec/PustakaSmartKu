@@ -278,14 +278,14 @@ export default function App() {
         // Refresh state across all views immediately!
         await refreshData();
 
-        // Toast and voice feedback on Attendance tab
-        if (activeTab === 'attendance' && result && result.success) {
+        // Toast and voice feedback across ALL tabs on card tap!
+        if (result && result.success) {
           setActiveAttendanceToast(result.attendance);
-          if (settings.enableVoice) {
+          if (settings.enableVoice !== false) {
             if (result.isFirstToday) {
               speakText(`Selamat datang di perpustakaan, ${member.name}!`);
             } else {
-              speakText(`Presensi ${member.name} untuk hari ini sudah tercatat sebelumnya.`);
+              speakText(`Selamat datang kembali ${member.name}, presensi Anda hari ini sudah tercatat.`);
             }
           }
         }

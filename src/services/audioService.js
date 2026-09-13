@@ -211,11 +211,14 @@ const speakWebSpeechFallback = (cleanText) => {
 export const speakText = (text, enabled = true) => {
   if (!enabled || !text || !text.trim()) return;
 
-  // STRICT REQUIREMENT: Only play TTS sound for Welcome Greetings and Quiz Start Greeting!
+  // Whitelist speech filter for Welcome Greetings, Attendance, & Quiz Greetings
   const lower = text.toLowerCase();
   const isAllowedVoice = lower.includes('selamat datang') || 
                          lower.includes('selamat membaca') || 
-                         lower.includes('silakan menjawab');
+                         lower.includes('silakan') ||
+                         lower.includes('presensi') ||
+                         lower.includes('kehadiran') ||
+                         lower.includes('tercatat');
 
   if (!isAllowedVoice) {
     return;
