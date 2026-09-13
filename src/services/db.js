@@ -461,7 +461,25 @@ export const getMemberByRfid = (rfidUid) => {
 export const getTransactions = () => {
   try {
     const data = localStorage.getItem(KEYS.TRANSACTIONS);
-    return data !== null ? JSON.parse(data) : INITIAL_TRANSACTIONS;
+    const txs = data !== null ? JSON.parse(data) : INITIAL_TRANSACTIONS;
+    const settings = getSettings();
+    const today = new Date().toISOString().split('T')[0];
+
+    return txs.map(tx => {
+      if (tx.status !== 'Dikembalikan') {
+        if (today > tx.dueDate) {
+          tx.status = 'Terlambat';
+          const due = new Date(tx.dueDate);
+          const now = new Date(today);
+          const diffDays = Math.ceil((now - due) / (1000 * 60 * 60 * 24));
+          tx.fineAmount = Math.max(0, diffDays * (settings.finePerDay || 1000));
+        } else {
+          tx.status = 'Dipinjam';
+          tx.fineAmount = 0;
+        }
+      }
+      return tx;
+    });
   } catch (e) {
     return INITIAL_TRANSACTIONS;
   }
