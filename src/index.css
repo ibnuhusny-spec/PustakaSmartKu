@@ -438,29 +438,41 @@ body {
   animation: pulseGlow 2s infinite;
 }
 
-/* Print CSS - Only Print Receipt Card or ID Card */
+/* Print CSS - Only Print Receipt Card, ID Card, or Label */
 @media print {
   html, body {
     background: #ffffff !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Hide main navigation, background pages, headers and footers */
+  /* Hide main navigation, background pages, headers, footers, and app main containers */
   #root > header,
   #root > main,
+  .app-layout > header,
+  .app-layout > main,
+  .app-layout > nav,
+  header,
+  main,
+  nav,
+  aside,
+  .navbar,
   .no-print,
   .modal-header,
   .modal-footer {
     display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
   }
 
   /* Make modal overlay background pure white without dark mask */
   .modal-overlay {
-    position: absolute !important;
+    position: static !important;
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
@@ -468,9 +480,10 @@ body {
     background: #ffffff !important;
     padding: 0 !important;
     margin: 0 !important;
-    display: flex !important;
-    justify-content: center !important;
+    display: block !important;
     backdrop-filter: none !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 
   .modal-container {
@@ -485,6 +498,7 @@ body {
 
   .modal-body {
     padding: 0 !important;
+    margin: 0 !important;
   }
 
   /* Thermal Receipt / A4 Paper printable box */
@@ -495,11 +509,20 @@ body {
     margin: 0 auto !important;
     padding: 10px !important;
     background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 
   .printable-area * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: auto;
+    margin: 5mm;
   }
 }
 
