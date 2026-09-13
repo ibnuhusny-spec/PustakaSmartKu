@@ -163,13 +163,24 @@ export default function TransactionsView({
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                           {tx.status !== 'Dikembalikan' && (
                             tx.fineAmount > 0 ? (
-                              <button 
-                                onClick={() => handleReturnAction(tx, true)}
-                                className="btn btn-emerald"
-                                style={{ fontSize: '0.78rem', padding: '6px 10px' }}
-                              >
-                                <CreditCard size={14} /> Potong Saldo RFID
-                              </button>
+                              <>
+                                <button 
+                                  onClick={() => handleReturnAction(tx, true)}
+                                  className="btn btn-emerald"
+                                  style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                                  title="Potong saldo kartu RFID otomatis"
+                                >
+                                  <CreditCard size={14} /> Potong Saldo RFID
+                                </button>
+                                <button 
+                                  onClick={() => handleReturnAction(tx, false)}
+                                  className="btn btn-primary"
+                                  style={{ fontSize: '0.78rem', padding: '6px 10px' }}
+                                  title="Terima denda uang tunai secara manual"
+                                >
+                                  <RotateCcw size={14} /> Bayar Tunai & Kembali
+                                </button>
+                              </>
                             ) : (
                               <button 
                                 onClick={() => handleReturnAction(tx, false)}

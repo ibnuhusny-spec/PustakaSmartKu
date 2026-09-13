@@ -600,13 +600,20 @@ export const returnBookTransaction = (txId, payFineViaRfid = false) => {
 
   const member = getMemberByRfid(tx.rfidUid);
 
-  if (fine > 0 && payFineViaRfid && member) {
-    if (member.balance < fine) {
-      return { success: false, message: `Saldo RFID tidak cukup (Denda: Rp ${fine.toLocaleString()}, Saldo: Rp ${member.balance.toLocaleString()})` };
+  if (fine > 0) {
+    if (payFineViaRfid && member) {
+      if (member.balance < fine) {
+        return { success: false, message: `Saldo RFID tidak cukup (Denda: Rp ${fine.toLocaleString('id-ID')}, Saldo: Rp ${member.balance.toLocaleString('id-ID')})` };
+      }
+      member.balance -= fine;
+      tx.finePaid = true;
+      updateMember(member);
+    } else {
+      // Paid via cash directly to librarian
+      tx.finePaid = true;
     }
-    member.balance -= fine;
+  } else {
     tx.finePaid = true;
-    updateMember(member);
   }
 
   tx.returnDate = today;
