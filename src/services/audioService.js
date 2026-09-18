@@ -229,9 +229,9 @@ export const speakText = (text, enabled = true) => {
 
   const cleanText = sanitizeIndonesianSpeechText(text);
 
-  // Prevent duplicate identical voice triggers within 1.5 seconds
+  // Prevent duplicate identical voice triggers within 6 seconds
   const now = Date.now();
-  if (cleanText === lastSpokenText && (now - lastSpokenTime) < 1500) {
+  if (cleanText === lastSpokenText && (now - lastSpokenTime) < 6000) {
     return;
   }
   lastSpokenText = cleanText;
