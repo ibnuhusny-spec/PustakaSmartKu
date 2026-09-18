@@ -282,28 +282,37 @@ export default function App() {
           return (rfidMatch || memberIdMatch) && rDate === todayStr;
         });
 
-        // ⚡ INSTANT AUDIBLE & VOICE FEEDBACK (< 5ms) BEFORE ANY ASYNC DB/SERVER WORK!
-        if (!alreadyRecordedToday) {
-          playSoundEffect('success');
-          if (settings.enableVoice !== false) {
-            speakText(`Selamat datang di perpustakaan, ${member.name}!`);
-          }
-        } else {
-          playSoundEffect('scan');
-        }
-
         let purpose = 'Presensi Tap Mandiri';
         if (activeTab === 'leaderboard') purpose = 'Partisipasi Kuis Literasi';
         else if (activeTab === 'kiosk') purpose = 'Layanan Mandiri Kios';
         else if (activeTab === 'catalog') purpose = 'Kunjungan Katalog Digital';
 
-        // Async attendance record saving & state refresh in background
-        const result = await recordAttendance(scanData.rfidUid, purpose);
-        await refreshData();
-
-        if (result && result.success) {
-          setActiveAttendanceToast(result.attendance);
+        // ⚡ INSTANT AUDIBLE, VOICE & TOAST FEEDBACK (< 5ms) AT THE EXACT MILLISECOND OF SCAN TAP!
+        if (!alreadyRecordedToday) {
+          playSoundEffect('success');
+          if (settings.enableVoice !== false) {
+            speakText(`Selamat datang di perpustakaan, ${member.name}!`);
+          }
+          const now = new Date();
+          setActiveAttendanceToast({
+            id: `ATT-${Date.now().toString().slice(-6)}`,
+            rfidUid: cleanRfid,
+            memberId: member.id,
+            memberName: member.name,
+            classGrade: member.classGrade || 'Siswa',
+            purpose,
+            timestamp: now.toISOString(),
+            date: todayStr,
+            isFirstToday: true
+          });
+        } else {
+          playSoundEffect('scan');
         }
+
+        // Async attendance record saving & state refresh in background
+        recordAttendance(scanData.rfidUid, purpose).then(() => {
+          refreshData();
+        });
       }
     };
 

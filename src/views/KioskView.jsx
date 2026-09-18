@@ -15,7 +15,7 @@ import {
   Award,
   Calendar
 } from 'lucide-react';
-import { getMemberByRfid, createLoanTransaction, returnBookTransaction, recordAttendance } from '../services/db';
+import { getMemberByRfid, createLoanTransaction, returnBookTransaction, recordAttendance, getAttendance, getLocalDateString } from '../services/db';
 import { speakText, playSoundEffect } from '../services/audioService';
 import confetti from 'canvas-confetti';
 
@@ -55,12 +55,21 @@ export default function KioskView({
       setSelectedMember(member);
 
       if (activeStep === 'attendance') {
-        // ONLY Attendance / Presensi Mode records attendance & speaks Selamat Datang Voice!
-        const result = await recordAttendance(member, 'Presensi Mandiri Kios RFID');
-        await onRefreshData();
-        
-        if (result && result.isFirstToday) {
-          // FIRST TAP TODAY: Record attendance, award +5 pts, display banner & confetti!
+        // Fast synchronous check if first tap today
+        const records = getAttendance();
+        const todayStr = getLocalDateString(new Date());
+        const cleanRfid = (rfidUid || member.rfidUid || '').trim().toUpperCase();
+        const memberId = (member.id || '').trim();
+
+        const alreadyRecordedToday = records.some(r => {
+          const rfidMatch = cleanRfid && r.rfidUid && r.rfidUid.trim().toUpperCase() === cleanRfid;
+          const memberIdMatch = memberId && r.memberId && r.memberId.trim() === memberId;
+          const rDate = r.date || (r.timestamp ? getLocalDateString(new Date(r.timestamp)) : '');
+          return (rfidMatch || memberIdMatch) && rDate === todayStr;
+        });
+
+        // ⚡ INSTANT BANNER & CONFETTI (< 5ms) AT THE EXACT MILLISECOND OF SCAN TAP!
+        if (!alreadyRecordedToday) {
           playSoundEffect('success');
           setMessage({ 
             type: 'success', 
@@ -68,13 +77,17 @@ export default function KioskView({
           });
           confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
         } else {
-          // SUBSEQUENT TAP SAME DAY: Quiet scan sound, NO VOICE, NO DUPLICATE RECORD, NO EXTRA POINTS!
           playSoundEffect('scan');
           setMessage({ 
             type: 'amber', 
             text: `Kehadiran ${member.name} untuk hari ini sudah tercatat sebelumnya. Selamat membaca!` 
           });
         }
+
+        // Perform background DB saving and state refresh asynchronously without blocking UI speed
+        recordAttendance(member, 'Presensi Mandiri Kios RFID').then(() => {
+          if (onRefreshData) onRefreshData();
+        });
       } else if (activeStep === 'borrow') {
         // Peminjaman Mode: Identifikasi Anggota TANPA Presensi & TANPA Suara
         playSoundEffect('scan');
