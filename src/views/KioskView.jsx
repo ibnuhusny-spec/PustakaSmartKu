@@ -35,7 +35,7 @@ export default function KioskView({
 
   // Listen directly to live RFID scan events
   useEffect(() => {
-    const handleLiveRfidScan = (e) => {
+    const handleLiveRfidScan = async (e) => {
       const { rfidUid } = e.detail;
       if (!rfidUid) return;
 
@@ -56,10 +56,10 @@ export default function KioskView({
 
       if (activeStep === 'attendance') {
         // ONLY Attendance / Presensi Mode records attendance & speaks Selamat Datang Voice!
-        const result = recordAttendance(member, 'Presensi Mandiri Kios RFID');
-        onRefreshData();
+        const result = await recordAttendance(member, 'Presensi Mandiri Kios RFID');
+        await onRefreshData();
         
-        if (result.isFirstToday) {
+        if (result && result.isFirstToday) {
           // FIRST TAP TODAY: Record attendance, award +5 pts, play female voice greeting!
           playSoundEffect('success');
           setMessage({ 
