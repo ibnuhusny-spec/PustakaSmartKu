@@ -21,6 +21,14 @@ export const DEFAULT_SETTINGS = {
   classFieldLabel: "Peran / Kelas", // Custom Class/Role Label
   adminPin: "PustakaSmart2026", // Strong Default Secure Admin PIN
   
+  // Foonte WhatsApp Gateway Integration & Dynamic Message Templates
+  foonteApiToken: "",
+  foonteSenderName: "",
+  waTemplateStudent: "Yth. Orang Tua / Wali dari {nama} ({kelas}),\n\nTerima kasih telah membaca di perpustakaan. Siswa ybs baru saja meminjam buku:\n📖 *{judul_buku}*\n📅 Tgl Pinjam: {tgl_pinjam}\n⏰ Batas Kembalikan: {tgl_kembali}\n\nJaga buku ini dengan baik & kembalikan tepat waktu.\n_{nama_sekolah}_",
+  waTemplateGeneral: "Yth. Bapak/Ibu {nama} ({peran}),\n\nTerima kasih telah membaca di perpustakaan. Anda baru saja meminjam buku:\n📖 *{judul_buku}*\n📅 Tgl Pinjam: {tgl_pinjam}\n⏰ Batas Kembalikan: {tgl_kembali}\n\nJaga buku ini dengan baik & kembalikan tepat waktu.\n_{nama_sekolah}_",
+  waTemplateReturnStudent: "Yth. Orang Tua / Wali dari {nama} ({kelas}),\n\nTerima kasih, buku berikut telah berhasil dikembalikan ke perpustakaan:\n📖 *{judul_buku}*\n📅 Tgl Kembalikan: {tgl_kembali}\n💰 Denda Terbayar: Rp {denda}\n💳 Sisa Saldo RFID: Rp {saldo}\n\n_{nama_sekolah}_",
+  waTemplateReturnGeneral: "Yth. Bapak/Ibu {nama} ({peran}),\n\nTerima kasih, buku berikut telah berhasil dikembalikan ke perpustakaan:\n📖 *{judul_buku}*\n📅 Tgl Kembalikan: {tgl_kembali}\n💰 Denda Terbayar: Rp {denda}\n💳 Sisa Saldo RFID: Rp {saldo}\n\n_{nama_sekolah}_",
+
   // Default Pro Licensing System
   licenseType: "pro",
   trialStartDate: new Date().toISOString().split('T')[0],

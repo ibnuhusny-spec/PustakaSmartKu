@@ -190,7 +190,12 @@ export default function MembersView({
     setIsImportModalOpen(false);
     setIsTopUpOpen(false);
     if (member) {
-      setFormData({ ...member, idCardUrl: member.idCardUrl || '' });
+      setFormData({ 
+        ...member, 
+        idCardUrl: member.idCardUrl || '',
+        phone: member.phone || '',
+        parentPhone: member.parentPhone || ''
+      });
     } else {
       setFormData({
         id: `M-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -201,6 +206,7 @@ export default function MembersView({
         nisn: '',
         email: '',
         phone: '',
+        parentPhone: '',
         balance: 10000,
         points: 10,
         badge: 'Pembaca Baru 🌱',
@@ -227,6 +233,7 @@ export default function MembersView({
       nisn: '',
       email: '',
       phone: '',
+      parentPhone: '',
       balance: 10000,
       points: 10,
       badge: 'Pembaca Baru 🌱',
@@ -390,10 +397,10 @@ export default function MembersView({
   };
 
   const downloadSampleCSV = () => {
-    const csvContent = "Nama,RFID,Kelas,NISN,Peran,Saldo\n" +
-      "Ahmad Fauzi,RFID-1001,XII IPA 1,0051239841,Siswa,25000\n" +
-      "Siti Rahmawati,RFID-1002,XI IPS 2,0068741235,Siswa,15000\n" +
-      "Dra. Hj. Nurhayati,RFID-1004,Guru Bahasa Indonesia,197508122001122001,Guru,100000\n";
+    const csvContent = "Nama,RFID,Kelas,NISN,Peran,Saldo,WA_Pribadi,WA_OrangTua\n" +
+      "Ahmad Fauzi,RFID-1001,XII IPA 1,0051239841,Siswa,25000,081234567890,085299887766\n" +
+      "Siti Rahmawati,RFID-1002,XI IPS 2,0068741235,Siswa,15000,081299881122,081344556677\n" +
+      "Dra. Hj. Nurhayati,RFID-1004,Guru Bahasa Indonesia,197508122001122001,Guru,100000,081255443322,\n";
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -1048,6 +1055,7 @@ export default function MembersView({
                       <option value="Siswa">Siswa</option>
                       <option value="Guru">Guru</option>
                       <option value="Staf / Karyawan">Staf / Karyawan</option>
+                      <option value="Umum">Umum / Anggota Luar</option>
                     </select>
                   </div>
 
@@ -1060,6 +1068,44 @@ export default function MembersView({
                       onChange={e => setFormData({ ...formData, balance: Number(e.target.value) })}
                       step="5000"
                     />
+                  </div>
+                </div>
+
+                {/* WHATSAPP CONTACT NUMBERS SECTION */}
+                <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '14px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.25)', marginTop: '8px', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#34d399', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    📱 Kontak WhatsApp (Struk Digital & Pengingat Terlambat)
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.78rem' }}>
+                        {formData.role === 'Siswa' ? 'No. WA Pribadi Siswa' : 'No. WA Pribadi Anggota'}
+                      </label>
+                      <input 
+                        type="text" 
+                        className="form-input"
+                        value={formData.phone || ''}
+                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="Contoh: 08123456789..."
+                        style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)' }}
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.78rem' }}>
+                        {formData.role === 'Siswa' ? 'No. WA Orang Tua / Wali (Opsional)' : 'No. WA Kontak Darurat'}
+                      </label>
+                      <input 
+                        type="text" 
+                        className="form-input"
+                        value={formData.parentPhone || ''}
+                        onChange={e => setFormData({ ...formData, parentPhone: e.target.value })}
+                        placeholder="Contoh: 085299887766..."
+                        style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)' }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                    💡 <em>Info:</em> Nomor WhatsApp akan digunakan untuk mengirimkan struk peminjaman/pengembalian dan pengingat pengembalian buku.
                   </div>
                 </div>
 

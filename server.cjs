@@ -132,6 +132,7 @@ async function initDatabaseSchemas() {
       nisn TEXT,
       email TEXT,
       phone TEXT,
+      parentPhone TEXT,
       balance INTEGER,
       points INTEGER,
       badge TEXT,
@@ -141,12 +142,13 @@ async function initDatabaseSchemas() {
     );
   `);
 
-  // Auto-migration for idCardUrl column
+  // Auto-migration for idCardUrl and parentPhone columns
   try {
     await dbRun(`ALTER TABLE members ADD COLUMN idCardUrl TEXT`);
-  } catch (e) {
-    // Column already exists
-  }
+  } catch (e) {}
+  try {
+    await dbRun(`ALTER TABLE members ADD COLUMN parentPhone TEXT`);
+  } catch (e) {}
 
   await dbRun(`
     CREATE TABLE IF NOT EXISTS transactions (
@@ -221,8 +223,32 @@ app.get('/api/health', (req, res) => {
     dbPath,
     hardwareId: hddSerial,
     serverIp: lanIp,
-    serverUrl: `http://${lanIp}:${PORT}`
   });
+});
+
+// 1.5 WhatsApp Gateway Foonte Proxy API
+app.post('/api/wa/send', async (req, res) => {
+  const { target, message, token } = req.body || {};
+  if (!target || !message || !token) {
+    return res.status(400).json({ status: false, reason: 'Target, message, and token are required' });
+  }
+
+  try {
+    const fetch = (await import('node-fetch')).default || global.fetch;
+    const foonteRes = await fetch('https://api.foonte.com/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ target, message })
+    });
+    const data = await foonteRes.json();
+    return res.json(data);
+  } catch (err) {
+    console.error('❌ Server proxy Foonte WA error:', err.message);
+    return res.status(500).json({ status: false, reason: err.message });
+  }
 });
 
 // 2. Settings APIs

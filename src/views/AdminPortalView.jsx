@@ -301,6 +301,7 @@ export default function AdminPortalView({
           <TransactionsView 
             transactions={transactions}
             members={members}
+            settings={settings}
             onRefreshData={onRefreshData}
             onOpenReceipt={onOpenReceipt}
           />

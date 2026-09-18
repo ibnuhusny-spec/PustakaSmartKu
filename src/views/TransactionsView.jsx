@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { History, Search, CreditCard, RotateCcw, Printer, AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
+import { History, Search, CreditCard, RotateCcw, Printer, AlertTriangle, CheckCircle2, Trash2, Smartphone } from 'lucide-react';
 import { returnBookTransaction, deleteTransaction, clearSampleTransactions } from '../services/db';
+import { sendWhatsAppNotification, formatWaMessage } from '../services/waService';
 
 export default function TransactionsView({ 
   transactions, 
   members, 
+  settings,
   onRefreshData, 
   onOpenReceipt 
 }) {
@@ -42,6 +44,51 @@ export default function TransactionsView({
     if (window.confirm('⚠️ HAPUS SEMUA RIWAYAT PEMINJAMAN DUMMY?\n\nTindakan ini akan mengosongkan seluruh catatan peminjaman di sistem.')) {
       clearSampleTransactions();
       onRefreshData();
+    }
+  };
+
+  const handleSendWaReminder = async (tx) => {
+    const member = members.find(m => m.id === tx.memberId);
+    const targetPhone = member?.parentPhone || member?.phone;
+    
+    if (!targetPhone) {
+      alert(`⚠️ Anggota "${tx.memberName}" belum memiliki nomor WhatsApp terdaftar di database.`);
+      return;
+    }
+
+    const isStudent = (member?.role || 'Siswa') === 'Siswa';
+    const isOverdue = tx.status === 'Terlambat';
+
+    let template = isStudent 
+      ? (isOverdue 
+          ? "⚠️ *PENGINGAT KETERLAMBATAN BUKU PERPUSTAKAAN*\n\nYth. Orang Tua / Wali dari {nama} ({kelas}),\n\nBatas peminjaman buku berikut telah terlewati:\n📖 *{judul_buku}*\n📅 Batas Kembalikan: {tgl_kembali}\n💰 Estimasi Denda: Rp {denda}\n\nMohon bantu ingatkan putra/putri Anda untuk segera mengembalikan buku ini ke perpustakaan.\n_{nama_sekolah}_"
+          : (settings?.waTemplateStudent || "Yth. Orang Tua / Wali dari {nama} ({kelas}),\n\nSiswa ybs meminjam buku:\n📖 *{judul_buku}*\n⏰ Batas Kembalikan: {tgl_kembali}\n\n_{nama_sekolah}_"))
+      : (isOverdue
+          ? "⚠️ *PENGINGAT KETERLAMBATAN BUKU PERPUSTAKAAN*\n\nYth. Bapak/Ibu {nama} ({peran}),\n\nPeminjaman buku berikut telah melewati batas waktu:\n📖 *{judul_buku}*\n📅 Batas Kembalikan: {tgl_kembali}\n💰 Denda: Rp {denda}\n\nMohon dapat segera mengembalikan buku ini ke perpustakaan.\n_{nama_sekolah}_"
+          : (settings?.waTemplateGeneral || "Yth. Bapak/Ibu {nama} ({peran}),\n\nAnda sedang meminjam buku:\n📖 *{judul_buku}*\n⏰ Batas Kembalikan: {tgl_kembali}\n\n_{nama_sekolah}_"));
+
+    const messageData = {
+      nama: tx.memberName,
+      kelas: member?.classGrade || 'Siswa',
+      peran: member?.role || 'Anggota',
+      judul_buku: tx.bookTitle,
+      tgl_pinjam: tx.issueDate,
+      tgl_kembali: tx.dueDate,
+      denda: tx.fineAmount || 0,
+      saldo: member?.balance || 0,
+      nama_sekolah: settings?.schoolName || "Perpustakaan Digital",
+      nota: tx.id
+    };
+
+    const formattedMessage = formatWaMessage(template, messageData);
+    const res = await sendWhatsAppNotification({
+      targetPhone,
+      message: formattedMessage,
+      foonteApiToken: settings?.foonteApiToken
+    });
+
+    if (res?.message) {
+      alert(res.message);
     }
   };
 
@@ -190,6 +237,16 @@ export default function TransactionsView({
                                 <RotateCcw size={14} /> Kembali
                               </button>
                             )
+                          )}
+                          {tx.status !== 'Dikembalikan' && (
+                            <button
+                              onClick={() => handleSendWaReminder(tx)}
+                              className="btn btn-emerald"
+                              style={{ fontSize: '0.78rem', padding: '6px 10px', background: 'linear-gradient(135deg, #059669, #10b981)' }}
+                              title="Kirim Pesan Pengingat Peminjaman / Keterlambatan via WhatsApp"
+                            >
+                              <Smartphone size={14} /> WA Ingatkan
+                            </button>
                           )}
                           <button 
                             onClick={() => onOpenReceipt(tx, member)}

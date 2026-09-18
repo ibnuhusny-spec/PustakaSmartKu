@@ -1,8 +1,13 @@
-import React from 'react';
-import { Printer, X, CheckCircle2, CreditCard, BookOpen, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Printer, X, CheckCircle2, CreditCard, BookOpen, RotateCcw, Smartphone, Send } from 'lucide-react';
 import defaultLogo from '../assets/logo.png';
+import { sendWhatsAppNotification, formatWaMessage } from '../services/waService';
 
 export default function ReceiptModal({ isOpen, onClose, transaction, member, settings }) {
+  const [waSending, setWaSending] = useState(false);
+  const [waStatusMsg, setWaStatusMsg] = useState('');
+  const [waTargetMode, setWaTargetMode] = useState('both'); // 'student', 'parent', 'both'
+
   if (!isOpen || !transaction) return null;
 
   // Safely extract actual transaction object if wrapped in { transaction: tx }
@@ -19,8 +24,12 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
   
   const borrowerName = actualTx.memberName || member?.name || 'Siswa / Anggota';
   const borrowerClass = member?.classGrade || member?.role || actualTx.classGrade || 'Siswa';
+  const borrowerRole = member?.role || 'Siswa';
   const rfidUid = actualTx.rfidUid || member?.rfidUid || '-';
   const bookTitle = actualTx.bookTitle || 'Buku Perpustakaan';
+
+  const memberPhone = member?.phone || '';
+  const parentPhone = member?.parentPhone || '';
 
   const handlePrint = () => {
     const oldTitle = document.title;
@@ -36,6 +45,79 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
       document.title = oldTitle;
       if (onClose) onClose();
     }, 400);
+  };
+
+  const handleSendWa = async (customTarget = null) => {
+    setWaSending(true);
+    setWaStatusMsg('');
+
+    // Determine target phone numbers
+    let targets = [];
+    const chosenTarget = customTarget || waTargetMode;
+
+    if (chosenTarget === 'student' && memberPhone) {
+      targets.push(memberPhone);
+    } else if (chosenTarget === 'parent' && parentPhone) {
+      targets.push(parentPhone);
+    } else if (chosenTarget === 'both') {
+      if (memberPhone) targets.push(memberPhone);
+      if (parentPhone) targets.push(parentPhone);
+    }
+
+    if (targets.length === 0) {
+      // Fallback if target selected didn't have phone
+      if (memberPhone) targets.push(memberPhone);
+      else if (parentPhone) targets.push(parentPhone);
+    }
+
+    if (targets.length === 0) {
+      setWaSending(false);
+      setWaStatusMsg('⚠️ Belum ada Nomor WhatsApp yang terdaftar untuk anggota ini.');
+      return;
+    }
+
+    // Determine template based on Role (Student vs Teacher/General) and Type (Loan vs Return)
+    let template = '';
+    const isStudent = borrowerRole === 'Siswa';
+
+    if (isReturn) {
+      template = isStudent 
+        ? (settings?.waTemplateReturnStudent || "Yth. Orang Tua / Wali dari {nama} ({kelas}),\n\nTerima kasih, buku berikut telah dikembalikan ke perpustakaan:\n📖 *{judul_buku}*\n📅 Tgl Kembali: {tgl_kembali}\n💰 Denda: Rp {denda}\n\n_{nama_sekolah}_")
+        : (settings?.waTemplateReturnGeneral || "Yth. Bapak/Ibu {nama} ({peran}),\n\nTerima kasih, buku berikut telah dikembalikan ke perpustakaan:\n📖 *{judul_buku}*\n📅 Tgl Kembali: {tgl_kembali}\n💰 Denda: Rp {denda}\n\n_{nama_sekolah}_");
+    } else {
+      template = isStudent 
+        ? (settings?.waTemplateStudent || "Yth. Orang Tua / Wali dari {nama} ({kelas}),\n\nTerima kasih telah membaca. Siswa ybs meminjam buku:\n📖 *{judul_buku}*\n📅 Tgl Pinjam: {tgl_pinjam}\n⏰ Batas Kembalikan: {tgl_kembali}\n\n_{nama_sekolah}_")
+        : (settings?.waTemplateGeneral || "Yth. Bapak/Ibu {nama} ({peran}),\n\nTerima kasih telah membaca. Anda baru saja meminjam buku:\n📖 *{judul_buku}*\n📅 Tgl Pinjam: {tgl_pinjam}\n⏰ Batas Kembalikan: {tgl_kembali}\n\n_{nama_sekolah}_");
+    }
+
+    const messageData = {
+      nama: borrowerName,
+      kelas: borrowerClass,
+      peran: borrowerRole,
+      judul_buku: bookTitle,
+      tgl_pinjam: issueDate,
+      tgl_kembali: isReturn ? returnDate : dueDate,
+      denda: actualTx.fineAmount || 0,
+      saldo: member?.balance || 0,
+      nama_sekolah: settings?.schoolName || "Perpustakaan Digital",
+      nota: notaNo
+    };
+
+    const formattedMessage = formatWaMessage(template, messageData);
+    let lastResult = null;
+
+    for (const target of targets) {
+      lastResult = await sendWhatsAppNotification({
+        targetPhone: target,
+        message: formattedMessage,
+        foonteApiToken: settings?.foonteApiToken
+      });
+    }
+
+    setWaSending(false);
+    if (lastResult?.message) {
+      setWaStatusMsg(lastResult.message);
+    }
   };
 
   const activeSchoolLogo = (settings?.schoolLogoUrl && settings.schoolLogoUrl.trim()) 
@@ -173,9 +255,82 @@ export default function ReceiptModal({ isOpen, onClose, transaction, member, set
         </div>
 
         <div className="modal-footer no-print" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: '1.4' }}>
-            💡 <strong>Info:</strong> Nama file struk kini otomatis terisi. Jika menyimpan ke PDF, tombol <strong>Save</strong> di Windows langsung aktif!
+          
+          {/* WHATSAPP DIGITAL RECEIPT SENDING BUTTON */}
+          <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#34d399', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Smartphone size={16} /> 📲 Kirim Struk Digital via WhatsApp
+              </span>
+              {settings?.foonteApiToken ? (
+                <span className="badge badge-emerald" style={{ fontSize: '0.65rem' }}>⚡ Foonte Gateway Aktif</span>
+              ) : (
+                <span className="badge badge-amber" style={{ fontSize: '0.65rem' }}>📱 WhatsApp Direct</span>
+              )}
+            </div>
+
+            {(memberPhone || parentPhone) ? (
+              <div>
+                {/* Target Radio Selection if both exist */}
+                {(memberPhone && parentPhone) && (
+                  <div style={{ display: 'flex', gap: '12px', marginBottom: '8px', fontSize: '0.75rem' }}>
+                    <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <input 
+                        type="radio" 
+                        name="waTarget" 
+                        value="both" 
+                        checked={waTargetMode === 'both'} 
+                        onChange={() => setWaTargetMode('both')} 
+                      />
+                      <span>Keduanya (Siswa & Ortu)</span>
+                    </label>
+                    <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <input 
+                        type="radio" 
+                        name="waTarget" 
+                        value="student" 
+                        checked={waTargetMode === 'student'} 
+                        onChange={() => setWaTargetMode('student')} 
+                      />
+                      <span>Pribadi ({memberPhone})</span>
+                    </label>
+                    <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <input 
+                        type="radio" 
+                        name="waTarget" 
+                        value="parent" 
+                        checked={waTargetMode === 'parent'} 
+                        onChange={() => setWaTargetMode('parent')} 
+                      />
+                      <span>Ortu ({parentPhone})</span>
+                    </label>
+                  </div>
+                )}
+
+                <button 
+                  type="button"
+                  onClick={() => handleSendWa()}
+                  disabled={waSending}
+                  className="btn btn-emerald"
+                  style={{ width: '100%', fontSize: '0.82rem', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: 800 }}
+                >
+                  <Send size={15} />
+                  <span>{waSending ? 'Mengirim WhatsApp...' : 'Kirim Pesan Struk WA Sekarang'}</span>
+                </button>
+              </div>
+            ) : (
+              <div style={{ fontSize: '0.75rem', color: '#f87171' }}>
+                ⚠️ Anggota ini belum memiliki nomor WA terdaftar di database.
+              </div>
+            )}
+
+            {waStatusMsg && (
+              <div style={{ fontSize: '0.75rem', marginTop: '6px', fontWeight: 700, color: '#34d399' }}>
+                {waStatusMsg}
+              </div>
+            )}
           </div>
+
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
             <button onClick={onClose} className="btn btn-secondary">
               Tutup

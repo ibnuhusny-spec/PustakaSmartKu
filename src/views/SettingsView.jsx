@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2, Mail, Server, Network, Wifi, Eye, EyeOff } from 'lucide-react';
+import { Settings, Save, Download, Upload, RefreshCw, Volume2, ShieldCheck, Database, MapPin, Radio, Award, Image as ImageIcon, FolderOpen, Sparkles, Building2, Layout, Tag, FileText, Lock, KeyRound, CheckCircle2, Mail, Server, Network, Wifi, Eye, EyeOff, Smartphone, Send, MessageSquare } from 'lucide-react';
 import { saveSettings, exportData, importData, resetToDefault, getServerUrl, setServerUrl, checkServerConnection, syncLocalToSqliteServer } from '../services/db';
 import { getTrialDaysRemaining, validateDynamicLicenseKey } from '../services/licenseService';
 
@@ -645,6 +645,104 @@ export default function SettingsView({ settings, onRefreshData, onReplaySplash }
               </div>
             </div>
 
+          </div>
+
+          {/* FOONTE WHATSAPP GATEWAY & MESSAGE TEMPLATE SETTINGS CARD */}
+          <div style={{
+            background: 'rgba(16, 185, 129, 0.06)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: 'var(--radius-md)',
+            padding: '24px',
+            marginBottom: '24px'
+          }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#34d399', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Smartphone size={20} /> Integrasi Foonte WhatsApp Gateway & Template Pesan Struk Digital
+            </h3>
+            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', marginBottom: '16px' }}>
+              Masukkan <strong>API Token Foonte</strong> (`foonte.com`) untuk mengirim pesan WhatsApp struk peminjaman & pengembalian buku secara otomatis. Jika Token dikosongkan, sistem tetap akan membuka tautan <strong>WhatsApp Direct</strong> secara gratis.
+            </p>
+
+            <div className="form-group" style={{ maxWidth: '500px', marginBottom: '16px' }}>
+              <label className="form-label" style={{ color: '#60a5fa', fontWeight: 700 }}>
+                🔑 Foonte API Token (Dapatkan di foonte.com):
+              </label>
+              <input 
+                type="password"
+                name="foonteApiToken"
+                className="form-input"
+                value={formData.foonteApiToken ?? ''}
+                onChange={handleChange}
+                placeholder="Paste Token Foonte di sini (misal: x9aK8mN...)..."
+                style={{ fontFamily: 'var(--font-mono)', fontSize: '0.88rem' }}
+              />
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                💡 <em>Petunjuk:</em> Daftar akun gratis/premium di <a href="https://foonte.com" target="_blank" rel="noreferrer" style={{ color: '#60a5fa' }}>foonte.com</a> untuk mendapatkan Token pengiriman WA otomatis.
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+              <div className="form-group">
+                <label className="form-label" style={{ color: '#fbbf24', fontWeight: 700 }}>
+                  📝 Template WA Peminjaman - Khusus Siswa (Ke Orang Tua/Wali):
+                </label>
+                <textarea 
+                  name="waTemplateStudent"
+                  className="form-textarea"
+                  rows="5"
+                  value={formData.waTemplateStudent ?? ''}
+                  onChange={handleChange}
+                  style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ color: '#38bdf8', fontWeight: 700 }}>
+                  📝 Template WA Peminjaman - Guru / Staf / Anggota Umum:
+                </label>
+                <textarea 
+                  name="waTemplateGeneral"
+                  className="form-textarea"
+                  rows="5"
+                  value={formData.waTemplateGeneral ?? ''}
+                  onChange={handleChange}
+                  style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '12px' }}>
+              <div className="form-group">
+                <label className="form-label" style={{ color: '#fbbf24', fontWeight: 700 }}>
+                  🔄 Template WA Pengembalian - Khusus Siswa:
+                </label>
+                <textarea 
+                  name="waTemplateReturnStudent"
+                  className="form-textarea"
+                  rows="5"
+                  value={formData.waTemplateReturnStudent ?? ''}
+                  onChange={handleChange}
+                  style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ color: '#38bdf8', fontWeight: 700 }}>
+                  🔄 Template WA Pengembalian - Guru / Staf / Anggota Umum:
+                </label>
+                <textarea 
+                  name="waTemplateReturnGeneral"
+                  className="form-textarea"
+                  rows="5"
+                  value={formData.waTemplateReturnGeneral ?? ''}
+                  onChange={handleChange}
+                  style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8', background: 'rgba(15, 23, 42, 0.4)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+              🏷️ <strong>Variabel Otomatis yang Bisa Digunakan:</strong> <code>{'{nama}'}</code>, <code>{'{kelas}'}</code>, <code>{'{peran}'}</code>, <code>{'{judul_buku}'}</code>, <code>{'{tgl_pinjam}'}</code>, <code>{'{tgl_kembali}'}</code>, <code>{'{denda}'}</code>, <code>{'{saldo}'}</code>, <code>{'{nama_sekolah}'}</code>.
+            </div>
           </div>
 
           {saveSuccessMsg && (

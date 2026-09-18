@@ -883,10 +883,66 @@ export const clearSampleMembers = () => {
   saveMembers([]);
 };
 
-export const importMembersCSV = (membersList) => {
+export const importMembersCSV = (inputData) => {
+  let parsedMembers = [];
+
+  if (typeof inputData === 'string') {
+    const lines = inputData.split(/\r?\n/).filter(line => line.trim());
+    if (lines.length <= 1) return 0;
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+      if (cols.length === 0 || !cols[0]) continue;
+
+      const getVal = (nameList) => {
+        for (const name of nameList) {
+          const idx = headers.indexOf(name);
+          if (idx !== -1 && cols[idx] !== undefined) return cols[idx];
+        }
+        return '';
+      };
+
+      const name = getVal(['nama', 'name']) || cols[0] || 'Anggota Barcode';
+      const rfidUid = getVal(['rfid', 'uid', 'kode rfid']) || cols[1] || `RFID-${Math.floor(1000 + Math.random() * 9000)}`;
+      const classGrade = getVal(['kelas', 'class', 'jabatan']) || cols[2] || 'Umum';
+      const nisn = getVal(['nisn', 'nip', 'id']) || cols[3] || '';
+      const role = getVal(['peran', 'role']) || cols[4] || 'Siswa';
+      const balanceStr = getVal(['saldo', 'balance']) || cols[5] || '10000';
+      const phone = getVal(['wa_pribadi', 'wa', 'phone', 'telepon', 'hp']) || cols[6] || '';
+      const parentPhone = getVal(['wa_orangtua', 'wa_ortu', 'parentphone', 'hp_ortu']) || cols[7] || '';
+
+      parsedMembers.push({
+        id: `M-${Math.floor(10000 + Math.random() * 90000)}`,
+        rfidUid: rfidUid.toUpperCase(),
+        name,
+        role,
+        classGrade,
+        nisn,
+        email: '',
+        phone,
+        parentPhone,
+        balance: parseInt(balanceStr.replace(/\D/g, ''), 10) || 10000,
+        points: 10,
+        badge: 'Pembaca Baru 🌱',
+        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`
+      });
+    }
+  } else if (Array.isArray(inputData)) {
+    parsedMembers = inputData;
+  }
+
+  if (parsedMembers.length === 0) return 0;
+
   const current = getMembers();
-  const updated = [...membersList, ...current];
+  // Filter out duplicates by rfidUid
+  const existingRfids = new Set(current.map(m => (m.rfidUid || '').toUpperCase()));
+  const newMembers = parsedMembers.filter(m => !existingRfids.has((m.rfidUid || '').toUpperCase()));
+
+  const updated = [...newMembers, ...current];
   saveMembers(updated);
+  return newMembers.length;
 };
 
 
