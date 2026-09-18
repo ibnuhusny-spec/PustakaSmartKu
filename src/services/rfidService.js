@@ -78,10 +78,9 @@ export const initRfidKeyboardListener = () => {
     const timeDiff = currentTime - lastKeyTime;
     lastKeyTime = currentTime;
 
-    // Physical USB RFID Readers send characters ultra-fast (< 75ms apart).
-    // Human typing is much slower (> 80ms apart).
-    // If delay > 80ms, it is human typing, so clear the RFID buffer immediately!
-    if (timeDiff > 80) {
+    // Physical USB RFID Readers send characters fast (< 250ms apart).
+    // If delay > 250ms between keys, clear the buffer.
+    if (timeDiff > 250) {
       buffer = '';
       fastCharCount = 0;
     } else {
@@ -89,8 +88,8 @@ export const initRfidKeyboardListener = () => {
     }
 
     if (event.key === 'Enter') {
-      // Only emit RFID scan if characters were received at ultra-fast hardware scanner speed
-      if (buffer.length >= 4 && fastCharCount >= 3) {
+      // Emit RFID scan if buffer has valid UID length
+      if (buffer.length >= 4) {
         const uid = buffer.trim().toUpperCase();
         buffer = '';
         fastCharCount = 0;

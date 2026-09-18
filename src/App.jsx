@@ -31,6 +31,7 @@ import {
 import { initRfidKeyboardListener } from './services/rfidService';
 import { speakText, stopSpeech, playSoundEffect } from './services/audioService';
 import { getTrialDaysRemaining } from './services/licenseService';
+import confetti from 'canvas-confetti';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -287,12 +288,15 @@ export default function App() {
         else if (activeTab === 'kiosk') purpose = 'Layanan Mandiri Kios';
         else if (activeTab === 'catalog') purpose = 'Kunjungan Katalog Digital';
 
-        // ⚡ INSTANT AUDIBLE, VOICE & TOAST FEEDBACK (< 5ms) AT THE EXACT MILLISECOND OF SCAN TAP!
-        if (!alreadyRecordedToday) {
+        // ⚡ INSTANT AUDIBLE, VOICE, TOAST & CONFETTI FEEDBACK (< 5ms) AT THE EXACT MILLISECOND OF SCAN TAP!
+        const isFirstToday = !alreadyRecordedToday;
+
+        if (isFirstToday) {
           playSoundEffect('success');
           if (settings.enableVoice !== false) {
             speakText(`Selamat datang di perpustakaan, ${member.name}!`);
           }
+          confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
           const now = new Date();
           setActiveAttendanceToast({
             id: `ATT-${Date.now().toString().slice(-6)}`,
@@ -308,6 +312,11 @@ export default function App() {
         } else {
           playSoundEffect('scan');
         }
+
+        // Notify UI views instantly via custom rfid-processed event
+        window.dispatchEvent(new CustomEvent('rfid-processed', {
+          detail: { member, isFirstToday, rfidUid: cleanRfid }
+        }));
 
         // Async attendance record saving & state refresh in background
         recordAttendance(scanData.rfidUid, purpose).then(() => {

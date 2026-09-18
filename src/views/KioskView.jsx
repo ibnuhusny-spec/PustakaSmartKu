@@ -35,7 +35,7 @@ export default function KioskView({
 
   // Listen directly to live RFID scan events
   useEffect(() => {
-    const handleLiveRfidScan = async (e) => {
+    const handleLiveRfidScan = (e) => {
       const { rfidUid } = e.detail;
       if (!rfidUid) return;
 
@@ -55,7 +55,6 @@ export default function KioskView({
       setSelectedMember(member);
 
       if (activeStep === 'attendance') {
-        // Fast synchronous check if first tap today
         const records = getAttendance();
         const todayStr = getLocalDateString(new Date());
         const cleanRfid = (rfidUid || member.rfidUid || '').trim().toUpperCase();
@@ -68,49 +67,37 @@ export default function KioskView({
           return (rfidMatch || memberIdMatch) && rDate === todayStr;
         });
 
-        // ⚡ INSTANT BANNER & CONFETTI (< 5ms) AT THE EXACT MILLISECOND OF SCAN TAP!
+        // ⚡ INSTANT BANNER UPDATE (< 1ms) AT THE EXACT MILLISECOND OF SCAN TAP!
         if (!alreadyRecordedToday) {
-          playSoundEffect('success');
           setMessage({ 
             type: 'success', 
             text: `Selamat Datang, ${member.name}! Presensi kehadiran Anda hari ini telah dicatat (+5 Poin Duta Baca).` 
           });
-          confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
         } else {
-          playSoundEffect('scan');
           setMessage({ 
             type: 'amber', 
             text: `Kehadiran ${member.name} untuk hari ini sudah tercatat sebelumnya. Selamat membaca!` 
           });
         }
-
-        // Perform background DB saving and state refresh asynchronously without blocking UI speed
-        recordAttendance(member, 'Presensi Mandiri Kios RFID').then(() => {
-          if (onRefreshData) onRefreshData();
-        });
       } else if (activeStep === 'borrow') {
-        // Peminjaman Mode: Identifikasi Anggota TANPA Presensi & TANPA Suara
         playSoundEffect('scan');
         setMessage({ 
           type: 'success', 
           text: `Kartu RFID Terverifikasi: ${member.name} (${member.classGrade}). Saldo: Rp ${member.balance.toLocaleString('id-ID')} | Poin: ${member.points} pts.` 
         });
       } else if (activeStep === 'return') {
-        // Pengembalian Mode: Identifikasi Anggota TANPA Presensi & TANPA Suara
         playSoundEffect('scan');
         setMessage({ 
           type: 'success', 
           text: `Kartu RFID Terverifikasi: ${member.name} (${member.classGrade}). Berikut daftar buku yang sedang dipinjam.` 
         });
       } else if (activeStep === 'balance') {
-        // Cek Saldo & Poin: Informasi Anggota TANPA Presensi & TANPA Suara
         playSoundEffect('scan');
         setMessage({ 
           type: 'success', 
           text: `Informasi Anggota: ${member.name} (${member.classGrade}). Saldo RFID: Rp ${member.balance.toLocaleString('id-ID')} | Poin: ${member.points} pts.` 
         });
       } else {
-        // Kiosk Menu Utama: Identifikasi Anggota TANPA Presensi & TANPA Suara
         playSoundEffect('scan');
         setMessage({ 
           type: 'success', 
@@ -121,7 +108,7 @@ export default function KioskView({
 
     window.addEventListener('rfid-scanned', handleLiveRfidScan);
     return () => window.removeEventListener('rfid-scanned', handleLiveRfidScan);
-  }, [settings, onRefreshData, activeStep]);
+  }, [activeStep]);
 
   const handleBorrow = (book) => {
     if (!selectedMember) {
