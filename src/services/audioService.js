@@ -240,18 +240,16 @@ export const speakText = (text, enabled = true) => {
   // Synchronously stop any previous speech
   stopSpeech();
 
-  // ⚡ INSTANT ZERO-LATENCY: Use native Windows/WebSpeech API (< 10ms offline response)!
-  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  // ⚡ 1. Try Native Windows/Browser Indonesian Voice (Instant 0ms Local Speech) ONLY IF INDONESIAN VOICE IS INSTALLED!
+  const localIndoVoice = getIndonesianFemaleVoice();
+
+  if (localIndoVoice && typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try {
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'id-ID';
       utterance.rate = 1.0;
       utterance.pitch = 1.2;
-
-      const localVoice = getIndonesianFemaleVoice();
-      if (localVoice) {
-        utterance.voice = localVoice;
-      }
+      utterance.voice = localIndoVoice;
 
       window.speechSynthesis.speak(utterance);
       return;
@@ -260,9 +258,11 @@ export const speakText = (text, enabled = true) => {
     }
   }
 
-  // Backup fallback to streaming TTS ONLY if WebSpeech API is completely missing from browser/system
+  // 🔊 2. Authentic Indonesian Female Voice via High-Speed Streaming TTS Engine (Google Translate ID Female Voice)
+  // Ensures 100% natural Indonesian accent even if Windows OS lacks Indonesian language pack!
   try {
-    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText.substring(0, 180))}&tl=id&client=tw-ob`;
+    const encoded = encodeURIComponent(cleanText.substring(0, 180));
+    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=id&client=tw-ob`;
     const audio = new Audio(ttsUrl);
     audio.volume = 1.0;
     currentAudio = audio;
