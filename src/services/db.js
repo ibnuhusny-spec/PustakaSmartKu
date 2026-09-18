@@ -698,16 +698,19 @@ export const recordAttendance = async (memberOrRfid, purpose = 'Presensi Mandiri
   const now = new Date();
   const todayStr = getLocalDateString(now);
 
-  const cleanRfid = member.rfidUid || (typeof memberOrRfid === 'string' ? memberOrRfid : member.id);
+  const cleanRfid = (member.rfidUid || (typeof memberOrRfid === 'string' ? memberOrRfid : '') || '').trim().toUpperCase();
+  const memberId = (member.id || '').trim();
 
-  // Check if member HAS ALREADY RECORDED ATTENDANCE TODAY
-  const alreadyRecordedToday = records.find(r => 
-    (r.rfidUid === cleanRfid || r.memberName === member.name) && 
-    (r.date === todayStr || getLocalDateString(new Date(r.timestamp)) === todayStr)
-  );
+  // STRICT ATTENDANCE CHECK FOR TODAY: Match strictly by RFID UID or Member ID (never loosely by name)
+  const alreadyRecordedToday = records.find(r => {
+    const rfidMatch = cleanRfid && r.rfidUid && r.rfidUid.trim().toUpperCase() === cleanRfid;
+    const memberIdMatch = memberId && r.memberId && r.memberId.trim() === memberId;
+    const rDate = r.date || (r.timestamp ? getLocalDateString(new Date(r.timestamp)) : '');
+    return (rfidMatch || memberIdMatch) && rDate === todayStr;
+  });
 
   if (alreadyRecordedToday) {
-    // Already recorded today! DO NOT add new record, DO NOT add points, DO NOT play voice!
+    // Already recorded today! DO NOT add new record, DO NOT add points, DO NOT play voice greeting!
     return {
       success: true,
       isFirstToday: false,
@@ -721,6 +724,7 @@ export const recordAttendance = async (memberOrRfid, purpose = 'Presensi Mandiri
   const newRecord = {
     id: `ATT-${Date.now().toString().slice(-6)}`,
     rfidUid: cleanRfid,
+    memberId: member.id,
     memberName: member.name,
     classGrade: member.classGrade || 'Siswa',
     purpose,
@@ -810,8 +814,9 @@ export const deleteAttendanceRecord = (id) => {
   saveAttendance(updated);
 };
 
-export const clearAllAttendanceLogs = () => {
-  saveAttendance([]);
+export const clearAllAttendanceLogs = async () => {
+  await saveAttendance([]);
+  await syncLocalToSqliteServer();
 };
 
 export const saveMember = (member) => {
