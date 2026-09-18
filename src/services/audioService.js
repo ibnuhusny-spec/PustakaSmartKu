@@ -207,7 +207,7 @@ const speakWebSpeechFallback = (cleanText) => {
   }
 };
 
-// Text-To-Speech Authentic Indonesian Female Voice Engine (Google Neural Female Stream First)
+// Text-To-Speech Authentic Indonesian Female Voice Engine (Instant Zero-Latency Local Voice First)
 export const speakText = (text, enabled = true) => {
   if (!enabled || !text || !text.trim()) return;
 
@@ -229,34 +229,39 @@ export const speakText = (text, enabled = true) => {
 
   const cleanText = sanitizeIndonesianSpeechText(text);
 
+  // ⚡ INSTANT ZERO LATENCY: Try local native Windows/WebSpeech Indonesian Voice first (< 50ms response)!
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    const localVoice = getIndonesianFemaleVoice();
+    if (localVoice) {
+      try {
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = 'id-ID';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.2;
+        utterance.voice = localVoice;
+        window.speechSynthesis.speak(utterance);
+        return;
+      } catch (e) {
+        console.warn('Local WebSpeech failed, falling back to streaming TTS:', e);
+      }
+    }
+  }
+
+  // Fallback to online streaming TTS if no native Indonesian voice is installed on Windows OS
   try {
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText.substring(0, 180))}&tl=id&client=tw-ob`;
     const audio = new Audio(ttsUrl);
     audio.volume = 1.0;
     currentAudio = audio;
 
-    let hasFallenBack = false;
-
     audio.onended = () => {
       currentAudio = null;
     };
 
-    audio.onerror = () => {
-      if (!hasFallenBack) {
-        hasFallenBack = true;
-        speakWebSpeechFallback(cleanText);
-      }
-    };
-
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(err => {
-        if (!hasFallenBack) {
-          hasFallenBack = true;
-          speakWebSpeechFallback(cleanText);
-        }
-      });
-    }
+    audio.play().catch(err => {
+      console.warn('Online Audio TTS play failed:', err);
+      speakWebSpeechFallback(cleanText);
+    });
   } catch (err) {
     speakWebSpeechFallback(cleanText);
   }
