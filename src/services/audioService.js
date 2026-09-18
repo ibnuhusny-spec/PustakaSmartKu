@@ -207,6 +207,9 @@ const speakWebSpeechFallback = (cleanText) => {
   }
 };
 
+let lastSpokenText = '';
+let lastSpokenTime = 0;
+
 // Text-To-Speech Authentic Indonesian Female Voice Engine (Instant Zero-Latency Local Voice First)
 export const speakText = (text, enabled = true) => {
   if (!enabled || !text || !text.trim()) return;
@@ -224,30 +227,40 @@ export const speakText = (text, enabled = true) => {
     return;
   }
 
-  // Synchronously stop any previous speech to avoid double overlapping sound
-  stopSpeech();
-
   const cleanText = sanitizeIndonesianSpeechText(text);
 
-  // ⚡ INSTANT ZERO LATENCY: Try local native Windows/WebSpeech Indonesian Voice first (< 50ms response)!
+  // Prevent duplicate identical voice triggers within 1.5 seconds
+  const now = Date.now();
+  if (cleanText === lastSpokenText && (now - lastSpokenTime) < 1500) {
+    return;
+  }
+  lastSpokenText = cleanText;
+  lastSpokenTime = now;
+
+  // Synchronously stop any previous speech
+  stopSpeech();
+
+  // ⚡ INSTANT ZERO-LATENCY: Use native Windows/WebSpeech API (< 10ms offline response)!
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    const localVoice = getIndonesianFemaleVoice();
-    if (localVoice) {
-      try {
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = 'id-ID';
-        utterance.rate = 1.0;
-        utterance.pitch = 1.2;
+    try {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'id-ID';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.2;
+
+      const localVoice = getIndonesianFemaleVoice();
+      if (localVoice) {
         utterance.voice = localVoice;
-        window.speechSynthesis.speak(utterance);
-        return;
-      } catch (e) {
-        console.warn('Local WebSpeech failed, falling back to streaming TTS:', e);
       }
+
+      window.speechSynthesis.speak(utterance);
+      return;
+    } catch (e) {
+      console.warn('Local WebSpeech failed:', e);
     }
   }
 
-  // Fallback to online streaming TTS if no native Indonesian voice is installed on Windows OS
+  // Backup fallback to streaming TTS ONLY if WebSpeech API is completely missing from browser/system
   try {
     const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText.substring(0, 180))}&tl=id&client=tw-ob`;
     const audio = new Audio(ttsUrl);
@@ -260,9 +273,8 @@ export const speakText = (text, enabled = true) => {
 
     audio.play().catch(err => {
       console.warn('Online Audio TTS play failed:', err);
-      speakWebSpeechFallback(cleanText);
     });
   } catch (err) {
-    speakWebSpeechFallback(cleanText);
+    console.warn('Audio fallback error:', err);
   }
 };

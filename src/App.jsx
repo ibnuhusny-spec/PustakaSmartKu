@@ -24,11 +24,12 @@ import {
   getTransactions,
   getAttendance,
   getMemberByRfid,
-  recordAttendance
+  recordAttendance,
+  getLocalDateString
 } from './services/db';
 
 import { initRfidKeyboardListener } from './services/rfidService';
-import { speakText, stopSpeech } from './services/audioService';
+import { speakText, stopSpeech, playSoundEffect } from './services/audioService';
 import { getTrialDaysRemaining } from './services/licenseService';
 
 export default function App() {
@@ -268,23 +269,40 @@ export default function App() {
 
       const member = getMemberByRfid(scanData.rfidUid);
       if (member && settings.autoAttendanceOnTap) {
+        // Fast synchronous check if member already recorded attendance today
+        const records = getAttendance();
+        const todayStr = getLocalDateString(new Date());
+        const cleanRfid = (scanData.rfidUid || '').trim().toUpperCase();
+        const memberId = (member.id || '').trim();
+
+        const alreadyRecordedToday = records.some(r => {
+          const rfidMatch = cleanRfid && r.rfidUid && r.rfidUid.trim().toUpperCase() === cleanRfid;
+          const memberIdMatch = memberId && r.memberId && r.memberId.trim() === memberId;
+          const rDate = r.date || (r.timestamp ? getLocalDateString(new Date(r.timestamp)) : '');
+          return (rfidMatch || memberIdMatch) && rDate === todayStr;
+        });
+
+        // ⚡ INSTANT AUDIBLE & VOICE FEEDBACK (< 5ms) BEFORE ANY ASYNC DB/SERVER WORK!
+        if (!alreadyRecordedToday) {
+          playSoundEffect('success');
+          if (settings.enableVoice !== false) {
+            speakText(`Selamat datang di perpustakaan, ${member.name}!`);
+          }
+        } else {
+          playSoundEffect('scan');
+        }
+
         let purpose = 'Presensi Tap Mandiri';
         if (activeTab === 'leaderboard') purpose = 'Partisipasi Kuis Literasi';
         else if (activeTab === 'kiosk') purpose = 'Layanan Mandiri Kios';
         else if (activeTab === 'catalog') purpose = 'Kunjungan Katalog Digital';
 
+        // Async attendance record saving & state refresh in background
         const result = await recordAttendance(scanData.rfidUid, purpose);
-        
-        // Refresh state across all views immediately!
         await refreshData();
 
-        // Toast and voice feedback across ALL tabs on card tap!
         if (result && result.success) {
           setActiveAttendanceToast(result.attendance);
-          // Voice sapaan ONLY plays on the FIRST scan of the day!
-          if (settings.enableVoice !== false && result.isFirstToday) {
-            speakText(`Selamat datang di perpustakaan, ${member.name}!`);
-          }
         }
       }
     };

@@ -739,7 +739,8 @@ export const recordAttendance = async (memberOrRfid, purpose = 'Presensi Mandiri
   await updateMember(member);
 
   await saveAttendance([newRecord, ...records]);
-  await syncLocalToSqliteServer();
+  // Perform background sync to SQLite server without blocking local attendance speed!
+  syncLocalToSqliteServer().catch(err => console.warn('Async SQLite sync background error:', err));
   return { success: true, isFirstToday: true, attendance: { ...newRecord, isFirstToday: true }, member };
 };
 
